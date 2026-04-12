@@ -108,10 +108,29 @@ Un fichier HTML standalone qui montre :
 - Loading states
 
 Le fichier doit etre :
-- **Ouvrable directement dans le navigateur** (pas de dependances)
-- **Tailwind via CDN** pour les classes
+- **Ouvrable directement dans le navigateur** (Tailwind CDN pour le preview)
 - **Sections clairement separees** avec ancres
 - **Copier-collable** : chaque composant avec son code source
+- **Inclure un bloc `tailwind.config.js`** a copier dans le projet :
+
+```html
+<!--
+  TAILWIND CONFIG — copier dans config/tailwind.config.js du projet :
+
+  colors: {
+    primary: '#3B82F6',
+    secondary: '#6366F1',
+    ...
+  },
+  fontFamily: {
+    sans: ['Inter', 'sans-serif'],
+    heading: ['Plus Jakarta Sans', 'sans-serif'],
+  }
+-->
+```
+
+Le style_guide.html utilise le CDN pour le preview standalone.
+Les mockups et l'implementation utilisent le gem `tailwindcss-rails` avec ces memes couleurs dans `config/tailwind.config.js`.
 
 ### 6. Validation
 

@@ -22,6 +22,67 @@ Cree les vues mockees du projet. L'objectif : un prototype navigable complet que
 - **Donnees fictives** dans les controleurs (hashes/OpenStruct, pas de DB)
 - **Utiliser des partials** pour tout ce qui sera reutilise en implementation
 - **Les pages doivent linker entre elles** — on navigue comme dans la vraie app
+- **Tailwind CSS** via le gem `tailwindcss-rails` (PAS le CDN)
+
+## Tailwind CSS
+
+### Utiliser le vrai pipeline, pas le CDN
+
+Les mockups utilisent le meme pipeline Tailwind que l'app finale. Pas de CDN.
+Ca garantit que les classes custom marchent en implementation.
+
+### Customisation dans `config/tailwind.config.js`
+
+Definir les couleurs, fonts et spacing du style guide ICI (source unique de verite) :
+
+```javascript
+module.exports = {
+  content: [
+    './app/views/**/*.html.erb',
+    './app/helpers/**/*.rb',
+    './app/javascript/**/*.js',
+  ],
+  theme: {
+    extend: {
+      colors: {
+        primary: '#3B82F6',
+        secondary: '#6366F1',
+        accent: '#EC4899',
+        // Reprendre exactement les couleurs du style_guide.html
+      },
+      fontFamily: {
+        sans: ['Inter', 'sans-serif'],
+        heading: ['Plus Jakarta Sans', 'sans-serif'],
+      },
+    },
+  },
+}
+```
+
+### Regles Tailwind
+
+1. **Utility classes en priorite** — directement dans le HTML
+2. **Partials pour la reutilisation** — pas `@apply` pour creer des composants
+3. **`@apply` uniquement** pour du CSS qu'on ne peut pas exprimer en markup (ex: markdown-content)
+4. **Jamais de CSS custom** dans des fichiers separes (sauf `application.tailwind.css`)
+5. **Couleurs custom** toujours dans `tailwind.config.js`, jamais en valeurs arbitraires (`bg-[#3B82F6]`)
+
+### Structure CSS
+
+```
+app/assets/stylesheets/
+  application.tailwind.css    # @tailwind base/components/utilities + @apply si besoin
+config/
+  tailwind.config.js          # Couleurs, fonts, spacing du style guide
+```
+
+### Transition mockups → implementation
+
+Les classes Tailwind sont identiques. La transition se fait par :
+1. Copier les partials (meme HTML, memes classes)
+2. Les custom colors marchent deja (definies dans tailwind.config.js)
+3. Remplacer les donnees fictives par les vrais modeles
+4. Rien a changer cote CSS
 
 ## Structure des fichiers
 
@@ -90,7 +151,8 @@ Chaque layout inclut :
 <!DOCTYPE html>
 <html>
 <head>
-  <%%= stylesheet_link_tag "https://cdn.jsdelivr.net/npm/tailwindcss@3/dist/tailwind.min.css" %>
+  <%%= stylesheet_link_tag "tailwind", "data-turbo-track": "reload" %>
+  <%%= stylesheet_link_tag "application", "data-turbo-track": "reload" %>
 </head>
 <body class="bg-gray-50">
   <div class="flex min-h-screen">
