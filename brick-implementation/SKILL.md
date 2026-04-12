@@ -41,7 +41,10 @@ Etats : `todo` → `coding` → `testing` → `done`
 ### 2. Pour chaque tache
 
 1. Ecrire le code (Ruby/HTML first, JS = Turbo/Stimulus uniquement)
-2. Ecrire les tests (couvrir les criteres d'acceptance)
+2. Ecrire les tests — voir `/rails-testing` pour la strategie :
+   - **Chaque AC → un test d'integration** (`test/integration/`)
+   - **Validations critiques → test model** (`test/models/`)
+   - Nommer le test avec la ref AC : `# R1/AC1.1: User peut s'inscrire`
 3. Lancer : `rails test path/to/test.rb 2>&1 | head -50`
 4. Renommer la tache en `done`
 5. **Committer** (message clair, ne PAS push sans demande)
