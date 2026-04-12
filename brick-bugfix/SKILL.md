@@ -13,12 +13,12 @@ Le client a toujours raison. Chaque bug suit le meme process : comprendre → re
 
 ## Branche
 
-Les bugfix se font TOUJOURS sur `main` (la prod). Ca permet de corriger des bugs en prod pendant qu'on dev la brick suivante sur `staging`.
+**Demander sur quelle branche travailler** si ce n'est pas precise :
+- Bug sur la **prod** (le client le voit en live) → `main`
+- Bug sur le **staging** (decouvert pendant le dev) → `staging`
 
 ```bash
-git checkout main
-# fix + test + commit
-git push origin main  # → deploy auto sur prod
+git branch  # verifier la branche avant de commencer
 ```
 
 ## Process
