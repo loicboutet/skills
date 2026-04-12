@@ -15,6 +15,7 @@ Utilise les skills pour chaque etape du workflow. Tape la commande correspondant
 | Mockups | `/brick-mockups` | Creer les vues mockees apres validation de l'analyse |
 | Implementation | `/brick-implementation` | Developper une brick apres validation des mockups |
 | Review | `/brick-review` | Validation pre-livraison (tests, gaps, UX, securite) |
+| Bugfix | `/brick-bugfix` | Bug client : comprendre → test qui reproduit → fix → verifier |
 
 ### Rails / Technique
 
