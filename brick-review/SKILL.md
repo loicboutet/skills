@@ -13,6 +13,13 @@ Validation pre-livraison d'une brick. Lance tous les checks avant de livrer.
 - Avant de passer a la brick suivante
 - Quand l'utilisateur demande un check global
 
+## Scope check
+
+Avant la review, verifier qu'on n'a pas implemente de features hors spec :
+- [ ] Tout le code implemente correspond a un critere d'acceptance
+- [ ] Pas de features "bonus" non demandees
+- [ ] Les changements de scope sont documentes dans les specs
+
 ## Process
 
 ### 1. Tests

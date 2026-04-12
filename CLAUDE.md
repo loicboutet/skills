@@ -38,6 +38,56 @@ ANALYSIS → [DESIGN] → MOCKUPS → IMPLEMENTATION → REVIEW → Brick suivan
 - Chaque phase a une **validation gate** (checklist) avant de passer a la suivante
 - La phase DESIGN est optionnelle (seulement si le client n'a pas de charte graphique)
 
+## Environnements et branches
+
+```
+main     → production   (projet.5000.dev)     ← le client voit ça
+staging  → staging       (projet-staging.5000.dev) ← on dev ici
+```
+
+### Strategie de branches
+
+| Situation | Branche | Environnement |
+|-----------|---------|---------------|
+| Brick 1 (premiere livraison) | `main` | Production |
+| Brick 2+ (evolution) | `staging` | Staging |
+| Bugfix sur la prod | `main` | Production |
+
+**Brick 1** : on travaille directement sur `main`. Le client n'a rien en prod encore.
+
+**Brick 2+** : on travaille sur `staging`. Le client valide sur `projet-staging.5000.dev`.
+Quand c'est valide → merge `staging` dans `main` → deploy prod automatique.
+
+**Bugfix** : toujours sur `main` (la prod). Utilise `/brick-bugfix`.
+On peut corriger des bugs en prod PENDANT qu'on dev la brick suivante sur staging.
+
+### Deploys automatiques
+- Push sur `main` → GitHub Actions → deploy prod
+- Push sur `staging` → GitHub Actions → deploy staging
+- JAMAIS de `kamal deploy` manuel
+
+## Retours client et specs
+
+**REGLE : toujours verifier les specs avant d'implementer un retour client.**
+
+Les clients demandent souvent des choses hors spec. Avant tout changement :
+
+1. Relire `doc/memory/acceptance_criteria.md` et les specs originales
+2. Si la demande est **dans les specs** → implementer normalement
+3. Si la demande est **hors spec** :
+   - Informer l'utilisateur/chef de projet
+   - Citer la spec concernee
+   - Demander confirmation explicite avant de coder
+   - Si confirme, documenter le changement de scope :
+     ```markdown
+     ## Changement de scope - [date]
+     Demande: [description]
+     Spec originale: [reference]
+     Approuve par: [nom]
+     Impact: [nouveau critere AC ou modification]
+     ```
+4. Si la demande **contredit** une spec → TOUJOURS signaler, ne jamais implementer silencieusement
+
 ## README.md = source de verite
 
 Le README.md du projet DOIT toujours refleter l'etat actuel :

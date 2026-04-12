@@ -11,6 +11,16 @@ Le client a toujours raison. Chaque bug suit le meme process : comprendre → re
 
 **Ne jamais dire "ca marche chez moi"**. Si le client dit que c'est casse, c'est casse. Notre job c'est de comprendre POURQUOI il voit ce qu'il voit.
 
+## Branche
+
+Les bugfix se font TOUJOURS sur `main` (la prod). Ca permet de corriger des bugs en prod pendant qu'on dev la brick suivante sur `staging`.
+
+```bash
+git checkout main
+# fix + test + commit
+git push origin main  # → deploy auto sur prod
+```
+
 ## Process
 
 ### 1. Comprendre le retour client

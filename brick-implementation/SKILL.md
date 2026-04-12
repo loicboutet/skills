@@ -89,6 +89,21 @@ Si un test echoue :
 - Demander de l'aide a l'utilisateur
 - Ne pas tourner en boucle sur un bug
 
+## Branches
+
+- **Brick 1** : travailler sur `main` (pas de prod existante)
+- **Brick 2+** : travailler sur `staging`, le client valide sur `projet-staging.5000.dev`
+- **Committer sur la bonne branche** : verifier avec `git branch` avant de committer
+- Quand la brick est validee → l'utilisateur merge staging dans main
+
+## Retours client
+
+Avant d'implementer un retour client, TOUJOURS :
+1. Verifier `doc/memory/acceptance_criteria.md`
+2. Si hors spec → signaler, demander confirmation
+3. Si confirme → documenter le changement de scope
+4. Ne JAMAIS implementer silencieusement un truc hors spec
+
 ## Regles techniques
 
 - Ruby/HTML maximum, JS = Turbo/Stimulus (voir `/rails-hotwire`)
