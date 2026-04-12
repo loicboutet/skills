@@ -120,6 +120,15 @@ Presenter le style guide a l'utilisateur :
 - Demander validation des couleurs, typo, composants
 - Iterer si necessaire
 
+## Validation gate
+
+- [ ] Palette de couleurs definie (primary, secondary, neutral, success/warning/danger)
+- [ ] Contraste WCAG AA verifie
+- [ ] Typographie choisie (headings, body, mono)
+- [ ] Composants documentes (boutons, inputs, cartes, tableaux, alerts)
+- [ ] Fichier ouvrable standalone dans le navigateur
+- [ ] L'utilisateur a valide
+
 ## Sortie
 
-`doc/memory/style_guide.html` cree et valide. L'analyse peut continuer.
+`doc/memory/style_guide.html` cree et valide. Continuer avec `/brick-analysis` (si en cours) ou `/brick-mockups`.

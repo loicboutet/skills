@@ -137,3 +137,36 @@ Turbo Frame avec liens qui changent le `src`.
 
 ### Infinite scroll
 Stimulus controller qui observe l'intersection + Turbo Frame pour les pages.
+
+## Tester les features Hotwire
+
+Voir `/rails-testing` pour la strategie complete. En resume :
+
+### Turbo Stream (test d'integration)
+```ruby
+test "create returns turbo stream" do
+  post messages_path, params: { message: { content: "Hello" } },
+       headers: { "Accept" => "text/vnd.turbo-stream.html" }
+  assert_response :success
+  assert_match "turbo-stream", response.body
+end
+```
+
+### Turbo Frame (test d'integration)
+```ruby
+test "edit form loads in turbo frame" do
+  get edit_user_path(users(:loic)),
+      headers: { "Turbo-Frame" => "user_1" }
+  assert_response :success
+  assert_select "turbo-frame#user_1"
+end
+```
+
+### Stimulus (system test si JS requis)
+```ruby
+test "dropdown toggles on click" do
+  visit users_path
+  click_on "Menu"
+  assert_selector ".dropdown-content", visible: true
+end
+```

@@ -101,6 +101,19 @@ Test: test/integration/bug_fixes/[test_file].rb
 
 Ne PAS push sans demande explicite.
 
+### 7. Confirmation client
+
+- Informer l'utilisateur que le fix est pret
+- Attendre que le client confirme que le bug est resolu
+- Ne JAMAIS fermer un bug sans confirmation
+
+### Contexte client
+
+Si le bug report est flou, utiliser tous les outils disponibles :
+- **Leexi** (si disponible) : chercher les conversations recentes avec le client
+- **Conversations nexrai** : relire les echanges dans l'app
+- **Screenshots/videos** : demander au client si possible
+
 ## Organisation des tests de bug
 
 Tous les tests de bugs vont dans `test/integration/bug_fixes/`. Chaque fichier = un bug report. On ne les supprime JAMAIS — ils servent de regression tests.

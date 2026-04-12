@@ -38,20 +38,51 @@ ANALYSIS → [DESIGN] → MOCKUPS → IMPLEMENTATION → REVIEW → Brick suivan
 - Chaque phase a une **validation gate** (checklist) avant de passer a la suivante
 - La phase DESIGN est optionnelle (seulement si le client n'a pas de charte graphique)
 
+## README.md = source de verite
+
+Le README.md du projet DOIT toujours refleter l'etat actuel :
+- **Etat du projet** : phase en cours (ANALYSIS, MOCKUPS, IMPLEMENTATION - Brick #X)
+- **Documentation** : checklist des fichiers crees
+- **Mettre a jour le README a chaque changement de phase ou de tache**
+
+## Kanban par fichiers
+
+Les taches sont gerees via le systeme de fichiers (pas de tool externe) :
+
+```
+doc/memory/mockups/tasks/
+  001-layout-admin-done.md
+  002-layout-user-done.md
+  003-dashboard-inprogress.md     ← en cours
+  004-user-list-todo.md
+  005-user-detail-todo.md
+
+doc/memory/brick-1/tasks/
+  001-models-user-done.md
+  002-auth-registration-testing.md  ← en test
+  003-admin-dashboard-todo.md
+```
+
+Le nom du fichier = le statut. Renommer le fichier pour changer l'etat.
+Avant de commencer une tache, verifier qu'il n'y en a pas une `inprogress` ou `coding`.
+
 ## Artefacts du projet
 
 ```
+README.md                        # Etat du projet, checklist
 doc/memory/
-├── data_models.md           # Modeles et relations
-├── routes.md                # Routes par namespace/profil
-├── acceptance_criteria.md   # Criteres d'acceptance tracables (R1/AC1.1)
-├── user_journeys.md         # Parcours utilisateurs par profil
-├── style_guide.html         # Charte graphique (standalone HTML)
-├── mockups/tasks/           # Taches mockups
+├── data_models.md               # Modeles et relations
+├── routes.md                    # Routes par namespace/profil
+├── acceptance_criteria.md       # Criteres d'acceptance tracables (R1/AC1.1)
+├── user_journeys.md             # Parcours utilisateurs par profil
+├── style_guide.html             # Charte graphique (standalone HTML)
+├── mockups/tasks/               # Kanban taches mockups
 └── brick-{N}/
-    ├── tasks/               # Taches implementation
-    └── review.md            # Rapport de review
+    ├── tasks/                   # Kanban taches implementation
+    └── review.md                # Rapport de review pre-livraison
 ```
+
+Toujours dans `doc/memory/`. Verifier l'existant avant de creer. Documentation pour les agents, pas les humains.
 
 ## Philosophie
 

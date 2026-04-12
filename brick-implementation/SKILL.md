@@ -12,10 +12,37 @@ Implemente le projet brick par brick avec tracabilite vers les criteres d'accept
 - Phase MOCKUPS validee
 - README indique `Etat: IMPLEMENTATION - Brick #X`
 - `doc/memory/acceptance_criteria.md` existe
+- `doc/memory/user_journeys.md` existe
 
-## Regle critique : preservation des mockups
+## Transition depuis les mockups
 
-**JAMAIS modifier les fichiers dans `/mockups/`**. DUPLIQUER les vues vers leur emplacement final.
+**JAMAIS modifier les fichiers dans `/mockups/`**. Les mockups servent de reference visuelle.
+
+### Comment reutiliser les mockups
+
+1. **Layouts** : copier `app/views/layouts/mockup_admin.html.erb` → `app/views/layouts/admin.html.erb`
+   - Remplacer les liens mockups par les vraies routes
+   - Garder la structure HTML/Tailwind identique
+
+2. **Partials** : copier les partials mockups vers les vrais emplacements
+   ```
+   app/views/mockups/users/_user_card.html.erb → app/views/users/_user_card.html.erb
+   app/views/mockups/users/_form.html.erb      → app/views/users/_form.html.erb
+   app/views/mockups/shared/_sidebar.html.erb   → app/views/shared/_sidebar.html.erb
+   ```
+
+3. **Remplacer les donnees fictives** par les vraies :
+   ```erb
+   <%% # AVANT (mockup) : hash %>
+   <%%= user[:name] %>
+
+   <%% # APRES (implementation) : modele %>
+   <%%= user.name %>
+   ```
+
+4. **Garder les memes noms de partials** pour faciliter la comparaison avec les mockups
+
+5. **Supprimer les routes `/mockups/`** une fois toutes les vues copiees
 
 ## Process
 
@@ -41,44 +68,47 @@ Etats : `todo` → `coding` → `testing` → `done`
 ### 2. Pour chaque tache
 
 1. Ecrire le code (Ruby/HTML first, JS = Turbo/Stimulus uniquement)
-2. Ecrire les tests — voir `/rails-testing` pour la strategie :
-   - **Chaque AC → un test d'integration** (`test/integration/`)
-   - **Validations critiques → test model** (`test/models/`)
+2. Ecrire les tests — strategie (voir `/rails-testing`) :
+   - **Chaque AC = un test d'integration** dans `test/integration/`
+   - **Validations critiques = test model** dans `test/models/`
    - Nommer le test avec la ref AC : `# R1/AC1.1: User peut s'inscrire`
 3. Lancer : `rails test path/to/test.rb 2>&1 | head -50`
 4. Renommer la tache en `done`
 5. **Committer** (message clair, ne PAS push sans demande)
 
-### 3. Convergence (inspire de Cavekit)
+### 3. Convergence
 
 Si un test echoue :
 1. Diagnostiquer le probleme
 2. Fixer
 3. Relancer les tests
-4. Max 3 iterations, apres demander aide a l'utilisateur
+4. Max 3 iterations — apres, demander aide a l'utilisateur
 
 ### 4. Si bloque
 
 - Demander de l'aide a l'utilisateur
-- Ne pas tourner en boucle
+- Ne pas tourner en boucle sur un bug
 
 ## Regles techniques
 
-- Ruby/HTML maximum, JS = Turbo/Stimulus
-- Idiomatique, DRY, conventions Rails
+- Ruby/HTML maximum, JS = Turbo/Stimulus (voir `/rails-hotwire`)
+- Idiomatique, DRY, conventions Rails (voir `/vanilla-rails`)
 - Fichiers < 400 lignes
 - SQLite + Solid libraries (Rails 8)
 - Migrations via generateur : `rails generate migration ...`
+- Modeles : voir `/rails-models` pour les conventions
 
 ## Sous-agents
 
-Si process global (pas une tache unique) :
-- Chaque tache = un sous-agent dedie
-- Toi = orchestrateur
-- 1 sous-agent par appel
+Pour un process multi-taches (pas une tache isolee) :
+- Decouper en taches independantes
+- 1 sous-agent par tache
+- Toi = orchestrateur qui delegue, verifie, et passe a la suivante
+- 1 sous-agent par appel (pas plusieurs en parallele)
 
 ## Passage a la brick suivante
 
-- L'utilisateur annonce explicitement
-- Lancer `/brick-review` avant de livrer
-- Creer `doc/memory/brick-{N+1}/tasks/`
+1. Lancer `/brick-review` pour la validation pre-livraison
+2. L'utilisateur valide la review
+3. Creer `doc/memory/brick-{N+1}/tasks/`
+4. Mettre a jour le README

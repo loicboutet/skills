@@ -84,4 +84,4 @@ Generer un rapport dans `doc/memory/brick-{N}/review.md` :
 ## Sortie
 
 Si READY → informer l'utilisateur, pret a livrer.
-Si NEEDS FIXES → lister les fixes necessaires, proposer de les faire.
+Si NEEDS FIXES → lister les fixes. Pour chaque fix, utiliser `/brick-bugfix` (test qui reproduit → fix → verify).
