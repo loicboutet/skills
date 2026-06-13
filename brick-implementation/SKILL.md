@@ -14,10 +14,7 @@ pendant toute l'implementation :
 - **Plan multi-etapes explicite** avant de coder (numerote les etapes + sortie attendue).
 - **Verification a chaque etape** (tests verts, criteres d'acceptance couverts) avant d'avancer.
 - **Auto-critique** avant de committer / livrer.
-- **Delegation** : 1 sous-agent par tache independante.
-  ⚠️ Exception au "parallele" de fable-mode : ici **1 sous-agent par appel** (sequentiel),
-  jamais plusieurs en un seul appel (cf. CLAUDE.md projet, sinon ca bug). Voir la section
-  "Sous-agents" plus bas.
+- **Delegation** : 1 sous-agent par tache independante (voir la section "Sous-agents").
 
 ## Pre-requis
 
