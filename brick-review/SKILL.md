@@ -50,7 +50,33 @@ Comparer `doc/memory/acceptance_criteria.md` avec le code :
 - Extra: Pagination sur la liste users (pas dans les specs)
 ```
 
-### 3. Review UX
+### 3. Pixel match (conformite aux mockups)
+
+Le respect des mockups est LE point critique cote client. Pour chaque page implementee,
+la comparer a son mockup de reference (`app/views/mockups/...`), section par section.
+
+Generer un tableau des differences :
+
+```markdown
+## Pixel match - Brick #X
+
+| Page implementee | Mockup de reference | Differences detectees | Statut |
+|------------------|---------------------|------------------------|--------|
+| users/index      | mockups/users/index | aucune                 | OK     |
+| users/show       | mockups/users/show  | bouton "Modifier" deplace dans le header | A CORRIGER |
+| dashboard/show   | mockups/dashboard/show | carte stats manquante | A CORRIGER |
+```
+
+Verifier :
+- [ ] Chaque page a un mockup de reference correspondant
+- [ ] Markup HTML / classes Tailwind identiques au mockup (seule la liaison de donnees change)
+- [ ] Aucune section ajoutee / retiree / reordonnee par rapport au mockup
+- [ ] Aucun faux objet (hash / OpenStruct) restant dans un controleur reel
+- [ ] Toute difference est soit corrigee, soit justifiee par une mise a jour de spec documentee
+
+**Toute ligne "A CORRIGER" non justifiee bloque la livraison** (verdict NEEDS FIXES).
+
+### 4. Review UX
 
 Verifier les parcours utilisateurs de `doc/memory/user_journeys.md` :
 - [ ] Chaque parcours est fonctionnel de bout en bout
@@ -58,7 +84,7 @@ Verifier les parcours utilisateurs de `doc/memory/user_journeys.md` :
 - [ ] Les messages flash sont presents et clairs
 - [ ] La navigation est coherente
 
-### 4. Review Code (vanilla Rails)
+### 5. Review Code (vanilla Rails)
 
 - [ ] Controllers < 7 actions (sinon extraire)
 - [ ] Pas de logique business dans les controllers
@@ -67,14 +93,14 @@ Verifier les parcours utilisateurs de `doc/memory/user_journeys.md` :
 - [ ] Pas de N+1 queries (utiliser `includes`)
 - [ ] Fichiers < 400 lignes
 
-### 5. Security check
+### 6. Security check
 
 - [ ] Strong parameters sur tous les controllers
 - [ ] Autorisation verifiee (l'utilisateur a acces a la ressource)
 - [ ] Pas de donnees sensibles dans les logs
 - [ ] CSRF protection active
 
-### 6. Rapport
+### 7. Rapport
 
 Generer un rapport dans `doc/memory/brick-{N}/review.md` :
 
@@ -83,6 +109,7 @@ Generer un rapport dans `doc/memory/brick-{N}/review.md` :
 
 ## Tests: X/Y passing
 ## Acceptance criteria: X/Y covered
+## Pixel match: X/Y pages conformes
 ## Gaps: [liste]
 ## Issues: [liste]
 ## Verdict: READY / NEEDS FIXES

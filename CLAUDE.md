@@ -13,6 +13,7 @@ Utilise les skills pour chaque etape du workflow. Tape la commande correspondant
 | Analyse | `/brick-analysis` | Nouveau projet, nouvelle brick, specs a analyser |
 | Design System | `/brick-design` | Creer une charte graphique quand le client n'en a pas |
 | Mockups | `/brick-mockups` | Creer les vues mockees apres validation de l'analyse |
+| Mockup Review | `/brick-mockup-review` | Verifier les mockups avant presentation client (scope brique, sync specs, outil capture) |
 | Implementation | `/brick-implementation` | Developper une brick apres validation des mockups |
 | Review | `/brick-review` | Validation pre-livraison (tests, gaps, UX, securite) |
 | Bugfix | `/brick-bugfix` | Bug client : comprendre → test qui reproduit → fix → verifier |

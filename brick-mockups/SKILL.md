@@ -84,6 +84,52 @@ Les classes Tailwind sont identiques. La transition se fait par :
 3. Remplacer les donnees fictives par les vrais modeles
 4. Rien a changer cote CSS
 
+## Scope par brique : marquer ce qui n'est PAS dans la brique courante
+
+Les mockups servent a faire valider le client. S'ils melangent plusieurs briques sans
+distinction, le client ne sait pas ce qui sera livre maintenant -> incomprehensions et
+retours ("pourquoi ca ne marche pas ?") sur des elements prevus plus tard.
+
+Regles :
+- **Limiter les mockups a la brique courante.** Ne pas tout mocker d'un coup.
+- **Les elements des briques suivantes restent visibles mais grises + marques** "brique 2"
+  / "brique 3", pour montrer la vision sans laisser croire qu'ils sont livres maintenant.
+- **L'index `/mockups` indique a quelle brique appartient chaque page.**
+
+```erb
+<%% # Element prevu pour une brique ulterieure : grise + badge %>
+<div class="relative opacity-50 pointer-events-none">
+  <span class="absolute top-2 right-2 text-xs font-medium px-2 py-1 rounded bg-gray-200 text-gray-600">
+    Brique 2
+  </span>
+  <%%= render "mockups/reports/_export_panel" %>
+</div>
+```
+
+Dans l'index, baliser la portee :
+
+```erb
+<li>
+  <%%= link_to "Statistiques avancees", mockups_stats_path %>
+  <span class="text-xs text-gray-500">(Brique 2)</span>
+</li>
+```
+
+## Nouveaux elements -> proposer l'ajout aux specs
+
+Pendant le mockup, on ajoute souvent des elements absents des specs (un champ, une page,
+une action, une etape de parcours). Les specs sont la source de verite : elles doivent rester
+a jour, sinon ecart specs / mockups / implementation.
+
+**Des qu'un element ajoute dans un mockup n'existe pas dans les specs :**
+1. Le signaler.
+2. **Proposer son ajout dans le bon fichier, au bon endroit** :
+   - Nouvel attribut affiche -> `doc/memory/data_models.md` (sur le bon modele)
+   - Nouvelle page / action -> `doc/memory/routes.md` (dans le bon namespace)
+   - Nouveau comportement verifiable -> `doc/memory/acceptance_criteria.md` (nouveau AC numerote)
+   - Nouvelle etape de parcours -> `doc/memory/user_journeys.md` (dans le bon parcours/profil)
+3. **Demander validation a l'utilisateur AVANT d'ecrire** dans les specs (jamais en silence).
+
 ## Structure des fichiers
 
 ```

@@ -27,6 +27,32 @@ pendant toute l'implementation :
 
 **JAMAIS modifier les fichiers dans `/mockups/`**. Les mockups servent de reference visuelle.
 
+### Regle d'or : le markup mockup est IMMUABLE
+
+Le client a valide les mockups au pixel pres. Toute liberte prise avec le rendu = retour client garanti.
+
+1. **NE JAMAIS toucher au markup d'une vue mockup copiee.** La SEULE modification autorisee
+   est de remplacer la liaison de donnees : `user[:name]` -> `user.name`.
+   - Interdit : changer les classes Tailwind, la structure HTML, l'ordre des elements,
+     ajouter/retirer des sections, "ameliorer" le design, transformer une vue mockee en
+     "vraie" vue restructuree.
+   - Si une vue mockup semble incomplete ou "fausse" : NE PAS la corriger soi-meme.
+     Signaler a l'utilisateur, le mockup est la source de verite visuelle.
+
+2. **ZERO faux objet dans les controleurs.** En implementation, les controleurs n'utilisent
+   QUE de vrais modeles / requetes ActiveRecord. Aucun hash, `OpenStruct`, ou donnee fictive
+   ne doit survivre du mockup vers le controleur reel.
+   - Interdit : `@user = OpenStruct.new(name: "Marie")` ou un hash code en dur "pour que la vue
+     s'affiche". Si le modele n'existe pas encore, le creer (voir `/rails-models`), pas le simuler.
+
+3. **Process recommande (cadrage de l'IA/sous-agent) :** dans le prompt de chaque tache,
+   imposer explicitement : "copie la vue mockup telle quelle, ne modifie QUE la liaison de
+   donnees, modifie controleurs et modeles uniquement". Puis correction iterative manuelle.
+
+4. **Auto-check pixel avant de marquer la tache `done`** : ouvrir cote a cote la vue mockup
+   et la vue implementee, comparer section par section. Tout ecart non justifie = a corriger
+   avant de continuer. Le check systematique se fait en `/brick-review` (etape Pixel match).
+
 ### Comment reutiliser les mockups
 
 1. **Layouts** : copier `app/views/layouts/mockup_admin.html.erb` → `app/views/layouts/admin.html.erb`
