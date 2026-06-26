@@ -72,6 +72,13 @@ retours directement depuis les mockups. Verifier qu'il est bien applique :
       capture, confirmer que screenshot + URL + commentaire partent correctement
 - [ ] Aucun mockup n'echappe a l'outil (verifier les layouts admin ET user)
 
+**Installation** : le widget est centralise dans nexrai (app 37). Pour l'integrer
+(mockup OU vraie appli), recuperer l'`app_id` + le `secret` via l'outil MCP
+`get_feedback_widget(app_id: <ton_app_id>)` (marche aussi sur les projets anciens :
+il genere le secret si absent) puis coller le snippet `<script>` retourne.
+Guide complet : artefact nexrai `feedback_widget_install` (app 37) —
+"Widget de feedback 5000.dev — Guide d'installation".
+
 ### 5. Conformite technique
 
 - [ ] Tout est dans le namespace `/mockups` (routes, controleurs, vues)
