@@ -84,6 +84,37 @@ Les classes Tailwind sont identiques. La transition se fait par :
 3. Remplacer les donnees fictives par les vrais modeles
 4. Rien a changer cote CSS
 
+## Widget de feedback : TOUJOURS verifier qu'il est installe
+
+Le widget de feedback permet au client d'annoter les mockups directement dans le navigateur
+(chaque annotation cree une issue dans le tracker nexrai). Sans lui, les retours arrivent
+par email/WhatsApp et se perdent. **Verifier sa presence AVANT de presenter les mockups.**
+
+### Verification
+
+1. Le partial existe : `app/views/mockups/shared/_feedback_widget.html.erb`
+   (il est normalement cree automatiquement a la creation du projet, mais les vieux
+   projets ne l'ont pas)
+2. Il contient un `<script src="https://5000dev.nexrai.ai/feedback-widget.js" ...>`
+   avec `data-app-id`, `data-secret` et `data-project` remplis
+3. Il est **rendu dans CHAQUE layout mockup** (`mockup_admin`, `mockup_user`, etc.) :
+
+```erb
+<%%= render "mockups/shared/feedback_widget" %>
+```
+
+### Installation si absent
+
+1. Recuperer l'app id dans `.nexrai/binding.json` a la racine du projet
+2. Appeler l'outil MCP `get_feedback_widget` avec cet `app_id` — il retourne le snippet
+   `<script>` pret a coller (`mockup_snippet`) et genere le secret si besoin
+3. Creer `app/views/mockups/shared/_feedback_widget.html.erb` avec le snippet
+4. Ajouter le `render` dans chaque layout mockup (juste avant `</body>`)
+5. Verifier dans le navigateur que le launcher du widget apparait sur une page mockup
+
+Pour les mockups : version NON gated (pas de `data-gated`) — le widget est toujours visible.
+Guide complet : artefact nexrai `feedback_widget_install` (app 37).
+
 ## Scope par brique : marquer ce qui n'est PAS dans la brique courante
 
 Les mockups servent a faire valider le client. S'ils melangent plusieurs briques sans
@@ -182,6 +213,7 @@ Ordre recommande :
 4. Pages principales (index, show)
 5. Formulaires (new, edit)
 6. Pages secondaires
+7. Pages systeme : login (si auth), erreurs 404 et 500 (aux couleurs du style guide)
 
 ### 2. Layouts
 
@@ -330,6 +362,7 @@ Avec `doc/memory/user_journeys.md` :
 
 Avant de passer a IMPLEMENTATION :
 - [ ] Toutes les pages de `routes.md` ont un mockup
+- [ ] Le widget de feedback est installe et rendu dans tous les layouts mockup
 - [ ] L'index `/mockups` liste toutes les pages
 - [ ] Le design est coherent entre les pages
 - [ ] Les parcours utilisateurs sont fluides

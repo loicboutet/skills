@@ -32,6 +32,14 @@ Comparer `doc/memory/routes.md` avec les vues de `app/views/mockups/` :
 - [ ] L'index `/mockups` liste TOUTES les pages
 - [ ] Aucune page en impasse (chaque page linke vers ses pages liees)
 
+**Pages systeme obligatoires** (souvent oubliees car absentes de `routes.md`) :
+- [ ] Page de **connexion** (login) si l'app a de l'authentification
+      (+ inscription / mot de passe oublie si prevus dans les specs)
+- [ ] Pages d'**erreur** : 404 (introuvable) et 500 (erreur interne),
+      aux couleurs du style guide (pas les pages Rails par defaut)
+- [ ] Ces pages figurent dans l'index `/mockups` et respectent le layout adapte
+      (login = layout minimal, pas la sidebar admin)
+
 ### 2. Scope par brique (marquage)
 
 Le client doit comprendre d'un coup d'oeil ce qui est livre maintenant vs plus tard :
@@ -105,6 +113,7 @@ Generer `doc/memory/mockups/review.md` :
 # Mockup Review - [Date]
 
 ## Couverture: X/Y pages (vs routes.md)
+## Pages systeme: login OK/manquant, 404 OK/manquant, 500 OK/manquant
 ## Scope brique: OK / marquages manquants [liste]
 ## Sync specs: N elements a ajouter aux specs [liste + proposition]
 ## Outil capture: OK / NON integre [details]

@@ -79,6 +79,42 @@ Le client a valide les mockups au pixel pres. Toute liberte prise avec le rendu 
 
 5. **Supprimer les routes `/mockups/`** une fois toutes les vues copiees
 
+## Widget de feedback : TOUJOURS verifier qu'il est installe
+
+Le client annote l'app en recette via le widget de feedback (chaque annotation = une issue
+dans le tracker nexrai). En implementation, la version **gated** doit etre presente dans les
+layouts de la vraie app — le launcher reste cache pour les vrais utilisateurs et n'apparait
+que si un testeur tape "bug" ou visite avec `?debug=true`.
+
+### Verification
+
+1. Chaque layout applicatif (`admin.html.erb`, `application.html.erb`, etc.) rend un partial
+   `app/views/shared/_feedback_widget.html.erb` (juste avant `</body>`)
+2. Le snippet contient bien `data-gated="true"` (sinon le widget est visible par tous les
+   utilisateurs finaux — a corriger)
+3. Ne PAS reprendre tel quel le partial mockup : lui n'est pas gated
+
+### Installation si absent
+
+1. Recuperer l'app id dans `.nexrai/binding.json` a la racine du projet
+2. Appeler l'outil MCP `get_feedback_widget` avec cet `app_id` — utiliser le champ
+   `app_snippet` (version gated) :
+
+```erb
+<%% # app/views/shared/_feedback_widget.html.erb %>
+<script src="https://5000dev.nexrai.ai/feedback-widget.js"
+        data-app-id="..."
+        data-secret="..."
+        data-project="..."
+        data-gated="true"
+        defer></script>
+```
+
+3. Rendre le partial dans chaque layout de l'app
+4. Verifier : en navigation normale le widget est invisible ; avec `?debug=true` il apparait
+
+Guide complet : artefact nexrai `feedback_widget_install` (app 37).
+
 ## Process
 
 ### 1. Creer les taches
@@ -158,6 +194,7 @@ Pour un process multi-taches (pas une tache isolee) :
 
 ## Passage a la brick suivante
 
+0. Verifier que le widget de feedback (version gated) est present dans tous les layouts
 1. Lancer `/brick-review` pour la validation pre-livraison
 2. L'utilisateur valide la review
 3. Creer `doc/memory/brick-{N+1}/tasks/`
