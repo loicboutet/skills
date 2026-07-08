@@ -93,6 +93,9 @@ que si un testeur tape "bug" ou visite avec `?debug=true`.
 2. Le snippet contient bien `data-gated="true"` (sinon le widget est visible par tous les
    utilisateurs finaux — a corriger)
 3. Ne PAS reprendre tel quel le partial mockup : lui n'est pas gated
+4. Le widget gated est INVISIBLE par defaut : on l'active en **tapant le mot "bug"**
+   n'importe ou sur la page (ou en visitant avec `?debug=true`). C'est normal qu'on ne
+   voie rien tant qu'on n'a pas tape "bug" — ne pas croire qu'il est casse.
 
 ### Installation si absent
 
@@ -111,7 +114,8 @@ que si un testeur tape "bug" ou visite avec `?debug=true`.
 ```
 
 3. Rendre le partial dans chaque layout de l'app
-4. Verifier : en navigation normale le widget est invisible ; avec `?debug=true` il apparait
+4. Verifier l'activation : en navigation normale le widget est invisible ; il apparait
+   quand on **tape "bug"** sur la page (ou avec `?debug=true`). Tester les deux.
 
 Guide complet : artefact nexrai `feedback_widget_install` (app 37).
 
