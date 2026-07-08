@@ -23,6 +23,9 @@ Cree les vues mockees du projet. L'objectif : un prototype navigable complet que
 - **Utiliser des partials** pour tout ce qui sera reutilise en implementation
 - **Les pages doivent linker entre elles** — on navigue comme dans la vraie app
 - **Tailwind CSS** via le gem `tailwindcss-rails` (PAS le CDN)
+- **JAMAIS d'emoji** dans l'UI (🔔📊✅…) — ils rendent le design amateur et incoherent
+  selon les OS. Utiliser une **police d'icones** adaptee et coherente (ex. Bootstrap Icons
+  `bi bi-*`, Heroicons, Lucide, Font Awesome) — une seule famille pour tout le projet.
 
 ## Tailwind CSS
 
