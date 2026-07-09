@@ -135,6 +135,42 @@ doc/memory/
 
 Toujours dans `doc/memory/`. Verifier l'existant avant de creer. Documentation pour les agents, pas les humains.
 
+## Ecriture client : JAMAIS de signes IA
+
+Tout texte destine a un client ou a ses utilisateurs (emails, messages, textes
+d'interface, empty states, docs, propositions, posts, contenus d'app) doit etre
+relu contre cette checklist AVANT envoi. Un texte qui "sent l'IA" decredibilise
+le travail, meme s'il est juste.
+
+### Le signe n1 : le tiret cadratin (—)
+
+Ne JAMAIS utiliser de tiret cadratin. Remplacer par une virgule, des
+parentheses, deux-points, ou refaire la phrase en deux.
+
+### Vocabulaire interdit
+
+- FR : "crucial", "primordial", "il est important de noter que", "il convient
+  de souligner", "en effet" en ouverture, "mettre en lumiere", "n'hesitez pas
+  a", "dans un monde ou", "que ce soit ... ou ...", "En somme", "En conclusion"
+- EN : delve, showcase, underscore, pivotal, seamless, leverage, robust,
+  "it's not just X, it's Y", "Here's the kicker"
+
+### Structures qui trahissent
+
+- "non seulement ... mais aussi" et les antitheses "ce n'est pas X, c'est Y"
+- Les triades systematiques (toujours 3 exemples, 3 adjectifs, 3 puces)
+- Les questions rhetoriques en accroche
+- Listes a puces partout avec le premier mot en gras ; emojis en tete de section
+- Paragraphes tous calibres a la meme longueur, phrases au rythme identique
+
+### Comment ecrire a la place
+
+- Phrases de longueurs variees, paragraphes inegaux, comme un humain presse
+- Concret > generique : chiffres, noms, exemples du contexte reel du client
+- Le ton 5000.dev : direct, factuel, pas de superlatifs ni d'enthousiasme force
+- En cas de doute, relire a voix haute : si ca sonne comme une plaquette
+  commerciale, recrire
+
 ## Philosophie
 
 - **Ruby/HTML first** : maximiser le code cote serveur
