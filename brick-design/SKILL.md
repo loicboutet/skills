@@ -35,7 +35,48 @@ Poser ces questions au client/utilisateur :
 - Beaucoup de donnees/tableaux ou plutot contenu narratif ?
 - Besoin de graphiques/charts ?
 
-### 2. Generer la palette
+### 2. Direction artistique : eviter le look template
+
+**Le piege : chaque app qui sort ressemble a la meme app SaaS** (Inter + bleu +
+cartes blanches rounded-lg + shadow). C'est le look "genere par IA" de 2023.
+Le client paie pour une identite qu'on ne peut pas confondre avec une autre.
+
+Avant de choisir couleurs et typo :
+
+1. **Ancrer le design dans le metier du client.** Le vocabulaire visuel vient de
+   son univers : materiaux, objets, codes du secteur. Un cabinet juridique, une
+   boite de logistique et un studio de yoga ne partagent AUCUNE direction.
+2. **Choisir UN element signature** : la chose dont on se souvient (un traitement
+   typo fort, une couleur possedee, un motif, un style de cartes inhabituel).
+   Une seule audace, executee proprement — tout le reste sobre et discipline.
+3. **Bannir les 3 defauts IA reconnaissables** (sauf demande explicite du client) :
+   - fond creme + serif haute + accent terracotta
+   - fond quasi-noir + un seul accent vert acide / vermillon
+   - look journal : hairlines partout, zero border-radius, colonnes denses
+
+### Tendances actuelles (a doser selon le client)
+
+**Ce qui marche en 2026 — et coute pas cher en Tailwind :**
+- **Calm design** : moins de chrome, le whitespace est un outil fonctionnel,
+  UNE action primaire par ecran, la typo porte la hierarchie (pas les icones)
+- **Une couleur possedee** : une seule teinte signature forte (comme Linear =
+  violet, Raycast = rouge-orange) plutot que 3 couleurs vives qui se battent
+- **Serif de caractere pour les titres** : les displays serif reviennent en
+  force dans le B2B (poids, credibilite), body sans-serif lisible
+- **Chiffres tabulaires** pour les tableaux et KPIs (`tabular-nums`)
+- **Bento grid** pour les dashboards : compartiments modulaires de tailles
+  variees plutot que la grille de cards identiques
+- **Dark mode adaptatif** si le client le veut (pas par defaut)
+- **Empty states avec de la voix** : une phrase humaine + CTA, pas juste
+  "Aucune donnee"
+
+**Ce qui date ou coute trop cher :**
+- Degrades pastel partout, glassmorphism lourd (flou epais)
+- 3D / WebGL / animations kinetiques (budget perf explose, apport faible)
+- Spinners generiques (preferer skeletons contextuels)
+- Soupe d'icones : si un label suffit, pas d'icone
+
+### 3. Generer la palette
 
 A partir des reponses, creer une palette Tailwind :
 
@@ -53,17 +94,27 @@ Surface    : fond de cartes/panels
 
 Regles :
 - **Contraste WCAG AA minimum** (4.5:1 pour le texte)
-- **Max 3 couleurs vives** (primary + secondary + accent)
-- **Grays coherents** (une seule echelle de gris)
+- **UNE couleur signature** (primary) + neutres + couleurs semantiques.
+  Secondary/accent discrets, au service de la primary — pas en competition
+- **Grays coherents** (une seule echelle de gris, legerement teintee vers la
+  primary plutot que gris pur)
 
-### 3. Choisir la typographie
+### 4. Choisir la typographie
 
-- **Headings** : font distinctive (Inter, Plus Jakarta Sans, Cal Sans...)
-- **Body** : font lisible (Inter, System UI, Geist...)
-- **Mono** : pour le code (JetBrains Mono, Fira Code...)
-- Tailles : scale harmonique (text-sm, text-base, text-lg, text-xl, text-2xl)
+La typo porte la personnalite de la page. **Ne pas reprendre Inter + Plus
+Jakarta sur chaque projet** : c'est le duo par defaut qui rend tout identique.
+Choisir un pairing specifique au client (Google Fonts, self-hosted) :
 
-### 4. Definir les composants
+- **Display/headings** : une font de caractere, utilisee avec retenue.
+  Pistes : Bricolage Grotesque, Space Grotesk, Sora (sans) ; Fraunces,
+  Instrument Serif, Newsreader (serif — credibilite B2B)
+- **Body** : lisible et neutre (Inter, Figtree, DM Sans, Source Sans 3)
+- **Mono / data** : JetBrains Mono, IBM Plex Mono — et `tabular-nums` sur
+  tous les chiffres de tableaux/KPIs
+- Tailles : scale harmonique (text-sm -> text-2xl), gros titres genereux
+- Le pairing display/body EST une decision de design, pas un detail
+
+### 5. Definir les composants
 
 Creer les patterns de base :
 
@@ -93,7 +144,7 @@ Creer les patterns de base :
 - Loading states (spinner, skeleton, shimmer)
 - Empty states (illustration + CTA)
 
-### 5. Generer `doc/memory/style_guide.html`
+### 6. Generer `doc/memory/style_guide.html`
 
 Un fichier HTML standalone qui montre :
 - Palette de couleurs avec codes hex
@@ -132,7 +183,7 @@ Le fichier doit etre :
 Le style_guide.html utilise le CDN pour le preview standalone.
 Les mockups et l'implementation utilisent le gem `tailwindcss-rails` avec ces memes couleurs dans `config/tailwind.config.js`.
 
-### 6. Validation
+### 7. Validation
 
 Presenter le style guide a l'utilisateur :
 - Montrer le fichier HTML
@@ -141,7 +192,10 @@ Presenter le style guide a l'utilisateur :
 
 ## Validation gate
 
-- [ ] Palette de couleurs definie (primary, secondary, neutral, success/warning/danger)
+- [ ] Le design a un element signature et ne ressemble PAS au template SaaS
+      generique (Inter + bleu + cartes blanches shadow) ni aux 3 defauts IA
+- [ ] La direction est ancree dans le metier du client (justifiable en 1 phrase)
+- [ ] Palette de couleurs definie (une signature + neutres + semantiques)
 - [ ] Contraste WCAG AA verifie
 - [ ] Typographie choisie (headings, body, mono)
 - [ ] Composants documentes (boutons, inputs, cartes, tableaux, alerts)

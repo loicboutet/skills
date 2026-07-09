@@ -62,6 +62,15 @@ module.exports = {
 }
 ```
 
+### Le style guide n'est pas decoratif
+
+Le `style_guide.html` porte une direction artistique (couleur signature, pairing
+typo, element signature — cf. `/brick-design`). Les mockups doivent l'appliquer,
+pas retomber sur le look SaaS generique (Inter + bleu + cartes blanches shadow).
+Si un ecran mocke pourrait appartenir a n'importe quelle autre app, c'est rate :
+verifier couleur signature visible, typo display sur les titres, chiffres
+tabulaires dans les tableaux, empty states avec une phrase humaine + CTA.
+
 ### Regles Tailwind
 
 1. **Utility classes en priorite** — directement dans le HTML
