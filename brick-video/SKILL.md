@@ -318,6 +318,18 @@ Utiliser `bin/rails runner` pour creer/reset les données de demo.
    EOF
    ```
 
+### Etape 2bis : Musique de fond (optionnel)
+
+Pour une musique de fond calee sur la duree de la video, utiliser le MCP tool
+`elevenlabs_music_tool(prompt: "...", duration_seconds: N)` :
+- `duration_seconds` = duree exacte de la video (10 a 300 s)
+- retourne une URL audio a telecharger en curl + `bpm`/`beat_offsets`
+  (pour caler les cuts sur les temps forts ; peuvent etre null)
+- CACHE : un appel identique renvoie la meme musique sans refacturer —
+  reutiliser le meme prompt pour toutes les videos d'une meme app garde
+  une identite sonore coherente
+- quota 10 generations/jour ; la cle ElevenLabs reste cote serveur
+
 ### Etape 3 : Lancer le pipeline
 
 ```bash
