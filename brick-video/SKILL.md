@@ -330,6 +330,16 @@ Pour une musique de fond calee sur la duree de la video, utiliser le MCP tool
   une identite sonore coherente
 - quota 10 generations/jour ; la cle ElevenLabs reste cote serveur
 
+### Etape 2ter : Effets sonores (optionnel)
+
+Pour des bruitages ponctuels (whoosh de transition, clic, notification,
+apparition d'element), utiliser `elevenlabs_sfx_tool(prompt: "...")` :
+- `duration_seconds` optionnel (0.5 a 22 s) ; omis = ElevenLabs choisit
+- `prompt_influence` 0.0-1.0 (haut = plus fidele au prompt)
+- meme CACHE que la musique (un effet identique n'est pas refacture) ;
+  reutiliser les memes prompts pour une banque d'effets coherente
+- retourne une URL audio a poser sur la timeline aux temps voulus
+
 ### Etape 3 : Lancer le pipeline
 
 ```bash
