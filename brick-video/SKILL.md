@@ -61,16 +61,19 @@ Si le tool retourne une erreur "cle non configuree", demander a l'utilisateur de
 
 ### Voix
 
-**TOUJOURS** utiliser la voix ElevenLabs `7HK1vVl7JNugzrkG5qKl` (voix de Loic Boutet),
-sauf demande contraire explicite de l'utilisateur.
+**TOUJOURS** utiliser la voix ElevenLabs Rudy `wufFsVwuYBePWKO6dMMN` avec le
+modele `eleven_v3`, sauf demande contraire explicite de l'utilisateur.
+C'est la meme voix et le meme modele que /brick-promo-video : toutes les
+videos livrees au client ont ainsi un rendu voix identique (eleven_v3 est
+aussi bien plus expressif que multilingual_v2).
 
 ### Format du fichier narrative
 
 ```json
 {
   "target": "http://app-url:port",
-  "voice_id": "7HK1vVl7JNugzrkG5qKl",
-  "model_id": "eleven_multilingual_v2",
+  "voice_id": "wufFsVwuYBePWKO6dMMN",
+  "model_id": "eleven_v3",
   "language": "fr",
   "viewport": { "width": 1536, "height": 900 },
   "steps": [
@@ -302,7 +305,7 @@ Utiliser `bin/rails runner` pour creer/reset les données de demo.
 1. Concatener tous les `say` des steps en un texte unique, separes par un espace
 2. Appeler le MCP tool :
    ```
-   elevenlabs_tts_tool(text: "Bonjour et bienvenue... Connectez-vous...", voice_id: "7HK1vVl7JNugzrkG5qKl")
+   elevenlabs_tts_tool(text: "Bonjour et bienvenue... Connectez-vous...", voice_id: "wufFsVwuYBePWKO6dMMN", model_id: "eleven_v3")
    ```
 3. Le tool retourne :
    - Une **audio URL** (chemin ActiveStorage)
@@ -409,7 +412,7 @@ regarde la demo avant un call.
 - [ ] Pas d'ecran blanc au debut de la video
 - [ ] Video uploadee avec un `title` decrivant le changement
 - [ ] Page publique de visionnage ouverte et verifiee (lien a envoyer au client)
-- [ ] Voix = 7HK1vVl7JNugzrkG5qKl (voix Loic)
+- [ ] Voix = wufFsVwuYBePWKO6dMMN (Rudy, modele eleven_v3 — comme /brick-promo-video)
 
 ## Troubleshooting
 
