@@ -237,6 +237,9 @@ dans le texte concatene pour determiner quand declencher chaque action.
 
 Consequence : les phrases doivent etre ecrites comme un texte fluide qui se lit naturellement a voix haute.
 
+Si la narration totale est longue (~2000+ caracteres), le TTS eleven_v3 doit etre
+decoupe en plusieurs appels puis recolle — voir Etape 2, « Textes longs ».
+
 ### 10. Scroll pour montrer le contenu sous le fold
 
 Les pages ont souvent du contenu sous le fold (invisible sans scroll).
@@ -320,6 +323,35 @@ Utiliser `bin/rails runner` pour creer/reset les données de demo.
    { "characters": [...], "character_start_times_seconds": [...], "character_end_times_seconds": [...] }
    EOF
    ```
+
+#### ⚠️ Textes longs : eleven_v3 est lent, decouper le TTS
+
+`eleven_v3` est un gros modele haute-fidelite : il rend l'audio bien plus
+lentement que multilingual_v2 (c'est une caracteristique du modele, pas un bug).
+Le tool `elevenlabs_tts_tool` fait UN seul appel bloquant, donc sur un texte de
+narration long il peut sembler « bloque » plusieurs minutes. ElevenLabs plafonne
+d'ailleurs v3 a **3000 caracteres par requete** et recommande de decouper les
+textes longs.
+
+Regle : si le texte concatene depasse ~2000 caracteres, decouper en morceaux
+et recoller.
+
+1. **Couper sur des frontieres de phrase** (fin de `.`/`!`/`?`), pas au milieu
+   d'un mot. Viser des morceaux de ~1500-1800 caracteres (pas 400-500 : trop de
+   morceaux = plus de coutures audibles et plus d'alignements a fusionner).
+2. **Un appel `elevenlabs_tts_tool` par morceau**, meme voice_id / model_id.
+3. **Recoller les mp3** dans l'ordre (ffmpeg concat).
+4. **Fusionner les alignments** : decaler les `character_start/end_times_seconds`
+   de chaque morceau de la duree cumulee des morceaux precedents, puis
+   concatener les tableaux `characters` + timestamps. C'est cet alignment fusionne
+   qui va dans `out/alignment.json` — le pipeline en depend pour caler les
+   actions.
+5. Pour limiter la cassure de prosodie aux coutures (l'intonation « repart a
+   froid » a chaque morceau), garder les phrases entieres dans un meme morceau
+   quand c'est possible.
+
+Un texte de narration de ~15 steps courts passe en general en un seul appel :
+ne decouper que si c'est reellement long.
 
 ### Etape 2bis : Musique de fond (optionnel)
 
