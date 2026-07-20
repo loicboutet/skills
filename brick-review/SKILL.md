@@ -181,7 +181,28 @@ Verifier les parcours utilisateurs de `doc/memory/user_journeys.md` :
 - [ ] Pas de N+1 queries (utiliser `includes`)
 - [ ] Fichiers < 400 lignes
 
-### 7. Security check
+### 7. Repetition : repasser les points de friction
+
+On ne relit pas toute la brick avec la meme attention. Les bugs et les
+mauvaises decisions sont concentres la ou le dev a coince, pas dans le CRUD
+qui est sorti tout seul. Reconstituer la liste des points de friction a
+partir des taches (`doc/memory/brick-{N}/tasks/`), des commits et de
+l'historique de la conversation :
+
+- endroits ou un test a echoue plusieurs fois avant de passer
+- code reecrit, deplace ou renomme en cours de route
+- decisions prises sous contrainte de temps, ou notees "a verifier plus tard"
+- TODO / FIXME / commentaires d'excuse laisses dans le code
+- fichiers les plus remanies sur la brick :
+  `git diff --stat {base}..HEAD | sort -k3 -n | tail -10`
+- endroits ou il a fallu demander de l'aide a l'utilisateur
+
+Pour chacun, relire le code a froid et se poser une seule question : est-ce
+que c'est la solution qu'on choisirait maintenant, en sachant ce qu'on sait
+a la fin de la brick ? Ce qui reste douteux devient une ligne du rapport
+(section Issues), pas un souvenir.
+
+### 8. Security check
 
 (Les cas de securite de la taxonomie sont deja dans la recette avec leurs
 tests ; ici on verifie le socle.)
@@ -190,7 +211,7 @@ tests ; ici on verifie le socle.)
 - [ ] Pas de donnees sensibles dans les logs
 - [ ] CSRF protection active
 
-### 8. Rapport
+### 9. Rapport
 
 Generer un rapport dans `doc/memory/brick-{N}/review.md` :
 
@@ -201,6 +222,7 @@ Generer un rapport dans `doc/memory/brick-{N}/review.md` :
 ## Tests: X/Y passing
 ## Acceptance criteria: X/Y couverts par la recette
 ## Pixel match: X/Y pages conformes
+## Points de friction repasses: X (dont Y encore douteux)
 ## Gaps: [liste]
 ## Issues: [liste]
 ## Bugs trouves par la recette: [liste — c'est un bon signe, pas un mauvais]

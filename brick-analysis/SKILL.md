@@ -62,9 +62,44 @@ Chaque critere doit etre :
 - **Testable** : peut etre verifie par un test automatise ou manuel
 - **Tracable** : reference dans les taches d'implementation (R1 → tache 003)
 
+#### Rattachement : chaque feature sert une fin
+
+Une feature ne vaut rien en soi, elle vaut dans la mesure ou elle sert un
+critere d'acceptance. Passer la liste des features envisagees une par une et
+nommer l'AC que chacune sert. L'exercice consiste a le faire feature par
+feature et a l'ecrire, pas a s'en souvenir en general.
+
+Une feature qui ne se rattache a aucun AC n'est pas un bonus, c'est du poids
+mort qu'on portera pendant toute la vie du projet. Deux issues possibles :
+soit elle revele un AC manquant (l'ajouter et le tracer), soit elle est hors
+scope (le dire a l'utilisateur avant de la mettre dans les mockups).
+
 ### 5. Creer `doc/memory/user_journeys.md`
 
 Definir les parcours utilisateurs cles. Chaque parcours = un chemin complet dans l'app.
+
+#### Composition de lieu (a faire AVANT d'ecrire les parcours)
+
+Un persona abstrait ("Marie, 42 ans, responsable RH") ne produit aucune
+decision de design. Avant d'ecrire les parcours d'un profil, se representer
+concretement la situation reelle et repondre par ecrit :
+
+- A quelle heure il ouvre l'app, sur quel appareil, quelle taille d'ecran
+- Ce qu'il faisait juste avant, ce qu'il fera juste apres
+- Ce qu'il a d'autre sous les yeux au meme moment (un mail, un tableur, un
+  client au telephone, un dossier papier a recopier)
+- Combien de temps il a devant lui, et qui peut l'interrompre
+- Ce qui se passe pour lui si l'app est indisponible ce jour-la
+- A quelle frequence il fait ca : dix fois par jour ou une fois par trimestre
+
+Trois a cinq lignes par profil, en tete de sa section dans
+`user_journeys.md`. C'est ce qui determine la densite d'information des
+ecrans, le nombre de clics tolerable, ce qui doit tenir sans scroll et ce
+qui merite un raccourci clavier. Un usage dix fois par jour et un usage
+trimestriel ne donnent pas la meme interface.
+
+Si on ne sait pas repondre a une question, c'est une question a poser au
+client, jamais a inventer.
 
 ```markdown
 # User Journeys
@@ -125,6 +160,8 @@ Avant de passer a MOCKUPS, verifier :
 - [ ] Tous les modeles ont des relations coherentes
 - [ ] Les routes couvrent toutes les features des specs
 - [ ] Chaque feature a au moins 2 criteres d'acceptance
+- [ ] Chaque feature envisagee est rattachee a un AC nomme (aucune orpheline)
 - [ ] Les parcours utilisateurs couvrent tous les profils
+- [ ] Chaque profil a sa composition de lieu, sans trou invente
 - [ ] Le style guide est defini (sinon lancer `/brick-design`)
 - [ ] L'utilisateur a valide
