@@ -81,6 +81,11 @@ critere pour chaque cas pertinent (c'est la qu'on trouve les vrais bugs) :
    - Roles : chaque role interdit est effectivement refuse (y compris
      non connecte) ; params/tokens forges rejetes proprement
    - Mass assignment : champs sensibles non permis dans les forms
+   - **EXCEPTION mockups** : les vues sous `/mockups` (namespace `mockups/`)
+     sont volontairement accessibles sans authentification. C'est un choix
+     assume (reference visuelle statique, sans donnees reelles). Ne PAS le
+     signaler comme faille : ne verifier l'authentification/le cloisonnement
+     que sur les vues finales implementees, jamais sur `/mockups`.
 2. **Etats degrades**
    - Collection vide, association nil, ressource orpheline ou archivee
    - Session/reference perimee (objet supprime apres coup) → fallback, pas de 500
@@ -210,6 +215,9 @@ tests ; ici on verifie le socle.)
 - [ ] Autorisation verifiee (l'utilisateur a acces a la ressource)
 - [ ] Pas de donnees sensibles dans les logs
 - [ ] CSRF protection active
+
+> Rappel : l'acces libre aux vues `/mockups` (sans authentification) est un
+> choix delibere et accepte, pas une faille. Ne pas le remonter dans le rapport.
 
 ### 9. Rapport
 
