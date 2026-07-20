@@ -45,7 +45,7 @@ Si le tool retourne une erreur "cle non configuree", demander a l'utilisateur de
 
 ### Phase 2 — Exploration et scenarisation
 
-1. Utiliser **MCP Playwright** pour explorer l'app cible :
+1. Utiliser **la CLI `playwright-cli`** (voir le skill `playwright`) pour explorer l'app cible :
    - Naviguer chaque ecran du parcours
    - Identifier les selecteurs CSS de chaque action
    - Valider que le parcours fonctionne de bout en bout
@@ -135,7 +135,7 @@ Sans `waitForUrl`, le curseur disparait apres la navigation (bug Turbo Rails 8).
 ### 3. Selecteurs `<input type="submit">` vs `<button>`
 
 Rails genere souvent des `<input type="submit">` au lieu de `<button>`.
-Verifier dans le HTML source ou via MCP Playwright snapshot.
+Verifier dans le HTML source ou via `playwright-cli snapshot` (skill `playwright`).
 
 ❌ NE MARCHE PAS si c'est un `<input>` :
 ```json
@@ -252,12 +252,12 @@ ajouter un step `hover` sur un element en bas ou un step de scroll :
 
 Ou utiliser un selecteur en bas de page pour que le curseur s'y deplace (le pipeline scrolle automatiquement pour rendre l'element visible).
 
-**Toujours verifier via MCP Playwright snapshot** si la page a du contenu en dessous du viewport. Si oui, prevoir un ou deux steps pour scroller et montrer ce contenu.
+**Toujours verifier via `playwright-cli snapshot` (skill `playwright`)** si la page a du contenu en dessous du viewport. Si oui, prevoir un ou deux steps pour scroller et montrer ce contenu.
 
 ### 11. Validation des formulaires AVANT le script
 
 **REGLE CRITIQUE** : avant d'ecrire le script de creation d'un objet (issue, projet, etc.),
-**TOUJOURS verifier via MCP Playwright quels champs sont requis** dans le formulaire.
+**TOUJOURS verifier via `playwright-cli` quels champs sont requis** dans le formulaire.
 
 Methode :
 1. Naviguer sur la page du formulaire via MCP
@@ -452,7 +452,7 @@ regarde la demo avant un call.
 |----------|-------|-----|
 | Curseur disparait apres un clic | Manque `waitForUrl` sur un clic de navigation | Ajouter `waitForUrl` avec le bon pattern |
 | Ecran blanc au debut | Rare, le pipeline pre-charge la page | Verifier que step 0 est bien un `goto` |
-| Step echoue (timeout) | Selecteur incorrect ou element invisible | Verifier via MCP Playwright, ajuster le selecteur |
+| Step echoue (timeout) | Selecteur incorrect ou element invisible | Verifier via `playwright-cli snapshot`, ajuster le selecteur |
 | Drag ne deplace pas la carte | Manque `moveUrl`/`moveStatus` | Ajouter l'endpoint API + le statut cible |
 | Ghost card sans mouvement visible | Steps de mouvement trop peu | Deja configure a 120 steps, ne pas toucher |
 | Audio desynchronise | Phrase trop courte pour une action lente | Allonger la phrase ou ajouter un step `wait` avant |

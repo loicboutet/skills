@@ -76,7 +76,7 @@ L'outil interne de capture (screenshot + URL + commentaire) sert au client a rem
 retours directement depuis les mockups. Verifier qu'il est bien applique :
 - [ ] L'outil de capture est integre dans les layouts mockups (present sur chaque page)
 - [ ] Il capture bien l'**URL** de la page en plus du screenshot et du commentaire
-- [ ] Verification comportementale : naviguer sur 1-2 pages (Playwright), declencher une
+- [ ] Verification comportementale : naviguer sur 1-2 pages (`playwright-cli`, voir le skill `playwright`), declencher une
       capture, confirmer que screenshot + URL + commentaire partent correctement
 - [ ] Aucun mockup n'echappe a l'outil (verifier les layouts admin ET user)
 
