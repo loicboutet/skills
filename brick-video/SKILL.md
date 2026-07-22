@@ -237,8 +237,9 @@ dans le texte concatene pour determiner quand declencher chaque action.
 
 Consequence : les phrases doivent etre ecrites comme un texte fluide qui se lit naturellement a voix haute.
 
-Si la narration totale est longue (~2000+ caracteres), le TTS eleven_v3 doit etre
-decoupe en plusieurs appels puis recolle — voir Etape 2, « Textes longs ».
+Si la narration totale depasse 3000 caracteres (plafond ElevenLabs par requete),
+le TTS doit etre decoupe puis recolle — voir Etape 2, « Textes longs ». En
+dessous, UN SEUL appel : prosodie continue et alignement natif.
 
 ### 10. Scroll pour montrer le contenu sous le fold
 
@@ -324,17 +325,25 @@ Utiliser `bin/rails runner` pour creer/reset les données de demo.
    EOF
    ```
 
-#### ⚠️ Textes longs : eleven_v3 est lent, decouper le TTS
+#### ⚠️ Textes longs : quand decouper le TTS (et quand ne PAS le faire)
 
-`eleven_v3` est un gros modele haute-fidelite : il rend l'audio bien plus
-lentement que multilingual_v2 (c'est une caracteristique du modele, pas un bug).
-Le tool `elevenlabs_tts_tool` fait UN seul appel bloquant, donc sur un texte de
-narration long il peut sembler « bloque » plusieurs minutes. ElevenLabs plafonne
-d'ailleurs v3 a **3000 caracteres par requete** et recommande de decouper les
-textes longs.
+Historique important : en juillet 2026, des appels TTS de plus de ~700
+caracteres semblaient « bloques 30 minutes » puis echouaient. Deux agents en ont
+conclu que eleven_v3 etait lent ou casse. **C'etait faux** : deux proxys de
+l'infra (kamal-proxy puis Thruster) coupaient toute reponse depassant 30 s, et
+le client MCP attendait ensuite 1800 s dans le vide. Corrige le 2026-07-22 et
+verifie en conditions reelles : 1400 caracteres passent en ~40 s, en un seul
+appel.
 
-Regle : si le texte concatene depasse ~2000 caracteres, decouper en morceaux
-et recoller.
+Performances reelles de eleven_v3 via le tool : ~30-45 s pour 1400-2000
+caracteres. C'est normal (l'endpoint renvoie l'audio ET l'alignement par
+caractere). Un appel qui depasse 5 minutes sans reponse n'est PAS une lenteur
+du modele : c'est une regression d'infra, signale-le au lieu de conclure que le
+modele est mort ou de descendre a des morceaux de 650 caracteres.
+
+Regle : UN SEUL appel tant que le texte tient sous **3000 caracteres** (c'est
+le plafond ElevenLabs par requete pour v3). Un seul appel = prosodie continue,
+alignement natif, zero couture. Ne decouper qu'au-dela, et alors :
 
 1. **Couper sur des frontieres de phrase** (fin de `.`/`!`/`?`), pas au milieu
    d'un mot. Viser des morceaux de ~1500-1800 caracteres (pas 400-500 : trop de
