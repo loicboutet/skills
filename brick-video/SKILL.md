@@ -442,6 +442,18 @@ re-uploader avec le MEME title remplace l'ancienne version (l'asset Mux de
 l'ancienne est supprime automatiquement cote plateforme — ne PAS s'en
 occuper, la facture Mux ne s'accumule pas).
 
+`MCP_TOKEN` et `PLATFORM_API_URL` ne sont PAS des variables d'environnement :
+on les derive des fichiers du depot de l'app (le jeton vit dans `.mcp.json` a
+la racine, l'URL dans `.nexrai/binding.json`) :
+
+```bash
+cd "$APP_DIR"
+MCP_TOKEN=$(python3 -c "import json;a=json.load(open('.mcp.json'))['mcpServers']['nexrai']['args'];print(a[a.index('--header')+1].replace('Authorization: Bearer ',''))")
+PLATFORM_API_URL=$(python3 -c "import json;print(json.load(open('.nexrai/binding.json'))['nexrai_url'])")
+```
+
+Ne JAMAIS afficher la valeur de `MCP_TOKEN` (echo, logs) : c'est un secret.
+
 1. Uploader la video vers nexrai :
 ```bash
 curl -X POST \
