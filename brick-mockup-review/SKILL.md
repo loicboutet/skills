@@ -31,6 +31,12 @@ Comparer `doc/memory/routes.md` avec les vues de `app/views/mockups/` :
 - [ ] Chaque route a un mockup correspondant
 - [ ] L'index `/mockups` liste TOUTES les pages
 - [ ] Aucune page en impasse (chaque page linke vers ses pages liees)
+- [ ] **Toute page d'index/liste a une pagination visible** (partial
+      `mockups/shared/_pagination` ou equivalent « Charger plus »). Verifier en
+      listant les vues : `grep -rL "pagination" app/views/mockups --include="index*.html.erb"`
+      — chaque fichier remonte par ce grep est une liste sans pagination a corriger.
+      Une liste avec 3 lignes fictives et pas de pagination = a refaire (15-25
+      lignes + pagination), sinon le client valide une page irrealiste
 
 **Pages systeme obligatoires** (souvent oubliees car absentes de `routes.md`) :
 - [ ] Page de **connexion** (login) si l'app a de l'authentification

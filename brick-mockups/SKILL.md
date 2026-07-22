@@ -22,6 +22,9 @@ Cree les vues mockees du projet. L'objectif : un prototype navigable complet que
 - **Donnees fictives** dans les controleurs (hashes/OpenStruct, pas de DB)
 - **Utiliser des partials** pour tout ce qui sera reutilise en implementation
 - **Les pages doivent linker entre elles** — on navigue comme dans la vraie app
+- **Toute page d'index/liste a une PAGINATION** — visible et mockee (voir la
+  regle dediee plus bas). Une liste sans pagination cache une decision
+  d'implementation et fait des mockups irrealistes des que les donnees grossissent
 - **Tailwind CSS** via le gem `tailwindcss-rails` (PAS le CDN)
 - **JAMAIS d'emoji** dans l'UI (🔔📊✅…) — ils rendent le design amateur et incoherent
   selon les OS. Utiliser une **police d'icones** adaptee et coherente (ex. Bootstrap Icons
@@ -278,6 +281,38 @@ Hub central qui liste TOUTES les pages par profil. Le client et le dev l'utilise
   ...
 </ul>
 ```
+
+### Pagination : obligatoire sur toute page d'index/liste
+
+**Regle : chaque page qui liste des elements (index, tableaux, resultats de
+recherche) affiche une pagination.** Sans elle, le client valide une page qui
+ment : en production la liste aura 500 lignes, pas 8, et la decision de
+pagination se prendra en catastrophe pendant l'implementation.
+
+Concretement en mockup :
+
+1. Assez de donnees fictives pour la justifier (15-25 lignes, pas 3).
+2. Un partial partage `app/views/mockups/shared/_pagination.html.erb`, rendu en
+   bas de CHAQUE liste — c'est lui qui sera remplace par le vrai paginateur
+   (Pagy) en implementation, au meme endroit :
+
+```erb
+<%% # app/views/mockups/shared/_pagination.html.erb — locals: current:, total: %>
+<nav class="flex items-center justify-between mt-6" aria-label="Pagination">
+  <p class="text-sm text-gray-500">Page <%%= current %> sur <%%= total %></p>
+  <div class="flex gap-1">
+    <a href="#" class="px-3 py-1.5 text-sm rounded border border-gray-300 text-gray-400">Precedent</a>
+    <%% (1..total).first(5).each do |p| %>
+      <a href="#" class="px-3 py-1.5 text-sm rounded border <%%= p == current ? 'border-blue-600 bg-blue-50 text-blue-700 font-medium' : 'border-gray-300 text-gray-600' %>"><%%= p %></a>
+    <%% end %>
+    <a href="#" class="px-3 py-1.5 text-sm rounded border border-gray-300 text-gray-600">Suivant</a>
+  </div>
+</nav>
+```
+
+3. Adapter au contexte : un tableau admin pagine en bas ; un feed peut préférer
+   « Charger plus » — mais le choix doit etre VISIBLE sur le mockup, c'est lui
+   que le client valide.
 
 ### 4. Partials — la cle pour l'implementation
 
