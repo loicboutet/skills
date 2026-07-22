@@ -76,7 +76,8 @@ Regles d'ecriture :
    l'orthographe reelle a l'ecran. Ponctuation expressive (!, ?) : elle pilote
    l'intonation.
 2. Modele **eleven_v3** (bien plus expressif que multilingual_v2). Voix de
-   reference pub : Rudy `wufFsVwuYBePWKO6dMMN` (dynamique) ; alternatives
+   reference pub : Rudy `wufFsVwuYBePWKO6dMMN` (francais) — pour une video en
+   ANGLAIS, prendre `3WqHLnw80rOZqJzW9YRB` (meme regle que /brick-video) ; alternatives
    Sophie `BewlJwjEWiFLWoXrbGMf`, Marie `sANWqF1bCMzR6eyZbCGw`.
 3. **Generer 2-3 prises** et faire choisir l'utilisateur a l'oreille (pas de
    graine fixe chez ElevenLabs, chaque prise differe).

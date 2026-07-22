@@ -91,11 +91,18 @@ Si le tool retourne une erreur "cle non configuree", demander a l'utilisateur de
 
 ### Voix
 
-**TOUJOURS** utiliser la voix ElevenLabs Rudy `wufFsVwuYBePWKO6dMMN` avec le
-modele `eleven_v3`, sauf demande contraire explicite de l'utilisateur.
-C'est la meme voix et le meme modele que /brick-promo-video : toutes les
-videos livrees au client ont ainsi un rendu voix identique (eleven_v3 est
-aussi bien plus expressif que multilingual_v2).
+Le choix depend de la LANGUE de la narration — s'aligner sur la langue de
+l'espace client du projet (certains clients sont en anglais) :
+
+| Langue | Voix | voice_id |
+|--------|------|----------|
+| Francais | Rudy | `wufFsVwuYBePWKO6dMMN` |
+| Anglais  | voix EN dediee | `3WqHLnw80rOZqJzW9YRB` |
+
+**TOUJOURS** le modele `eleven_v3`, et toujours la MEME voix pour toutes les
+videos d'un meme client (rendu identique d'une livraison a l'autre). Memes
+voix et modele que /brick-promo-video. Ne pas improviser d'autre voix sans
+demande explicite de l'utilisateur.
 
 ### Format du fichier narrative
 
