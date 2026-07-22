@@ -16,7 +16,37 @@ Genere une video de demo avec voix IA synchronisee pour livrer une brick a un cl
 ## Pre-requis
 
 - Le dev server de l'app cible doit tourner (ne PAS le lancer soi-meme)
-- Le pipeline video est installe a `~/demo-video/` sur le VPS
+- Le pipeline video est installe a `~/demo-video/` sur le VPS — c'est une
+  INSTALLATION PARTAGEE EN LECTURE SEULE (binaires + node_modules). On n'ecrit
+  JAMAIS dedans : chaque app travaille dans SA copie, voir « Repertoire de
+  travail » ci-dessous.
+
+## Repertoire de travail : un par app, OBLIGATOIRE
+
+Deux incidents reels (physiotraq puis bigpocket, juillet 2026) : deux agents
+tournant en meme temps ont ecrase `~/demo-video/out/voice.mp3` et
+`alignment.json` l'un de l'autre — mauvaise voix sur la mauvaise video, heures
+perdues. `out/` est un singleton : DEUX PIPELINES NE DOIVENT JAMAIS PARTAGER LE
+MEME `out/`.
+
+Avant toute chose, creer la copie de travail DANS le depot de l'app (sous
+`tmp/`, deja gitignore par le template Rails) :
+
+```bash
+APP_DIR=$(pwd)                      # la racine du depot de l'app
+WORK="$APP_DIR/tmp/brick-video"
+mkdir -p "$WORK/narratives" "$WORK/out"
+cp -a ~/demo-video/src ~/demo-video/remotion ~/demo-video/package.json \
+      ~/demo-video/run.sh ~/demo-video/before.js ~/demo-video/shot.js \
+      ~/demo-video/measure.js "$WORK/" 2>/dev/null
+ln -sfn ~/demo-video/node_modules "$WORK/node_modules"
+```
+
+Ensuite TOUT se fait dans `$WORK` : narrative, audio, alignment, rendu. Aucun
+chemin `~/demo-video/...` ne doit apparaitre dans tes commandes apres ce bloc
+(le `run.sh` copie travaille relativement a son propre dossier). Ces fichiers
+sont des artefacts intermediaires : ils ne se COMMITENT jamais (tmp/ est
+gitignore, ne pas les sortir de la).
 - La cle ElevenLabs est configuree dans les **tenant credentials** du serveur nexrai distant (cle: `elevenlabs_api_key`, categorie: `api_keys`)
 
 ## IMPORTANT — Gestion de la cle ElevenLabs
@@ -57,7 +87,7 @@ Si le tool retourne une erreur "cle non configuree", demander a l'utilisateur de
    - ~15 etapes maximum pour une video de ~70 secondes
    - Chaque phrase correspond a UNE action dans l'app
 
-3. Generer le fichier `~/demo-video/narratives/{slug}.json`
+3. Generer le fichier `$WORK/narratives/{slug}.json`
 
 ### Voix
 
@@ -316,11 +346,11 @@ Utiliser `bin/rails runner` pour creer/reset les données de demo.
    - Le **alignment JSON** (timestamps par caractere)
 4. Telecharger l'audio :
    ```bash
-   curl -o ~/demo-video/out/voice.mp3 "$PLATFORM_API_URL{audio_url}"
+   curl -o "$WORK/out/voice.mp3" "$PLATFORM_API_URL{audio_url}"
    ```
 5. Sauver l'alignment dans un fichier :
    ```bash
-   cat > ~/demo-video/out/alignment.json << 'EOF'
+   cat > "$WORK/out/alignment.json" << 'EOF'
    { "characters": [...], "character_start_times_seconds": [...], "character_end_times_seconds": [...] }
    EOF
    ```
@@ -387,8 +417,7 @@ apparition d'element), utiliser `elevenlabs_sfx_tool(prompt: "...")` :
 ### Etape 3 : Lancer le pipeline
 
 ```bash
-cd ~/demo-video
-bash run.sh narratives/{slug}.json
+bash "$WORK/run.sh" "$WORK/narratives/{slug}.json"
 ```
 
 Le pipeline detecte `out/voice.mp3` + `out/alignment.json` et skip le TTS.
@@ -396,11 +425,11 @@ Il lance Playwright, enregistre la video, et merge avec ffmpeg.
 
 ### Etape 4 : Verifier
 
-- `out/output.mp4` existe
+- `$WORK/out/output.mp4` existe
 - Pas de fichiers `out/error-step-*.png` (sinon les selecteurs sont faux)
 - Extraire des frames pour valider :
   ```bash
-  ffmpeg -ss 10 -i ~/demo-video/out/output.mp4 -frames:v 1 /tmp/check.png
+  ffmpeg -ss 10 -i "$WORK/out/output.mp4" -frames:v 1 /tmp/check.png
   ```
 - Si des steps ont echoue, corriger les selecteurs et relancer
 
@@ -417,7 +446,7 @@ occuper, la facture Mux ne s'accumule pas).
 ```bash
 curl -X POST \
   -H "Authorization: Bearer $MCP_TOKEN" \
-  -F "video=@$HOME/demo-video/out/output.mp4" \
+  -F "video=@$WORK/out/output.mp4" \
   -F "title=Description courte du changement filme" \
   $PLATFORM_API_URL/api/v1/bricks/{brick_id}/delivery_video
 ```

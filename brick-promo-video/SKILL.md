@@ -21,7 +21,7 @@ enregistrement de l'app reelle). Ici on VEND le produit, on ne le documente pas.
 
 ## Pre-requis
 
-- Projet Remotion template : `~/demo-video/remotion/` (composition de reference
+- Projet Remotion template : `~/demo-video/remotion/` — LECTURE SEULE, a copier dans l'app (composition de reference
   `src/Promo1600.jsx`, celle d'Izi Wage — copier/adapter, ne pas partir de zero)
 - Tools plateforme (MCP nexrai) : `elevenlabs_tts_tool`, `elevenlabs_music_tool`,
   `elevenlabs_sfx_tool` (cles cote serveur, jamais en local)
@@ -148,7 +148,13 @@ Une seule composition responsive, trois `<Composition>` dans Root :
 ### Phase 7 — Rendu et revue critique
 
 ```bash
-cd ~/demo-video/remotion && npx remotion render src/index.js <CompoId> out/<slug>-vN.mp4
+# JAMAIS dans ~/demo-video directement : repertoire PARTAGE entre agents
+# (deux rendus concurrents s'ecrasent). Copie de travail par app, comme
+# brick-video :
+WORK="$(pwd)/tmp/brick-promo-video"
+mkdir -p "$WORK" && cp -a ~/demo-video/remotion "$WORK/remotion"
+ln -sfn ~/demo-video/node_modules "$WORK/remotion/node_modules" 2>/dev/null || true
+cd "$WORK/remotion" && npx remotion render src/index.js <CompoId> out/<slug>-vN.mp4
 ```
 (~3 min pour 50 s en 1080p. Iterer = re-render, c'est pas cher.)
 
