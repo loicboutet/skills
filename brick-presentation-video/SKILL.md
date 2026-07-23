@@ -144,20 +144,42 @@ consigne de NE PAS toucher aux autres repertoires.
    `out/output.mp4` : archiver `mv "$WORK/out/output.mp4" "$WORK/out/chap-NN.mp4"`
    apres chaque rendu, comme /brick-mockup-video).
 3. **Rendre les cartons** Remotion (`chap-NN-card.mp4`) + intro/outro.
-4. **Assembler** :
+4. **Assembler — concat FILTER obligatoire, jamais le demuxer** :
+
+   Incident reel (Nutchel, 23/07) : le demuxer `-f concat` fusionne les
+   timestamps AVANT tout decodage. Avec des sources aux bases de temps
+   differentes (cartons Remotion vs chapitres Playwright), il date les frames
+   « dans le passe » ; le framerate constant jette alors ces frames et duplique
+   la derniere valide : chaque chapitre devient UNE image figee pendant toute
+   sa duree, avec l'audio intact. Re-encoder en sortie ne protege pas — le mal
+   est fait a l'entree de l'encodeur. Le concat FILTER decode chaque source en
+   frames brutes et renumerote tout, donc insensible aux bases de temps :
+
    ```bash
-   # Liste ordonnee intro, carton, chapitre, carton, chapitre..., outro
-   for f in intro.mp4 chap-01-card.mp4 chap-01.mp4 ...; do echo "file '$WORK/out/$f'"; done > "$WORK/out/concat.txt"
-   # Re-encoder au concat (sources heterogenes Remotion/Playwright) :
-   ffmpeg -f concat -safe 0 -i "$WORK/out/concat.txt" -c:v libx264 -crf 20 -preset medium -c:a aac -movflags +faststart "$WORK/out/presentation.mp4"
+   # FILES dans l'ordre : intro, carton 1, chapitre 1, carton 2, ...
+   # Chaque segment DOIT avoir une piste audio (cartons Remotion : les rendre
+   # avec un silence, sinon concat n=..:a=1 echoue), meme resolution partout.
+   INPUTS=""; FC=""
+   i=0; for f in "${FILES[@]}"; do INPUTS="$INPUTS -i $f"; FC="$FC[$i:v][$i:a]"; i=$((i+1)); done
+   ffmpeg $INPUTS -filter_complex "${FC}concat=n=$i:v=1:a=1[v][a]" \
+     -map "[v]" -map "[a]" -c:v libx264 -crf 20 -preset medium -r 25 \
+     -c:a aac -movflags +faststart "$WORK/out/presentation.mp4"
    ```
 5. **Table des chapitres** : additionner les durees (`ffprobe -show_entries
    format=duration`) pour produire la liste des timecodes (`00:00 Introduction,
    02:14 Parcours patient, ...`). Elle accompagne TOUJOURS le lien envoye au
    client : personne ne regarde 25 minutes sans sommaire cliquable mentalement.
-6. **Verifier** avant publication : regarder au moins le debut, une transition
-   de carton, et la fin (`ffmpeg -ss` pour extraire des frames), verifier
-   l'audio aux coutures.
+6. **Verifier avant publication — freezedetect NON NEGOCIABLE** :
+
+   ```bash
+   ffmpeg -i "$WORK/out/presentation.mp4" -vf "freezedetect=n=0.001:d=8" -an -f null - 2>&1 | grep freeze || echo "aucun gel > 8s"
+   ```
+   Tout gel superieur a ~8 s est suspect (une narration sur ecran fixe
+   legitime dure moins que ca). C'est le test qui aurait attrape l'incident
+   Nutchel en 15 secondes : des frames de controle tirees au hasard peuvent
+   TOUTES tomber sur les segments animes ou sur une image figee qui ressemble
+   a l'ecran attendu. En complement : extraire une frame AU MILIEU de chaque
+   chapitre (pas aux transitions) et verifier l'audio aux coutures.
 7. **Publier** comme /brick-video (`delivery_video`, meme derivation
    MCP_TOKEN/PLATFORM_API_URL). Un fichier de 10-30 min fait 100-400 Mo :
    l'infra accepte (pas de plafond de taille, delais d'upload releves a 600 s).
@@ -172,5 +194,6 @@ consigne de NE PAS toucher aux autres repertoires.
 - [ ] Chapitres de 2-4 min, tournes et archives separement
 - [ ] Cartons a la resolution du screencast, transitions avec SFX
 - [ ] Narration dans la langue de l'espace client, meme voix sur toute la video
+- [ ] `freezedetect` passe sur le fichier FINAL (aucun gel > 8 s inexplique)
 - [ ] Table des timecodes fournie avec le lien
 - [ ] Duree totale 10-30 min — au-dela de 30, scinder en deux videos
