@@ -78,7 +78,7 @@ ne pas les redecouvrir ici, OUVRIR le skill :
    b. Ecrire le narrative JSON (`$WORK/narratives/<parcours>.json`)
    c. TTS (un appel), pipeline, verification (frames + audio)
    d. Archiver : `mv "$WORK/out/output.mp4" "$WORK/out/<parcours>.mp4"`
-3. Publier chaque video sur la brique avec un titre = le parcours :
+3. Publier chaque video sur la brique avec `-F category=mockup`, `-F transcript=...` (les say du parcours) et un titre = le parcours :
    `Parcours patient — abonnement (mockups)`. Le titre est la cle de
    remplacement : refilmer un parcours remplace SA video, pas les autres.
 4. `GET /api/v1/bricks/{brick_id}/videos` pour verifier la liste complete, et

@@ -443,7 +443,11 @@ Il lance Playwright, enregistre la video, et merge avec ffmpeg.
 ### Phase 4 — Publication
 
 Chaque brick a une **liste de videos** : une video par changement demande par
-le client. Le `title` decrit le changement filme (ex: "Filtre de recherche
+le client. `category` : demo (livraison), correction (correctif suite a retour), mockup,
+presentation, promo — selon le skill qui produit la video. `transcript` : la
+narration exacte (les say concatenes) — elle nourrit le chatbot de l'espace
+client et les futurs sous-titres, NE PAS l'omettre. Le `title` decrit le
+changement filme (ex: "Filtre de recherche
 sur le kanban"). Il est OBLIGATOIRE et sert de cle de remplacement :
 re-uploader avec le MEME title remplace l'ancienne version (l'asset Mux de
 l'ancienne est supprime automatiquement cote plateforme — ne PAS s'en
@@ -467,6 +471,8 @@ curl -X POST \
   -H "Authorization: Bearer $MCP_TOKEN" \
   -F "video=@$WORK/out/output.mp4" \
   -F "title=Description courte du changement filme" \
+  -F "category=demo" \
+  -F "transcript=$(python3 -c "import json;print(' '.join(s['say'] for s in json.load(open('NARRATIVE'))['steps'] if s.get('say')))" )" \
   $PLATFORM_API_URL/api/v1/bricks/{brick_id}/delivery_video
 ```
 

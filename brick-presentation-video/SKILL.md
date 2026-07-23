@@ -182,7 +182,13 @@ consigne de NE PAS toucher aux autres repertoires.
    TOUTES tomber sur les segments animes ou sur une image figee qui ressemble
    a l'ecran attendu. En complement : extraire une frame AU MILIEU de chaque
    chapitre (pas aux transitions) et verifier l'audio aux coutures.
-7. **Publier** comme /brick-video (`delivery_video`, meme derivation
+7. **Publier** comme /brick-video avec, EN PLUS :
+   - `-F category=presentation`
+   - `-F transcript=...` (toute la narration concatenee)
+   - `-F 'chapters=[{"start":0,"title":"Introduction"},...]'` — la table des
+     timecodes au format JSON : le player Mux affiche alors les chapitres
+     facon YouTube sur la timeline, et le sommaire vit DANS la video.
+   (`delivery_video`, meme derivation
    MCP_TOKEN/PLATFORM_API_URL). Un fichier de 10-30 min fait 100-400 Mo :
    l'infra accepte (pas de plafond de taille, delais d'upload releves a 600 s).
    Transmettre le lien public + la table des chapitres.
