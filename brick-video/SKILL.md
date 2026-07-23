@@ -491,6 +491,20 @@ Les stats de visionnage (vues, taux de completion, ou le client a decroche)
 sont dans le dashboard Mux (mux.com) — utile pour savoir si le client a
 regarde la demo avant un call.
 
+## Archiver les parcours : la video nourrit le monitoring
+
+Le narrative ecrit pour la video ne se jette PLUS : une version sans les `say`
+(et avec des steps `{ "action": "shot", "name": "..." }` sur les ecrans cles)
+s'archive dans **`doc/memory/journeys/<parcours>.json`** et se committe. Le
+workflow `visual-checks` du template la rejoue apres chaque deploiement :
+parcours casse -> issue tracker automatique ; captures `shot` -> regression
+visuelle contre `doc/memory/visual-baseline/` + changelog avant/apres.
+
+Concretement, apres avoir tourne la video : dupliquer le narrative, retirer
+les `say`, poser 1-3 `shot` par parcours (les ecrans que le client
+reconnaitrait), committer. Premiere fois : lancer le workflow a la main avec
+`rebless=true` pour poser la baseline.
+
 ## Validation gate
 
 - [ ] Video generee sans erreurs de steps
