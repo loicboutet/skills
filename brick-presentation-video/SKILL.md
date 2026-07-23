@@ -27,11 +27,38 @@ fois sur 10, et chaque echec coute 30 minutes de re-tournage. En chapitres de
 [intro Remotion 5-10s] [carton chap.1] [screencast chap.1] [carton chap.2] [screencast chap.2] ... [outro Remotion]
 ```
 
-1 chapitre = 1 parcours utilisateur ou 1 zone fonctionnelle de la brique.
-Source : `doc/memory/user_journeys.md` + les routes de la brique. Pour « tous
-les chemins », lister les parcours PUIS les ecrans restants (parametres,
-etats vides, erreurs) et les regrouper en chapitres coherents. Confirmer le
-plan de chapitres avec l'utilisateur avant de tourner.
+## Le scenario : structure par les parcours, exhaustivite par la recette
+
+Deux sources, deux roles distincts :
+
+1. **`doc/memory/user_journeys.md` donne la STRUCTURE** : 1 chapitre = 1
+   parcours utilisateur (ou 1 zone fonctionnelle). Une video raconte des
+   histoires, pas une checklist — l'ordre des chapitres suit la logique
+   metier (le parcours du client final d'abord, l'admin ensuite).
+
+2. **`doc/memory/brick-{N}/recette.md` (produit par `/brick-review`) donne
+   l'EXHAUSTIVITE** : c'est la matrice de couverture. Construire un tableau
+   ligne de recette -> chapitre qui la MONTRE a l'ecran. Toute ligne sans
+   chapitre est un trou : l'affecter a un chapitre existant ou creer un
+   chapitre « et aussi » pour les comportements annexes (etats vides,
+   erreurs, permissions). La video est complete quand CHAQUE ligne de la
+   recette est visible quelque part — c'est la definition de « tous les
+   chemins », pas une intuition.
+
+Ecriture de la narration, chapitre par chapitre :
+- partir des criteres d'acceptance couverts par le chapitre, formules dans le
+  vocabulaire du CLIENT (ce qui a ete promis, pas comment c'est code) ;
+- une phrase = une action a l'ecran (regle /brick-video), l'enchainement des
+  phrases EST le scenario du chapitre ;
+- montrer le comportement, pas le decrire : pour « le montant est
+  facultatif », on valide SANS montant a l'ecran plutot que de le dire.
+
+Si la recette n'existe pas encore (brique pas passee par `/brick-review`),
+la faire d'abord — la video de presentation sans recette redevient une
+balade dont on ne peut pas prouver la couverture.
+
+Confirmer le plan de chapitres AVEC le tableau de couverture avec
+l'utilisateur avant de tourner.
 
 ## Execution technique
 
@@ -87,8 +114,8 @@ cartons, donc inaudibles.
 ## Validation gate
 
 - [ ] Plan de chapitres valide par l'utilisateur AVANT tournage
-- [ ] Tous les parcours de la brique couverts (croiser avec user_journeys.md
-      et les routes) — les ecrans annexes regroupes, pas oublies
+- [ ] Matrice de couverture recette -> chapitres complete : CHAQUE ligne de
+      `doc/memory/brick-{N}/recette.md` est montree dans un chapitre
 - [ ] Chapitres de 2-4 min, tournes et archives separement
 - [ ] Cartons a la resolution du screencast, transitions avec SFX
 - [ ] Narration dans la langue de l'espace client, meme voix sur toute la video
