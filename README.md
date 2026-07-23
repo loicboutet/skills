@@ -27,6 +27,7 @@ Pipeline complet pour livrer un projet client, de l'analyse a la livraison.
 | Mockups | `/brick-mockups` | Vues mockees, layouts, verification UX des parcours |
 | Mockup Review | `/brick-mockup-review` | Controle des mockups avant client : scope brique, sync specs, outil de capture |
 | Mockup Video | `/brick-mockup-video` | Une video par parcours utilisateur des mockups (validation a distance) |
+| Presentation Video | `/brick-presentation-video` | Video longue 10-30 min, tous les chemins d'une brique (revue, formation, passation) |
 | Implementation | `/brick-implementation` | Dev brick par brick, tests, tracabilite vers les criteres |
 | Review | `/brick-review` | Pre-livraison : gap analysis, tests, UX, securite |
 

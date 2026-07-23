@@ -15,6 +15,7 @@ Utilise les skills pour chaque etape du workflow. Tape la commande correspondant
 | Mockups | `/brick-mockups` | Creer les vues mockees apres validation de l'analyse |
 | Mockup Review | `/brick-mockup-review` | Verifier les mockups avant presentation client (scope brique, sync specs, outil capture) |
 | Mockup Video | `/brick-mockup-video` | Une video par parcours utilisateur des mockups, pour la validation client a distance |
+| Presentation Video | `/brick-presentation-video` | Video longue (10-30 min) qui parcourt TOUS les chemins d'une brique, chapitres + cartons |
 | Implementation | `/brick-implementation` | Developper une brick apres validation des mockups |
 | Review | `/brick-review` | Validation pre-livraison (tests, gaps, UX, securite) |
 | Bugfix | `/brick-bugfix` | Bug client : comprendre → test qui reproduit → fix → verifier |
