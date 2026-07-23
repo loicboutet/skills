@@ -37,13 +37,28 @@ Deux sources, deux roles distincts :
    metier (le parcours du client final d'abord, l'admin ensuite).
 
 2. **`doc/memory/brick-{N}/recette.md` (produit par `/brick-review`) donne
-   l'EXHAUSTIVITE** : c'est la matrice de couverture. Construire un tableau
-   ligne de recette -> chapitre qui la MONTRE a l'ecran. Toute ligne sans
-   chapitre est un trou : l'affecter a un chapitre existant ou creer un
-   chapitre « et aussi » pour les comportements annexes (etats vides,
-   erreurs, permissions). La video est complete quand CHAQUE ligne de la
-   recette est visible quelque part — c'est la definition de « tous les
-   chemins », pas une intuition.
+   l'EXHAUSTIVITE** : c'est la matrice de couverture. Mais une recette reelle
+   contient beaucoup de lignes infilmables (tests de securite, config) :
+   classer CHAQUE ligne dans un des trois traitements, c'est la colonne
+   supplementaire de la matrice.
+
+   | Traitement | Quoi | Exemples (recette Yseis brick 1) |
+   |---|---|---|
+   | **montrer** | comportement visible par un utilisateur legitime | connexion, creation d'observation, envoi du rapport PDF |
+   | **mentionner** | invisible a l'ecran mais precieux pour la confiance : UNE phrase de narration, pas de demo | « chaque role ne voit que son perimetre, verifie par audit » (IDOR, cross-agence, scellement des tokens) |
+   | **hors-video** | plomberie et tests negatifs/techniques | cookies httponly, mass-assignment, redirection canonique, id forge dans l'URL |
+
+   Piege a eviter : les lignes de PERIMETRE PAR ROLE (« le directeur voit
+   tout, le responsable ne voit que son agence ») ressemblent a de la
+   securite mais sont parmi les plus VENDABLES a montrer — un chapitre « ce
+   que voit chaque role » les demontre naturellement, souvent le meilleur
+   sommaire pour la partie admin.
+
+   La video est complete quand chaque ligne est CLASSEE et que toutes les
+   « montrer » sont visibles dans un chapitre. Les « mentionner » se
+   regroupent en une ou deux phrases (typiquement sur l'outro). On ne filme
+   JAMAIS une attaque (URL forgee, etc.) : c'est sans valeur pour le client
+   et anxiogene.
 
 Ecriture de la narration, chapitre par chapitre :
 - partir des criteres d'acceptance couverts par le chapitre, formules dans le
@@ -114,8 +129,9 @@ cartons, donc inaudibles.
 ## Validation gate
 
 - [ ] Plan de chapitres valide par l'utilisateur AVANT tournage
-- [ ] Matrice de couverture recette -> chapitres complete : CHAQUE ligne de
-      `doc/memory/brick-{N}/recette.md` est montree dans un chapitre
+- [ ] Matrice de couverture complete : CHAQUE ligne de recette classee
+      (montrer / mentionner / hors-video), toutes les « montrer » visibles
+      dans un chapitre, les « mentionner » couvertes par la narration
 - [ ] Chapitres de 2-4 min, tournes et archives separement
 - [ ] Cartons a la resolution du screencast, transitions avec SFX
 - [ ] Narration dans la langue de l'espace client, meme voix sur toute la video
