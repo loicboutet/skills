@@ -1,6 +1,6 @@
 ---
 name: brick-user-guide
-description: "Genere le guide utilisateur PDF d'une brique (un chapitre par parcours, captures d'ecran annotees) et le publie dans l'espace client (page Documents, type guide). Utilise /brick-user-guide apres une livraison, ou avec /brick-presentation-video (memes sources)."
+description: "Genere le guide utilisateur d'une brique (chapitres markdown + captures) et le publie dans l'espace client ou il est rendu NATIVEMENT (page Guide, export PDF navigateur). Utilise /brick-user-guide apres une livraison, ou avec /brick-presentation-video (memes sources)."
 ---
 
 # Brick User Guide — le guide utilisateur PDF dans l'espace client
@@ -58,28 +58,31 @@ c'est possible : un seul travail de scenarisation, deux artefacts.
    - encarts « Bon a savoir » pour les lignes « mentionner » de la recette
    Pied de page : version de la brique + date. Table des matieres en tete.
 
-5. **PDF** : chaine verifiee, zero dependance nouvelle :
-   ```bash
-   playwright-cli -s=guide-<app> goto "file://$PWD/tmp/brick-user-guide/guide.html"
-   playwright-cli -s=guide-<app> pdf    # recuperer le chemin du PDF produit
-   playwright-cli -s=guide-<app> close  # TOUJOURS fermer sa session
-   ```
-   Verifier le PDF : l'ouvrir (extraire 2-3 pages en images), controler que
-   les captures sont nettes et que rien ne deborde.
+5. **Publication : le guide est RENDU NATIVEMENT dans l'espace client**
+   (page /external/guide : sommaire, un chapitre par page, export PDF via
+   l'impression navigateur). On ne genere PAS de PDF et on ne passe PAS par
+   le Drive : un seul POST multipart idempotent, qui remplace tout le guide :
 
-6. **Publication** :
-   a. Uploader le PDF sur le Drive du projet (`google_drive_upload_file`),
-      dossier du client.
-   b. Le lier dans l'espace client :
-      ```
-      client_document_tool(action: "add", kind: "guide",
-        title: "Guide utilisateur — Brique {N}",
-        drive_file_id: "<id>", app_id: <id>)
-      ```
-   Les sources markdown restent committees dans le depot (elles nourrissent le
-   chatbot et la prochaine mise a jour). Le titre porte le numero de brique : re-publier apres une livraison cree
-   le guide de LA brique, l'ancien reste consultable (remplacer = action
-   remove sur l'ancien PUIS add, si l'utilisateur le demande).
+   ```bash
+   cd "$APP_DIR"
+   MCP_TOKEN=$(python3 -c "import json;a=json.load(open('.mcp.json'))['mcpServers']['nexrai']['args'];print(a[a.index('--header')+1].replace('Authorization: Bearer ',''))")
+   NEXRAI_URL=$(python3 -c "import json;print(json.load(open('.nexrai/binding.json'))['nexrai_url'])")
+   APP_ID=$(python3 -c "import json;print(json.load(open('.nexrai/binding.json'))['id'])")
+
+   # chapters.json : [{"position":1,"slug":"demarrer","title":"...","body_md":"..."}, ...]
+   # (les body_md sont exactement les fichiers doc/memory/guide/chap-*.md)
+   IMGS=$(for f in doc/memory/guide/img/*.png; do printf -- "-F images[]=@%s " "$f"; done)
+   curl -sf -X POST "$NEXRAI_URL/api/v1/apps/$APP_ID/guide" \
+     -H "Authorization: Bearer $MCP_TOKEN" \
+     -F "title=Guide utilisateur" -F "brick=Brique {N}" \
+     -F "chapters=<tmp/brick-user-guide/chapters.json" \
+     $IMGS
+   ```
+
+   La reponse contient l'URL du guide. **VERIFIER le rendu** : ouvrir
+   /external/guide avec playwright-cli (connecte en compte client de test si
+   dispo, sinon demander a l'utilisateur de verifier), controler qu'un
+   chapitre s'affiche avec ses images. Ne jamais afficher MCP_TOKEN.
 
 ## Mise a jour a chaque livraison
 
@@ -95,6 +98,6 @@ les HTML/captures par chapitre dans le repertoire de travail du depot.
 - [ ] Chaque etape : une instruction imperative + une capture reconnaissable
 - [ ] Aucune donnee de test moche visible sur les captures
 - [ ] Langue de l'espace client, vocabulaire du client (zero jargon)
-- [ ] PDF verifie visuellement (nettete, debordements) avant publication
-- [ ] Publie en kind "guide" avec titre versionne par brique
+- [ ] Publication API reussie (reponse chapters/images aux bons comptes)
+- [ ] Rendu verifie sur /external/guide : chapitre affiche AVEC ses images
 - [ ] Session playwright-cli fermee
