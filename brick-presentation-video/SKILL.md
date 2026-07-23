@@ -14,6 +14,8 @@ A ne pas confondre avec :
 - `/brick-video` : demo courte d'UNE livraison (~70 s)
 - `/brick-mockup-video` : une video PAR parcours, pour valider des mockups
 - `/brick-promo-video` : motion design de vente, pas un parcours d'app
+- `/brick-user-guide` : le PDF jumeau de cette video (memes sources, memes
+  chapitres) — les produire ensemble quand c'est possible
 
 ## Architecture imposee : des chapitres assembles, JAMAIS une prise unique
 
