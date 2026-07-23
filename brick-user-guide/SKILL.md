@@ -44,9 +44,14 @@ c'est possible : un seul travail de scenarisation, deux artefacts.
    des etats transitoires. Donnees de demo propres (pas de donnees de test
    moches type "TEST-xxx" visibles — les remplacer avant si besoin).
 
-4. **HTML du guide** : UN fichier autonome dans le repertoire de travail,
-   images en chemins relatifs, style sobre aligne sur la charte du client
-   (couleurs du style_guide). Structure par chapitre :
+4. **Source du guide : markdown par chapitre, VERSIONNE** dans
+   `doc/memory/guide/chap-NN-<nom>.md` (+ captures dans
+   `doc/memory/guide/img/`). C'est la source de verite : diffable, mis a jour
+   chapitre par chapitre a chaque livraison, et directement consommable comme
+   base de connaissances du futur chatbot (le markdown se lit mieux que le
+   HTML et infiniment mieux qu'un PDF extrait). Puis assembler en UN HTML
+   autonome (images embarquees, style sobre aligne sur la charte du
+   style_guide) dans le repertoire de travail. Structure par chapitre :
    - titre du parcours + une phrase d'objectif (« Ce chapitre montre comment
      votre patient s'abonne »)
    - etapes numerotees : instruction (1 phrase imperative) + capture
@@ -71,7 +76,8 @@ c'est possible : un seul travail de scenarisation, deux artefacts.
         title: "Guide utilisateur — Brique {N}",
         drive_file_id: "<id>", app_id: <id>)
       ```
-   Le titre porte le numero de brique : re-publier apres une livraison cree
+   Les sources markdown restent committees dans le depot (elles nourrissent le
+   chatbot et la prochaine mise a jour). Le titre porte le numero de brique : re-publier apres une livraison cree
    le guide de LA brique, l'ancien reste consultable (remplacer = action
    remove sur l'ancien PUIS add, si l'utilisateur le demande).
 
