@@ -99,11 +99,48 @@ ou deux appels TTS au plus — on reste dans la regle « un appel sous 3000
 caracteres » de /brick-video, et les coutures de prosodie tombent sur les
 cartons, donc inaudibles.
 
+## Parallelisation : un sous-agent par chapitre
+
+Une video de 8 chapitres tournee en sequence coute des heures ; les chapitres
+sont independants par construction, donc **l'orchestrateur delegue : un
+sous-agent par chapitre** (1 sous-agent par appel, regle CLAUDE.md), qui
+explore ses pages, ecrit son narrative, genere son TTS et rend son mp4.
+L'orchestrateur garde pour lui : le plan + la matrice (avant), les cartons,
+l'assemblage, la publication (apres).
+
+Deux garde-fous OBLIGATOIRES, sans lesquels le parallele detruit le travail :
+
+1. **Un repertoire pipeline PAR chapitre** : `out/` est un singleton
+   (voice.mp3, output.mp4). Chaque sous-agent recoit SA copie :
+   ```bash
+   CHAP="$WORK/chap-NN"   # copie du pipeline comme dans /brick-video, node_modules symlinke
+   ```
+   Le sous-agent livre `$CHAP/out/output.mp4`, l'orchestrateur le collecte.
+   Deux sous-agents dans le meme repertoire = ecrasement croise garanti
+   (deja vu deux fois avec ~/demo-video partage).
+
+2. **Discipline d'etat : classer chaque chapitre lecture/ecriture.** L'app
+   filmee est UNE instance partagee. Un chapitre qui CREE ou modifie des
+   donnees pendant qu'un autre filme une liste fait apparaitre des
+   enregistrements fantomes dans la video du voisin — invisible au tournage,
+   visible par le client. Regle :
+   - chapitres en LECTURE seule (consultation, navigation) -> parallele libre ;
+   - chapitres qui ECRIVENT -> en sequence entre eux, apres les lectures, OU
+     sur des comptes/entites dedies dont les mutations n'apparaissent dans
+     aucun autre chapitre (le preciser dans le plan de chapitres).
+
+Plafonner a **3-4 sous-agents simultanes** : chaque tournage porte un chromium
+(~300-500 Mo) plus le TTS ; au-dela on degrade le dev server et la machine.
+Le brief de chaque sous-agent doit etre autonome : scenario du chapitre, URL
+du dev server, credentials de demo, voix/langue, chemin `$CHAP`, et la
+consigne de NE PAS toucher aux autres repertoires.
+
 ## Process
 
 1. **Plan de chapitres** : parcours + ecrans restants -> 4 a 10 chapitres
    nommes. Le faire VALIDER par l'utilisateur (c'est le sommaire de la video).
-2. **Tourner chapitre par chapitre**, en sequence (le pipeline ecrit
+2. **Tourner les chapitres** — en parallele par sous-agents (section
+   ci-dessus), ou en sequence si peu de chapitres (le pipeline ecrit
    `out/output.mp4` : archiver `mv "$WORK/out/output.mp4" "$WORK/out/chap-NN.mp4"`
    apres chaque rendu, comme /brick-mockup-video).
 3. **Rendre les cartons** Remotion (`chap-NN-card.mp4`) + intro/outro.
