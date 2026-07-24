@@ -189,6 +189,28 @@ Si tu geres le process global (pas une tache unique) :
 - Toi = orchestrateur qui delegue et verifie
 - 1 sous-agent par appel
 
+## Lancer le serveur de dev : c'est TON boulot, en autonomie
+
+Tu n'as PAS l'interdiction de lancer le serveur. Tu as l'interdiction de le
+lancer d'une facon qui bloque ton shell et ne donne aucun acces web. Le bon
+outil existe et fait le travail a ta place : lance-le toi-meme, sans demander.
+
+- Pour demarrer : outil MCP `vps_dev_server_start`. Il lance `bin/dev` en tache
+  de fond sur le VPS, sur un port deterministe (3000 + id de l'app), enregistre
+  le serveur derriere le proxy et te renvoie une **URL publique** accessible sur
+  le web. C'est CA qui permet de tester dans un navigateur (via `playwright-cli`
+  ou pour le client), pas un `rails s` local.
+- Boucle d'auto-reparation, sans repasser la main : si le serveur ne repond pas,
+  lis `vps_dev_server_logs`, corrige la cause (bundle, migrations en attente,
+  erreur de syntaxe, port occupe, asset manquant), et rappelle
+  `vps_dev_server_start`. Tu recommences jusqu'a ce qu'il tourne. Ne reponds
+  JAMAIS "je n'ai pas le droit de lancer le serveur" : c'est faux, et c'est ton
+  travail de le faire demarrer.
+- `vps_dev_server_stop` pour l'arreter, `vps_dev_server_logs` pour investiguer.
+- Ne bloque la main a l'utilisateur que si, logs a l'appui, la panne depend de
+  lui (secret manquant, decision produit), pas pour une erreur que tu peux
+  corriger.
+
 ## Commandes autorisees
 
 ```bash
@@ -201,8 +223,10 @@ kamal app exec --interactive 'rails console'
 ## Commandes INTERDITES
 
 ```bash
-bin/dev            # bloque
-rails server       # bloque
+# Ne JAMAIS lancer le serveur a la main dans un shell : ca bloque la session
+# et ne passe pas par le proxy (aucune URL web). Utiliser vps_dev_server_start.
+bin/dev            # bloque le shell, pas d'acces web -> vps_dev_server_start
+rails server       # idem -> vps_dev_server_start
 kill -9 [pid]      # demander a l'utilisateur
 kamal deploy       # GitHub Actions
 ```
