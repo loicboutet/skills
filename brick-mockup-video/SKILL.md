@@ -78,11 +78,15 @@ ne pas les redecouvrir ici, OUVRIR le skill :
    b. Ecrire le narrative JSON (`$WORK/narratives/<parcours>.json`)
    c. TTS (un appel), pipeline, verification (frames + audio)
    d. Archiver : `mv "$WORK/out/output.mp4" "$WORK/out/<parcours>.mp4"`
-3. Publier chaque video sur la brique avec `-F category=mockup`, `-F transcript=...` (les say du parcours) et un titre = le parcours :
+3. Publier chaque video sur la brique avec `-F category=mockup`,
+   `-F description=...` (une phrase : le parcours mocke que la video presente,
+   au futur — s'affiche sous le player), `-F transcript=...` (les say du
+   parcours) et un titre = le parcours :
    `Parcours patient — abonnement (mockups)`. Le titre est la cle de
    remplacement : refilmer un parcours remplace SA video, pas les autres.
 4. `GET /api/v1/bricks/{brick_id}/videos` pour verifier la liste complete, et
-   transmettre les liens de visionnage publics (jamais les fichiers bruts).
+   transmettre les liens de visionnage publics COURTS (champ `video_url`,
+   `/v/xxxxxxx` ; jamais les fichiers bruts ni le `legacy_video_url` long).
 
 ## Validation gate
 

@@ -184,6 +184,8 @@ consigne de NE PAS toucher aux autres repertoires.
    chapitre (pas aux transitions) et verifier l'audio aux coutures.
 7. **Publier** comme /brick-video avec, EN PLUS :
    - `-F category=presentation`
+   - `-F description=...` (une a deux phrases : la brique couverte et pour
+     qui la video est utile ; s'affiche sous le player sur la page de partage)
    - `-F transcript=...` (toute la narration concatenee)
    - `-F 'chapters=[{"start":0,"title":"Introduction"},...]'` — la table des
      timecodes au format JSON : le player Mux affiche alors les chapitres
@@ -191,7 +193,9 @@ consigne de NE PAS toucher aux autres repertoires.
    (`delivery_video`, meme derivation
    MCP_TOKEN/PLATFORM_API_URL). Un fichier de 10-30 min fait 100-400 Mo :
    l'infra accepte (pas de plafond de taille, delais d'upload releves a 600 s).
-   Transmettre le lien public + la table des chapitres.
+   La reponse renvoie un lien COURT `video_url` (`/v/xxxxxxx`) — c'est celui
+   a transmettre, avec la table des chapitres. `legacy_video_url` (lien long
+   signe) reste fourni pour compat, ne pas l'envoyer au client.
 
 ## Validation gate
 

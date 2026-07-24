@@ -472,15 +472,22 @@ curl -X POST \
   -F "video=@$WORK/out/output.mp4" \
   -F "title=Description courte du changement filme" \
   -F "category=demo" \
+  -F "description=Une a deux phrases : ce que la video montre, dans le vocabulaire du client." \
   -F "transcript=$(python3 -c "import json;print(' '.join(s['say'] for s in json.load(open('NARRATIVE'))['steps'] if s.get('say')))" )" \
   $PLATFORM_API_URL/api/v1/bricks/{brick_id}/delivery_video
 ```
 
+Le champ `description` (facultatif mais recommande) s'affiche SOUS le player
+sur la page de partage. Le rester court et concret : ce que le client voit,
+pas comment c'est code.
+
 2. La reponse contient `video_url` : la **page publique de visionnage**
    (player Mux en streaming + stats de visionnage remontees dans Mux Data).
    **C'est CE lien qu'on transmet au client** — jamais l'URL du fichier brut.
-   La page marche immediatement (lecture directe le temps que Mux encode,
-   puis bascule sur le player Mux automatiquement).
+   C'est desormais un lien COURT (`/v/xxxxxxx`). La reponse fournit aussi
+   `legacy_video_url` (ancien lien long signe, toujours valide) : n'envoyer
+   au client que `video_url`. La page marche immediatement (lecture directe
+   le temps que Mux encode, puis bascule sur le player Mux automatiquement).
 
 3. Lister les videos existantes de la brick (pour verifier ou retrouver un lien) :
 ```bash
