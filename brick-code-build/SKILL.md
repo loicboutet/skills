@@ -1,6 +1,6 @@
 ---
-name: brick-implementation
-description: "Phase 3 : implementation brick par brick avec tests, commits, tracabilite vers les criteres d'acceptance. Utilise /brick-implementation pour developper une brick."
+name: brick-code-build
+description: "Phase 3 : implementation brick par brick avec tests, commits, tracabilite vers les criteres d'acceptance. Utilise /brick-code-build pour developper une brick."
 ---
 
 # Brick Implementation
@@ -51,7 +51,7 @@ Le client a valide les mockups au pixel pres. Toute liberte prise avec le rendu 
 
 4. **Auto-check pixel avant de marquer la tache `done`** : ouvrir cote a cote la vue mockup
    et la vue implementee, comparer section par section. Tout ecart non justifie = a corriger
-   avant de continuer. Le check systematique se fait en `/brick-review` (etape Pixel match).
+   avant de continuer. Le check systematique se fait en `/brick-code-review` (etape Pixel match).
 
 ### Comment reutiliser les mockups
 
@@ -199,7 +199,7 @@ Pour un process multi-taches (pas une tache isolee) :
 ## Passage a la brick suivante
 
 0. Verifier que le widget de feedback (version gated) est present dans tous les layouts
-1. Lancer `/brick-review` pour la validation pre-livraison
+1. Lancer `/brick-code-review` pour la validation pre-livraison
 2. L'utilisateur valide la review
 3. Creer `doc/memory/brick-{N+1}/tasks/`
 4. Mettre a jour le README

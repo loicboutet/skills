@@ -1,6 +1,6 @@
 ---
-name: brick-design
-description: "Design system : creer une charte graphique quand le client n'en a pas. Couleurs, typo, composants, style guide HTML. Utilise /brick-design pour generer un design system."
+name: brick-design-build
+description: "Design system : creer une charte graphique quand le client n'en a pas. Couleurs, typo, composants, style guide HTML. Utilise /brick-design-build pour generer un design system."
 ---
 
 # Brick Design
@@ -204,4 +204,4 @@ Presenter le style guide a l'utilisateur :
 
 ## Sortie
 
-`doc/memory/style_guide.html` cree et valide. Continuer avec `/brick-analysis` (si en cours) ou `/brick-mockups`.
+`doc/memory/style_guide.html` cree et valide. Continuer avec `/brick-analysis-build` (si en cours) ou `/brick-mockup-build`.

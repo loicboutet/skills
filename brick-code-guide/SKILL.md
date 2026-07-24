@@ -1,6 +1,6 @@
 ---
-name: brick-user-guide
-description: "Genere le guide utilisateur d'une brique (chapitres markdown + captures) et le publie dans l'espace client ou il est rendu NATIVEMENT (page Guide, export PDF navigateur). Utilise /brick-user-guide apres une livraison, ou avec /brick-presentation-video (memes sources)."
+name: brick-code-guide
+description: "Genere le guide utilisateur d'une brique (chapitres markdown + captures) et le publie dans l'espace client ou il est rendu NATIVEMENT (page Guide, export PDF navigateur). Utilise /brick-code-guide apres une livraison, ou avec /brick-code-walkthrough (memes sources)."
 ---
 
 # Brick User Guide — le guide utilisateur PDF dans l'espace client
@@ -10,7 +10,7 @@ section « Guides utilisateur », en tete de page) : un chapitre par parcours,
 des captures d'ecran reelles, des instructions pas a pas dans le vocabulaire
 du client.
 
-Memes sources que `/brick-presentation-video` — les produire ENSEMBLE quand
+Memes sources que `/brick-code-walkthrough` — les produire ENSEMBLE quand
 c'est possible : un seul travail de scenarisation, deux artefacts.
 
 ## Sources et structure (identiques a la video de presentation)
@@ -29,7 +29,7 @@ c'est possible : un seul travail de scenarisation, deux artefacts.
 1. **Plan de chapitres** : le meme que la video si elle existe (reutiliser sa
    matrice de couverture). Sinon le construire pareil et le faire valider.
 
-2. **Repertoire de travail** : `tmp/brick-user-guide/` dans le depot de l'app
+2. **Repertoire de travail** : `tmp/brick-code-guide/` dans le depot de l'app
    (gitignore par /tmp/*). JAMAIS de repertoire partage entre apps.
 
 3. **Captures d'ecran** : parcourir chaque parcours au clic avec
@@ -75,7 +75,7 @@ c'est possible : un seul travail de scenarisation, deux artefacts.
    curl -sf -X POST "$NEXRAI_URL/api/v1/apps/$APP_ID/guide" \
      -H "Authorization: Bearer $MCP_TOKEN" \
      -F "title=Guide utilisateur" -F "brick=Brique {N}" \
-     -F "chapters=<tmp/brick-user-guide/chapters.json" \
+     -F "chapters=<tmp/brick-code-guide/chapters.json" \
      $IMGS
    ```
 

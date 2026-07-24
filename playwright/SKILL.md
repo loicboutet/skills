@@ -1,6 +1,6 @@
 ---
 name: playwright
-description: "Piloter un navigateur depuis le terminal avec playwright-cli : explorer une page, cliquer, remplir, capturer, inspecter le reseau. Remplace l'ancien MCP Playwright. Utilise /playwright, ou reference depuis brick-video, brick-mockup-review et brick-review."
+description: "Piloter un navigateur depuis le terminal avec playwright-cli : explorer une page, cliquer, remplir, capturer, inspecter le reseau. Remplace l'ancien MCP Playwright. Utilise /playwright, ou reference depuis brick-code-video, brick-mockup-review et brick-code-review."
 ---
 
 # Playwright en ligne de commande

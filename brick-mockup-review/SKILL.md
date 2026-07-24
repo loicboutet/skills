@@ -11,7 +11,7 @@ de feedback est en place. A lancer sur des mockups en cours de validation.
 
 ## Quand utiliser
 
-- Mockups crees (via `/brick-mockups`) et prets a etre montres au client
+- Mockups crees (via `/brick-mockup-build`) et prets a etre montres au client
 - Reprise d'une serie de mockups existante dont on veut verifier la conformite
 - Avant chaque presentation client d'un lot de mockups
 
@@ -97,7 +97,7 @@ Guide complet : artefact nexrai `feedback_widget_install` (app 37) —
 
 - [ ] Tout est dans le namespace `/mockups` (routes, controleurs, vues)
 - [ ] Aucun modele ni migration (donnees fictives dans les controleurs uniquement)
-- [ ] Partials extraites pour tout element repetable / reutilisable (cf. `/brick-mockups`)
+- [ ] Partials extraites pour tout element repetable / reutilisable (cf. `/brick-mockup-build`)
 - [ ] Tailwind via le pipeline `tailwindcss-rails` (PAS le CDN)
 - [ ] Couleurs custom dans `tailwind.config.js`, jamais en arbitraire (`bg-[#3B82F6]`)
 - [ ] Pas de CSS custom hors `application.tailwind.css`
@@ -135,4 +135,4 @@ Generer `doc/memory/mockups/review.md` :
 
 - **PRET POUR CLIENT** -> informer l'utilisateur, mockups presentables.
 - **A CORRIGER** -> lister les corrections. Les corrections de mockups passent par
-  `/brick-mockups` (jamais modifier les specs sans validation, cf. etape 3).
+  `/brick-mockup-build` (jamais modifier les specs sans validation, cf. etape 3).

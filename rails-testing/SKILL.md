@@ -51,9 +51,9 @@ Bug #42: Bouton save casse      → test/integration/bug_fixes/save_button_test.
 
 | Phase | Tests |
 |-------|-------|
-| `/brick-implementation` | Test chaque AC au fur et a mesure du dev |
-| `/brick-bugfix` | Test qui echoue AVANT le fix (obligatoire) |
-| `/brick-review` | Verifier la couverture, lancer la suite complete |
+| `/brick-code-build` | Test chaque AC au fur et a mesure du dev |
+| `/brick-code-fix` | Test qui echoue AVANT le fix (obligatoire) |
+| `/brick-code-review` | Verifier la couverture, lancer la suite complete |
 
 ## Philosophie
 

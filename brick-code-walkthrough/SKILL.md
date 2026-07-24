@@ -1,6 +1,6 @@
 ---
-name: brick-presentation-video
-description: "Video de presentation longue (10-30 min) qui parcourt TOUS les chemins d'une brique : chapitres screencast assembles avec cartons Remotion, musique et SFX (apprentissages de /brick-promo-video). Utilise /brick-presentation-video pour une revue complete, une formation client ou une passation."
+name: brick-code-walkthrough
+description: "Video de presentation longue (10-30 min) qui parcourt TOUS les chemins d'une brique : chapitres screencast assembles avec cartons Remotion, musique et SFX (apprentissages de /brick-promo-video). Utilise /brick-code-walkthrough pour une revue complete, une formation client ou une passation."
 ---
 
 # Brick Presentation Video — 10 a 30 minutes, tous les chemins de la brique
@@ -11,10 +11,10 @@ revue de livraison exhaustive, formation des utilisateurs du client,
 passation a une nouvelle equipe.
 
 A ne pas confondre avec :
-- `/brick-video` : demo courte d'UNE livraison (~70 s)
+- `/brick-code-video` : demo courte d'UNE livraison (~70 s)
 - `/brick-mockup-video` : une video PAR parcours, pour valider des mockups
 - `/brick-promo-video` : motion design de vente, pas un parcours d'app
-- `/brick-user-guide` : le PDF jumeau de cette video (memes sources, memes
+- `/brick-code-guide` : le PDF jumeau de cette video (memes sources, memes
   chapitres) — les produire ensemble quand c'est possible
 
 ## Architecture imposee : des chapitres assembles, JAMAIS une prise unique
@@ -38,7 +38,7 @@ Deux sources, deux roles distincts :
    histoires, pas une checklist — l'ordre des chapitres suit la logique
    metier (le parcours du client final d'abord, l'admin ensuite).
 
-2. **`doc/memory/brick-{N}/recette.md` (produit par `/brick-review`) donne
+2. **`doc/memory/brick-{N}/recette.md` (produit par `/brick-code-review`) donne
    l'EXHAUSTIVITE** : c'est la matrice de couverture. Mais une recette reelle
    contient beaucoup de lignes infilmables (tests de securite, config) :
    classer CHAQUE ligne dans un des trois traitements, c'est la colonne
@@ -65,12 +65,12 @@ Deux sources, deux roles distincts :
 Ecriture de la narration, chapitre par chapitre :
 - partir des criteres d'acceptance couverts par le chapitre, formules dans le
   vocabulaire du CLIENT (ce qui a ete promis, pas comment c'est code) ;
-- une phrase = une action a l'ecran (regle /brick-video), l'enchainement des
+- une phrase = une action a l'ecran (regle /brick-code-video), l'enchainement des
   phrases EST le scenario du chapitre ;
 - montrer le comportement, pas le decrire : pour « le montant est
   facultatif », on valide SANS montant a l'ecran plutot que de le dire.
 
-Si la recette n'existe pas encore (brique pas passee par `/brick-review`),
+Si la recette n'existe pas encore (brique pas passee par `/brick-code-review`),
 la faire d'abord — la video de presentation sans recette redevient une
 balade dont on ne peut pas prouver la couverture.
 
@@ -79,8 +79,8 @@ l'utilisateur avant de tourner.
 
 ## Execution technique
 
-**Base : toutes les regles de `/brick-video` s'appliquent** (repertoire de
-travail par app `tmp/brick-video/`, scenarisation waitForUrl/selecteurs,
+**Base : toutes les regles de `/brick-code-video` s'appliquent** (repertoire de
+travail par app `tmp/brick-code-video/`, scenarisation waitForUrl/selecteurs,
 voix par langue — Rudy FR / `3WqHLnw80rOZqJzW9YRB` EN, `eleven_v3`).
 
 **Emprunts a `/brick-promo-video`** pour le liant :
@@ -98,7 +98,7 @@ voix par langue — Rudy FR / `3WqHLnw80rOZqJzW9YRB` EN, `eleven_v3`).
 
 **TTS par chapitre** : un chapitre de 2-4 min = 1800-3600 caracteres, donc un
 ou deux appels TTS au plus — on reste dans la regle « un appel sous 3000
-caracteres » de /brick-video, et les coutures de prosodie tombent sur les
+caracteres » de /brick-code-video, et les coutures de prosodie tombent sur les
 cartons, donc inaudibles.
 
 ## Parallelisation : un sous-agent par chapitre
@@ -115,7 +115,7 @@ Deux garde-fous OBLIGATOIRES, sans lesquels le parallele detruit le travail :
 1. **Un repertoire pipeline PAR chapitre** : `out/` est un singleton
    (voice.mp3, output.mp4). Chaque sous-agent recoit SA copie :
    ```bash
-   CHAP="$WORK/chap-NN"   # copie du pipeline comme dans /brick-video, node_modules symlinke
+   CHAP="$WORK/chap-NN"   # copie du pipeline comme dans /brick-code-video, node_modules symlinke
    ```
    Le sous-agent livre `$CHAP/out/output.mp4`, l'orchestrateur le collecte.
    Deux sous-agents dans le meme repertoire = ecrasement croise garanti
@@ -182,7 +182,7 @@ consigne de NE PAS toucher aux autres repertoires.
    TOUTES tomber sur les segments animes ou sur une image figee qui ressemble
    a l'ecran attendu. En complement : extraire une frame AU MILIEU de chaque
    chapitre (pas aux transitions) et verifier l'audio aux coutures.
-7. **Publier** comme /brick-video avec, EN PLUS :
+7. **Publier** comme /brick-code-video avec, EN PLUS :
    - `-F category=presentation`
    - `-F description=...` (une a deux phrases : la brique couverte et pour
      qui la video est utile ; s'affiche sous le player sur la page de partage)

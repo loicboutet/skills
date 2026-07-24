@@ -1,6 +1,6 @@
 ---
-name: brick-analysis
-description: "Phase 1 : analyse des specs, data models, routes, style guide, criteres d'acceptance. Utilise /brick-analysis pour demarrer l'analyse d'un projet ou d'une nouvelle brick."
+name: brick-analysis-build
+description: "Phase 1 : analyse des specs, data models, routes, style guide, criteres d'acceptance. Utilise /brick-analysis-build pour demarrer l'analyse d'un projet ou d'une nouvelle brick."
 ---
 
 # Brick Analysis
@@ -163,5 +163,5 @@ Avant de passer a MOCKUPS, verifier :
 - [ ] Chaque feature envisagee est rattachee a un AC nomme (aucune orpheline)
 - [ ] Les parcours utilisateurs couvrent tous les profils
 - [ ] Chaque profil a sa composition de lieu, sans trou invente
-- [ ] Le style guide est defini (sinon lancer `/brick-design`)
+- [ ] Le style guide est defini (sinon lancer `/brick-design-build`)
 - [ ] L'utilisateur a valide

@@ -1,6 +1,6 @@
 ---
-name: brick-review
-description: "Pre-livraison : cahier de recette, suite de tests, gap analysis, pixel match, UX, securite. Utilise /brick-review avant de livrer une brick au client."
+name: brick-code-review
+description: "Pre-livraison : cahier de recette, suite de tests, gap analysis, pixel match, UX, securite. Utilise /brick-code-review avant de livrer une brick au client."
 ---
 
 # Brick Review
@@ -241,5 +241,5 @@ Generer un rapport dans `doc/memory/brick-{N}/review.md` :
 
 Si READY → informer l'utilisateur, pret a livrer. Le cahier de recette est
 un LIVRABLE : il peut etre partage au client comme preuve de couverture.
-Si NEEDS FIXES → lister les fixes. Pour chaque fix, utiliser `/brick-bugfix`
+Si NEEDS FIXES → lister les fixes. Pour chaque fix, utiliser `/brick-code-fix`
 (test qui reproduit → fix → verify), puis re-derouler la recette.

@@ -1,6 +1,6 @@
 ---
 name: brick-mockup-video
-description: "Genere UNE video par parcours utilisateur principal des mockups, pour la validation client a distance. Meme execution technique que /brick-video (pipeline, voix, publication). Utilise /brick-mockup-video quand les mockups sont prets a presenter."
+description: "Genere UNE video par parcours utilisateur principal des mockups, pour la validation client a distance. Meme execution technique que /brick-code-video (pipeline, voix, publication). Utilise /brick-mockup-video quand les mockups sont prets a presenter."
 ---
 
 # Brick Mockup Video — une video PAR parcours utilisateur
@@ -27,12 +27,12 @@ objectif majeur). Si le fichier manque, les deduire de l'index `/mockups` et
 **confirmer la liste avec l'utilisateur avant de filmer** — c'est lui qui sait
 ce que le client doit valider en priorite.
 
-## Execution technique : suivre /brick-video
+## Execution technique : suivre /brick-code-video
 
-Toutes les regles techniques de `/brick-video` s'appliquent telles quelles —
+Toutes les regles techniques de `/brick-code-video` s'appliquent telles quelles —
 ne pas les redecouvrir ici, OUVRIR le skill :
 
-- **Repertoire de travail par app** (`tmp/brick-video/` dans le depot, jamais
+- **Repertoire de travail par app** (`tmp/brick-code-video/` dans le depot, jamais
   `~/demo-video/` partage) — un seul repertoire pour tous les parcours, mais
   ATTENTION : le pipeline ecrit `out/voice.mp3` / `out/output.mp4`, donc les
   parcours se tournent EN SEQUENCE, en archivant chaque resultat avant le
@@ -50,7 +50,7 @@ ne pas les redecouvrir ici, OUVRIR le skill :
 ## Specificites mockups (ce qui CHANGE par rapport a une video de brick)
 
 1. **Cible** : le dev server de l'app, pages sous `/mockups/...`. La navigation
-   passe par les liens reels entre mockups (regle de `/brick-mockups` : les
+   passe par les liens reels entre mockups (regle de `/brick-mockup-build` : les
    pages doivent linker entre elles — si un parcours est infranchissable au
    clic, c'est un bug de mockup a corriger AVANT de filmer).
 2. **Les formulaires ne creent rien** : donnees fictives dans les controleurs,

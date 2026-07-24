@@ -1,6 +1,6 @@
 ---
-name: brick-bugfix
-description: "Correction de bug client : comprendre le retour, reproduire avec un test, corriger, verifier. Utilise /brick-bugfix quand un client signale un probleme."
+name: brick-code-fix
+description: "Correction de bug client : comprendre le retour, reproduire avec un test, corriger, verifier. Utilise /brick-code-fix quand un client signale un probleme."
 ---
 
 # Brick Bugfix

@@ -1,6 +1,6 @@
 ---
-name: brick-video
-description: "Genere une video de demo automatisee pour une brick. Voix IA (ElevenLabs) + navigation Playwright + merge ffmpeg. Utilise /brick-video pour creer une video de livraison."
+name: brick-code-video
+description: "Genere une video de demo automatisee pour une brick. Voix IA (ElevenLabs) + navigation Playwright + merge ffmpeg. Utilise /brick-code-video pour creer une video de livraison."
 ---
 
 # Brick Video — Video de demo automatisee
@@ -11,7 +11,7 @@ Genere une video de demo avec voix IA synchronisee pour livrer une brick a un cl
 
 - Brick prete a livrer (status implementation ou test)
 - Le client a besoin d'une video de demo du resultat
-- Apres `/brick-review` pour accompagner la livraison
+- Apres `/brick-code-review` pour accompagner la livraison
 
 ## Pre-requis
 
@@ -34,7 +34,7 @@ Avant toute chose, creer la copie de travail DANS le depot de l'app (sous
 
 ```bash
 APP_DIR=$(pwd)                      # la racine du depot de l'app
-WORK="$APP_DIR/tmp/brick-video"
+WORK="$APP_DIR/tmp/brick-code-video"
 mkdir -p "$WORK/narratives" "$WORK/out"
 cp -a ~/demo-video/src ~/demo-video/remotion ~/demo-video/package.json \
       ~/demo-video/run.sh ~/demo-video/before.js ~/demo-video/shot.js \

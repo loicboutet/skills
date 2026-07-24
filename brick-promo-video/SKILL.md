@@ -10,7 +10,7 @@ produit client : motion design style agence (reference : 1600.agency), voix
 off dynamique, musique et sound design generes, UI recomposee en composants
 React animes aux couleurs de la charte.
 
-Ne pas confondre avec `/brick-video` (walkthrough de livraison d'une brick,
+Ne pas confondre avec `/brick-code-video` (walkthrough de livraison d'une brick,
 enregistrement de l'app reelle). Ici on VEND le produit, on ne le documente pas.
 
 ## Quand utiliser
@@ -77,7 +77,7 @@ Regles d'ecriture :
    l'intonation.
 2. Modele **eleven_v3** (bien plus expressif que multilingual_v2). Voix de
    reference pub : Rudy `wufFsVwuYBePWKO6dMMN` (francais) — pour une video en
-   ANGLAIS, prendre `3WqHLnw80rOZqJzW9YRB` (meme regle que /brick-video) ; alternatives
+   ANGLAIS, prendre `3WqHLnw80rOZqJzW9YRB` (meme regle que /brick-code-video) ; alternatives
    Sophie `BewlJwjEWiFLWoXrbGMf`, Marie `sANWqF1bCMzR6eyZbCGw`.
 3. **Generer 2-3 prises** et faire choisir l'utilisateur a l'oreille (pas de
    graine fixe chez ElevenLabs, chaque prise differe).
@@ -151,7 +151,7 @@ Une seule composition responsive, trois `<Composition>` dans Root :
 ```bash
 # JAMAIS dans ~/demo-video directement : repertoire PARTAGE entre agents
 # (deux rendus concurrents s'ecrasent). Copie de travail par app, comme
-# brick-video :
+# brick-code-video :
 WORK="$(pwd)/tmp/brick-promo-video"
 mkdir -p "$WORK" && cp -a ~/demo-video/remotion "$WORK/remotion"
 ln -sfn ~/demo-video/node_modules "$WORK/remotion/node_modules" 2>/dev/null || true

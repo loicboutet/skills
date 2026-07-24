@@ -11,28 +11,32 @@ Ajouter le repo dans les settings du developer sur nexrai, ou dans `.claude/sett
 }
 ```
 
-## Workflow Brick
+## Workflow Brick : la carte de l'usine
 
-Pipeline complet pour livrer un projet client, de l'analyse a la livraison.
+Nommage unique : **`brick-<etape>-<action>`**. Chaque etape suit le meme geste
+`build → review → video`, avec `brief` / `guide` / `walkthrough` / `feedback` / `fix` la ou
+c'est utile. Chaque skill finit par un pointeur `Ensuite →` : le workflow se navigue tout seul.
 
 ```
-/brick-analysis → /brick-design → /brick-mockups → /brick-implementation → /brick-review
-                    (optionnel)
+Fondations : analysis-build → analysis-review → [design-brief → design-build → design-review]
+Boucle mockup : mockup-build → mockup-review → mockup-video ↻ mockup-feedback
+Boucle code   : code-build → code-review → code-video (→ code-guide, code-walkthrough) ↻ code-feedback
+                                                                          code-fix = methode bug
 ```
 
-| Skill | Commande | Description |
-|-------|----------|-------------|
-| Analysis | `/brick-analysis` | Specs, data models, routes, criteres d'acceptance, parcours utilisateurs |
-| Design | `/brick-design` | Creer une charte graphique quand le client n'en a pas |
-| Mockups | `/brick-mockups` | Vues mockees, layouts, verification UX des parcours |
-| Mockup Review | `/brick-mockup-review` | Controle des mockups avant client : scope brique, sync specs, outil de capture |
-| Mockup Video | `/brick-mockup-video` | Une video par parcours utilisateur des mockups (validation a distance) |
-| Presentation Video | `/brick-presentation-video` | Video longue 10-30 min, tous les chemins d'une brique (revue, formation, passation) |
-| User Guide | `/brick-user-guide` | Guide utilisateur PDF dans l'espace client (memes sources que la video) |
-| Implementation | `/brick-implementation` | Dev brick par brick, tests, tracabilite vers les criteres |
-| Review | `/brick-review` | Pre-livraison : gap analysis, tests, UX, securite |
+| Etape | Produire (build) | Relire (review) | Filmer (video) | Boucle retours (feedback) |
+|-------|------------------|-----------------|----------------|---------------------------|
+| **analysis** | `/brick-analysis-build` | `/brick-analysis-review` | `/brick-analysis-video` *(interne, option)* | — |
+| **design** *(option)* | `/brick-design-brief` puis `/brick-design-build` | `/brick-design-review` | — | — |
+| **mockup** | `/brick-mockup-build` | `/brick-mockup-review` | `/brick-mockup-video` | `/brick-mockup-feedback` |
+| **code** | `/brick-code-build` | `/brick-code-review` | `/brick-code-video` | `/brick-code-feedback` |
 
-Chaque phase a une **validation gate** — checklist a cocher avant de passer a la suivante.
+Livrables en plus de l'etape code : `/brick-code-guide`, `/brick-code-walkthrough` (video longue),
+`/brick-code-fix` (methode bug). Hors-cycle : `/brick-promo-video`.
+
+Les etapes **mockup** et **code** sont des **boucles** : on presente au client, il renvoie ses
+retours (widget → tracker, + emails/WhatsApp/Drive), `*-feedback` les traite, `*-video` refilme
+les changements du jour, on recommence jusqu'a validation. Chaque skill a une **validation gate**.
 
 ## Rails 8 / Hotwire
 

@@ -1,6 +1,6 @@
 ---
-name: brick-mockups
-description: "Phase 2 : creation des vues mockees avec donnees fictives. Index, navigation, partials, layouts. Utilise /brick-mockups pour lancer la phase mockups."
+name: brick-mockup-build
+description: "Phase 2 : creation des vues mockees avec donnees fictives. Index, navigation, partials, layouts. Utilise /brick-mockup-build pour lancer la phase mockups."
 ---
 
 # Brick Mockups
@@ -68,7 +68,7 @@ module.exports = {
 ### Le style guide n'est pas decoratif
 
 Le `style_guide.html` porte une direction artistique (couleur signature, pairing
-typo, element signature — cf. `/brick-design`). Les mockups doivent l'appliquer,
+typo, element signature — cf. `/brick-design-build`). Les mockups doivent l'appliquer,
 pas retomber sur le look SaaS generique (Inter + bleu + cartes blanches shadow).
 Si un ecran mocke pourrait appartenir a n'importe quelle autre app, c'est rate :
 verifier couleur signature visible, typo display sur les titres, chiffres

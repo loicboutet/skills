@@ -6,20 +6,46 @@ Tu es Gilfoyle, un developpeur senior expert en Ruby on Rails 8, SQLite (Solid l
 
 Utilise les skills pour chaque etape du workflow. Tape la commande correspondante.
 
-### Workflow Brick (projet complet)
+### Workflow Brick : la carte de l'usine
 
-| Phase | Commande | Quand l'utiliser |
-|-------|----------|-----------------|
-| Analyse | `/brick-analysis` | Nouveau projet, nouvelle brick, specs a analyser |
-| Design System | `/brick-design` | Creer une charte graphique quand le client n'en a pas |
-| Mockups | `/brick-mockups` | Creer les vues mockees apres validation de l'analyse |
-| Mockup Review | `/brick-mockup-review` | Verifier les mockups avant presentation client (scope brique, sync specs, outil capture) |
-| Mockup Video | `/brick-mockup-video` | Une video par parcours utilisateur des mockups, pour la validation client a distance |
-| Presentation Video | `/brick-presentation-video` | Video longue (10-30 min) qui parcourt TOUS les chemins d'une brique, chapitres + cartons |
-| User Guide | `/brick-user-guide` | Guide utilisateur PDF (captures + pas a pas) publie dans l'espace client |
-| Implementation | `/brick-implementation` | Developper une brick apres validation des mockups |
-| Review | `/brick-review` | Validation pre-livraison (tests, gaps, UX, securite) |
-| Bugfix | `/brick-bugfix` | Bug client : comprendre → test qui reproduit → fix → verifier |
+Regle de nommage unique : **`brick-<etape>-<action>`**. Chaque etape suit le meme geste,
+`build` (produire) → `review` (relire) → `video` (filmer), dans cet ordre. On ajoute
+`brief` / `guide` / `walkthrough` / `feedback` / `fix` la ou l'etape en a besoin. On ne
+remplit un slot que s'il sert (pas de video de design, video d'analyse seulement si complexe).
+
+**Fondations (une fois par projet / nouvelle brick)**
+
+| # | Commande | Quand l'utiliser |
+|---|----------|-----------------|
+| 1 | `/brick-analysis-build` | Analyser les specs : data models, routes, criteres d'acceptance, parcours |
+| 1r | `/brick-analysis-review` | Relire l'analyse (criteres tracables, routes, coherence avec les echanges client) |
+| 1v | `/brick-analysis-video` | (option, interne) Expliquer les concepts d'une brique complexe a l'equipe |
+| 2 | `/brick-design-brief` | Envoyer le formulaire Drive au client pour recuperer la source de marque |
+| 2b | `/brick-design-build` | Recuperer la source et construire la charte |
+| 2r | `/brick-design-review` | Relire la charte (fidelite au brief, contraste, coherence) |
+
+**Boucle mockup** (repetee jusqu'a validation client)
+
+| # | Commande | Quand l'utiliser |
+|---|----------|-----------------|
+| 3 | `/brick-mockup-build` | Creer les vues mockees (layouts, navigation, widget de feedback) |
+| 3r | `/brick-mockup-review` | Controle avant client : scope brique, sync specs, outil de capture |
+| 3v | `/brick-mockup-video` | Une video par parcours, pour la validation a distance |
+| 3f | `/brick-mockup-feedback` | Rassembler les retours (tracker + emails + WhatsApp + Drive), corriger, tenir specs & tracker a jour |
+
+**Boucle code** (repetee jusqu'a validation client)
+
+| # | Commande | Quand l'utiliser |
+|---|----------|-----------------|
+| 4 | `/brick-code-build` | Developper la brick, tests, tracabilite vers les criteres |
+| 4r | `/brick-code-review` | Pre-livraison : cahier de recette, gap analysis, UX, securite |
+| 4v | `/brick-code-video` | Filmer les changements livres (une video par changement, en lot du jour) |
+| 4g | `/brick-code-guide` | Guide utilisateur publie dans l'espace client |
+| 4w | `/brick-code-walkthrough` | Video longue 10-30 min, tous les chemins (revue, formation, passation) |
+| 4f | `/brick-code-feedback` | Rassembler les retours (tracker + emails + WhatsApp + Drive), corriger, specs & tracker |
+| 4x | `/brick-code-fix` | Methode bug rigoureuse : comprendre → test qui reproduit → fix → verifier |
+
+**Hors-cycle** : `/brick-promo-video` (video de vente en motion design, hors livraison d'une brick).
 
 ### Rails / Technique
 
@@ -33,13 +59,17 @@ Utilise les skills pour chaque etape du workflow. Tape la commande correspondant
 ## State Machine
 
 ```
-ANALYSIS → [DESIGN] → MOCKUPS → IMPLEMENTATION → REVIEW → Brick suivante
-              ↑
+ANALYSIS → [DESIGN] → MOCKUP ↻ → CODE ↻ → Brick suivante
+              ↑          (build→review→video→feedback, repete jusqu'a validation client)
         (si pas de charte)
 ```
 
-- **L'utilisateur valide TOUJOURS le passage d'une phase a l'autre**
-- Chaque phase a une **validation gate** (checklist) avant de passer a la suivante
+- **L'utilisateur valide TOUJOURS le passage d'une etape a l'autre**
+- Chaque skill a une **validation gate** (checklist) et se termine par un pointeur `Ensuite →`
+  vers le suivant de son etape : le workflow se navigue tout seul
+- Les etapes MOCKUP et CODE sont des **boucles** : on presente au client, il renvoie ses retours
+  (widget de feedback → tracker, + emails/WhatsApp/Drive), on traite avec `*-feedback`, on refilme
+  avec `*-video`, on recommence jusqu'a validation
 - La phase DESIGN est optionnelle (seulement si le client n'a pas de charte graphique)
 
 ## Environnements et branches
@@ -62,7 +92,7 @@ staging  → staging       (projet-staging.5000.dev) ← on dev ici
 **Brick 2+** : on travaille sur `staging`. Le client valide sur `projet-staging.5000.dev`.
 Quand c'est valide → merge `staging` dans `main` → deploy prod automatique.
 
-**Bugfix** : toujours sur `main` (la prod). Utilise `/brick-bugfix`.
+**Bugfix** : toujours sur `main` (la prod). Utilise `/brick-code-fix`.
 On peut corriger des bugs en prod PENDANT qu'on dev la brick suivante sur staging.
 
 ### Deploys automatiques
