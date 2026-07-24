@@ -243,3 +243,7 @@ Si READY → informer l'utilisateur, pret a livrer. Le cahier de recette est
 un LIVRABLE : il peut etre partage au client comme preuve de couverture.
 Si NEEDS FIXES → lister les fixes. Pour chaque fix, utiliser `/brick-code-fix`
 (test qui reproduit → fix → verify), puis re-derouler la recette.
+
+## Ensuite
+
+→ `brick-code-video` (filmer la livraison), + `brick-code-guide` / `brick-code-walkthrough`.

@@ -209,3 +209,7 @@ consigne de NE PAS toucher aux autres repertoires.
 - [ ] `freezedetect` passe sur le fichier FINAL (aucun gel > 8 s inexplique)
 - [ ] Table des timecodes fournie avec le lien
 - [ ] Duree totale 10-30 min — au-dela de 30, scinder en deux videos
+
+## Ensuite
+
+→ livrable. `brick-code-guide` partage les mêmes sources.

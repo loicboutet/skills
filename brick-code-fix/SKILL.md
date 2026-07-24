@@ -135,3 +135,7 @@ Tous les tests de bugs vont dans `test/integration/bug_fixes/`. Chaque fichier =
 - Fix qui touche a 10 fichiers → probablement un refactoring deguise
 - "Ca ne devrait pas arriver" → ca arrive, le client le voit
 - Fermer le bug sans que le client confirme → toujours demander confirmation
+
+## Ensuite
+
+→ `brick-code-video` pour filmer le correctif, puis reboucler `brick-code-feedback`.

@@ -415,3 +415,7 @@ Avant de passer a IMPLEMENTATION :
 - [ ] Les parcours utilisateurs sont fluides
 - [ ] Les partials sont extraites pour la reutilisation
 - [ ] L'utilisateur a valide
+
+## Ensuite
+
+→ `brick-mockup-review` (contrôle avant client).

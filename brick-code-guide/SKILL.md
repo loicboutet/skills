@@ -101,3 +101,7 @@ les HTML/captures par chapitre dans le repertoire de travail du depot.
 - [ ] Publication API reussie (reponse chapters/images aux bons comptes)
 - [ ] Rendu verifie sur /external/guide : chapitre affiche AVEC ses images
 - [ ] Session playwright-cli fermee
+
+## Ensuite
+
+→ livrable. La boucle de retours passe par `brick-code-feedback`.

@@ -203,3 +203,7 @@ Pour un process multi-taches (pas une tache isolee) :
 2. L'utilisateur valide la review
 3. Creer `doc/memory/brick-{N+1}/tasks/`
 4. Mettre a jour le README
+
+## Ensuite
+
+→ `brick-code-review` (pré-livraison).

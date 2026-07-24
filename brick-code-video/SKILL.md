@@ -438,7 +438,37 @@ Il lance Playwright, enregistre la video, et merge avec ffmpeg.
   ```bash
   ffmpeg -ss 10 -i "$WORK/out/output.mp4" -frames:v 1 /tmp/check.png
   ```
+- **freezedetect (NON NEGOCIABLE des qu'on assemble ou concatene)** : tout gel
+  de plus de ~8 s est suspect (une narration sur ecran fixe legitime dure moins).
+  ```bash
+  ffmpeg -i "$WORK/out/output.mp4" -vf "freezedetect=n=0.001:d=8" -an -f null - 2>&1 | grep freeze || echo "aucun gel > 8s"
+  ```
 - Si des steps ont echoue, corriger les selecteurs et relancer
+
+### Assembler plusieurs clips : concat FILTER, JAMAIS le demuxer
+
+Regle du MOTEUR (vaut pour toute video qui colle des morceaux : cartons +
+screencasts du walkthrough, plusieurs prises, intro/outro). Incident reel
+(Nutchel) : le demuxer `-f concat` fusionne les timestamps AVANT tout decodage.
+Avec des sources aux bases de temps differentes (Remotion vs Playwright), il
+date des frames "dans le passe" ; a framerate constant elles sont jetees et la
+derniere valide est dupliquee : chaque segment devient une image FIGEE, audio
+intact. Re-encoder en sortie ne protege pas, le mal est fait a l'entree. Le
+concat FILTER decode chaque source en frames brutes et renumerote tout, donc
+insensible aux bases de temps :
+
+```bash
+# FILES dans l'ordre. Chaque segment DOIT avoir une piste audio (cartons muets
+# = leur ajouter un silence), meme resolution/fps partout (viewport 1536x900).
+INPUTS=""; FC=""; i=0
+for f in "${FILES[@]}"; do INPUTS="$INPUTS -i $f"; FC="$FC[$i:v][$i:a]"; i=$((i+1)); done
+ffmpeg $INPUTS -filter_complex "${FC}concat=n=$i:v=1:a=1[v][a]" \
+  -map "[v]" -map "[a]" -c:v libx264 -crf 20 -preset medium -r 25 \
+  -c:a aac -movflags +faststart "$WORK/out/final.mp4"
+```
+
+Puis `freezedetect` sur le fichier FINAL (voir Etape 4). Ce test aurait attrape
+l'incident Nutchel en 15 secondes.
 
 ### Phase 4 — Publication
 
@@ -545,3 +575,7 @@ reconnaitrait), committer. Premiere fois : lancer le workflow a la main avec
 | Contenu important pas visible | Page plus haute que le viewport | Ajouter un step `hover` sur un element en bas pour scroller |
 | Submit echoue silencieusement | Champs requis non remplis | Verifier TOUS les champs obligatoires via MCP avant d'ecrire le script |
 | Objet pas cree apres submit | Validation Rails a echoue | Verifier les `required`, `minlength`, format attendu dans le snapshot MCP |
+
+## Ensuite
+
+→ `brick-code-feedback` à chaque vague de retours client ; `brick-code-guide` / `brick-code-walkthrough` pour les livrables.

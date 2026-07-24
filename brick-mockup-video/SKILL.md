@@ -33,10 +33,11 @@ Toutes les regles techniques de `/brick-code-video` s'appliquent telles quelles 
 ne pas les redecouvrir ici, OUVRIR le skill :
 
 - **Repertoire de travail par app** (`tmp/brick-code-video/` dans le depot, jamais
-  `~/demo-video/` partage) — un seul repertoire pour tous les parcours, mais
-  ATTENTION : le pipeline ecrit `out/voice.mp3` / `out/output.mp4`, donc les
-  parcours se tournent EN SEQUENCE, en archivant chaque resultat avant le
-  suivant (`mv out/output.mp4 out/<parcours>.mp4`)
+  `~/demo-video/` partage). Le pipeline ecrit `out/voice.mp3` / `out/output.mp4`
+  (singleton), donc UN repertoire PAR parcours : `CHAP="$WORK/j-<parcours>"`,
+  copie du pipeline avec `node_modules` symlinke (comme un chapitre de
+  `/brick-code-walkthrough`). C'est ce qui permet de filmer les parcours EN
+  PARALLELE sans ecrasement croise.
 - **Voix par langue** (Rudy FR / `3WqHLnw80rOZqJzW9YRB` EN, `eleven_v3`),
   langue = celle de l'espace client du projet
 - **TTS en un seul appel** sous 3000 caracteres — un parcours de 45-90 s fait
@@ -69,15 +70,37 @@ ne pas les redecouvrir ici, OUVRIR le skill :
    la narration le dit explicitement — le client ne doit pas croire qu'il
    valide cette partie-la.
 
+## Parallelisation : un sous-agent par parcours
+
+Les parcours sont independants (les mockups ne creent aucune donnee : pas d'etat
+partage a corrompre entre deux tournages). Donc **l'orchestrateur delegue : un
+sous-agent par parcours** (1 sous-agent par appel, regle CLAUDE.md), qui explore
+ses pages, ecrit son narrative, genere son TTS et rend son mp4 dans SON
+repertoire `$WORK/j-<parcours>/`. Plafonner a 3-4 sous-agents simultanes (chaque
+tournage porte un chromium ~300-500 Mo). Brief autonome : parcours + URL du dev
+server + credentials + voix/langue + chemin `$CHAP` + consigne de NE PAS toucher
+aux autres repertoires. L'orchestrateur garde : la liste des parcours (avant) et
+la publication (apres).
+
+## Cartons d'intro (option)
+
+Pour un rendu client plus soigne, un carton titre de 2-3 s en tete de chaque
+video (nom du parcours, couleurs de la charte), rendu comme dans
+`/brick-code-walkthrough`. Si tu colles un carton devant le screencast, tu
+ASSEMBLES : applique la regle du moteur (concat FILTER + `freezedetect`, jamais
+le demuxer — voir `/brick-code-video`), et le carton doit avoir une piste audio
+(silence) sinon le concat echoue.
+
 ## Process
 
 1. Lire `doc/memory/user_journeys.md`, etablir la liste des parcours a filmer
    (nom court + pages traversees), la confirmer avec l'utilisateur.
-2. Pour chaque parcours, EN SEQUENCE :
+2. Deleguer un sous-agent par parcours (3-4 en parallele max), chacun dans son
+   `$WORK/j-<parcours>/` :
    a. Explorer le chemin au clic via `playwright-cli` (selecteurs, pages, fold)
-   b. Ecrire le narrative JSON (`$WORK/narratives/<parcours>.json`)
-   c. TTS (un appel), pipeline, verification (frames + audio)
-   d. Archiver : `mv "$WORK/out/output.mp4" "$WORK/out/<parcours>.mp4"`
+   b. Ecrire le narrative JSON, TTS (un appel), pipeline, verification (frames,
+      audio, `freezedetect` si un carton est colle)
+   c. Livrer `$WORK/j-<parcours>/out/output.mp4` a l'orchestrateur
 3. Publier chaque video sur la brique avec `-F category=mockup`,
    `-F description=...` (une phrase : le parcours mocke que la video presente,
    au futur — s'affiche sous le player), `-F transcript=...` (les say du
@@ -97,3 +120,7 @@ ne pas les redecouvrir ici, OUVRIR le skill :
 - [ ] Elements hors brique explicitement annonces comme tels
 - [ ] Titres = noms de parcours, toutes publiees sur la meme brique
 - [ ] Liste verifiee via l'endpoint videos, liens publics transmis
+
+## Ensuite
+
+→ envoyer au client, puis `brick-mockup-feedback` à chaque vague de retours. Mockups validés → `brick-code-build`.

@@ -199,3 +199,7 @@ frames apres correction. Documenter les lecons generales dans ce skill.
 - [ ] Musique sous la voix, SFX en place, piste audio presente au ffprobe
 - [ ] Les 3 formats rendus et verifies par frames (16:9, 1:1, 9:16)
 - [ ] Videos livrees dans doc/demo_videos/ (gitignore)
+
+## Ensuite
+
+→ hors-cycle : la promo ne s'enchaîne avec aucune étape de brique.

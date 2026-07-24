@@ -136,3 +136,7 @@ Generer `doc/memory/mockups/review.md` :
 - **PRET POUR CLIENT** -> informer l'utilisateur, mockups presentables.
 - **A CORRIGER** -> lister les corrections. Les corrections de mockups passent par
   `/brick-mockup-build` (jamais modifier les specs sans validation, cf. etape 3).
+
+## Ensuite
+
+→ `brick-mockup-video` : filmer les parcours pour la validation client.

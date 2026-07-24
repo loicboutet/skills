@@ -205,3 +205,7 @@ Presenter le style guide a l'utilisateur :
 ## Sortie
 
 `doc/memory/style_guide.html` cree et valide. Continuer avec `/brick-analysis-build` (si en cours) ou `/brick-mockup-build`.
+
+## Ensuite
+
+→ `brick-design-review`, puis `brick-mockup-build`.

@@ -165,3 +165,7 @@ Avant de passer a MOCKUPS, verifier :
 - [ ] Chaque profil a sa composition de lieu, sans trou invente
 - [ ] Le style guide est defini (sinon lancer `/brick-design-build`)
 - [ ] L'utilisateur a valide
+
+## Ensuite
+
+→ `brick-analysis-review` (relire l'analyse). Puis `brick-design-brief` si le client n'a pas de charte, sinon `brick-mockup-build`.
