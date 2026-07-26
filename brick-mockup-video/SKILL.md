@@ -35,6 +35,24 @@ objectif majeur) ; ils deviennent l'ordre des chapitres, logique metier d'abord
 filmer** — c'est le sommaire de la video, et c'est lui qui sait ce que le client
 doit valider en priorite.
 
+## Perimetre : le tour complet UNE fois, ensuite seulement le nouveau
+
+Regle de cadrage, alignee sur `/brick-code-video` (une video par changement) et
+sur la boucle `/brick-mockup-feedback` (on filme les changements du jour) :
+
+- **Premiere presentation d'une brique** : tour complet, un chapitre par parcours
+  principal (rien n'est encore valide).
+- **Briques suivantes (2, 3...) ET chaque vague de retours** : on ne chapitre
+  **QUE les parcours nouveaux ou modifies**. Le client a deja valide le reste ;
+  le refilmer lui fait perdre son temps et noie ce qu'il doit reellement valider.
+  Un chapitre = un parcours neuf ou une modif. Si la brique n'ajoute qu'un ecran,
+  la « video chapitree » peut n'avoir qu'un seul chapitre, c'est normal.
+
+Pour savoir ce qui est nouveau : le tracker (issues traitees depuis la derniere
+video) et `doc/memory/acceptance_criteria.md` (AC ajoutes par la brique
+courante). En cas de doute sur ce qui a deja ete valide, demander a
+l'utilisateur — c'est lui qui tient l'historique client.
+
 ## Architecture : des chapitres assembles, jamais une prise unique
 
 Meme contrainte de fiabilite que `/brick-code-walkthrough` : le pipeline execute
@@ -168,7 +186,9 @@ chemin `$CHAP` + consigne de NE PAS toucher aux autres repertoires.
 ## Validation gate
 
 - [ ] Plan de chapitres (parcours) valide par l'utilisateur AVANT tournage
-- [ ] UNE seule video, un chapitre par parcours principal
+- [ ] Perimetre correct : tour complet en brique 1, seulement les parcours
+      nouveaux/modifies en briques 2+ et en iterations de retours
+- [ ] UNE seule video, un chapitre par parcours retenu
 - [ ] Chaque chapitre 45-90 s ; total 3-8 min (au-dela, scinder un parcours)
 - [ ] Cartons a la resolution du screencast, transition (whoosh SFX) sur chacun
 - [ ] `freezedetect` passe sur le fichier FINAL (aucun gel > 8 s inexplique)
