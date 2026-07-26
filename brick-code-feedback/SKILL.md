@@ -55,5 +55,6 @@ changements du jour.
 
 ## Ensuite
 
-→ `brick-code-video` pour filmer les changements du jour et les renvoyer au client. Reboucler a
-la vague suivante. (A venir : un skill pour envoyer la video + un message au client.)
+→ `brick-code-video` pour filmer un changement urgent tout de suite. En fin de journee,
+`brick-daily-video` assemble TOUS les changements du jour (mockup + code) en un bilan chapitre et
+l'envoie au client avec un message recap. Reboucler a la vague suivante.

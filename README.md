@@ -32,7 +32,8 @@ Boucle code   : code-build → code-review → code-video (→ code-guide, code-
 | **code** | `/brick-code-build` | `/brick-code-review` | `/brick-code-video` | `/brick-code-feedback` |
 
 Livrables en plus de l'etape code : `/brick-code-guide`, `/brick-code-walkthrough` (video longue),
-`/brick-code-fix` (methode bug). Hors-cycle : `/brick-promo-video`.
+`/brick-code-fix` (methode bug). Transverse fin de journee : `/brick-daily-video` (bilan chapitre
+de tous les changements du jour, mockup + code, envoye au client). Hors-cycle : `/brick-promo-video`.
 
 Les etapes **mockup** et **code** sont des **boucles** : on presente au client, il renvoie ses
 retours (widget → tracker, + emails/WhatsApp/Drive), `*-feedback` les traite, `*-video` refilme
