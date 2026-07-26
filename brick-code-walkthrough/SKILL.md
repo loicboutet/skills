@@ -12,7 +12,8 @@ passation a une nouvelle equipe.
 
 A ne pas confondre avec :
 - `/brick-code-video` : demo courte d'UNE livraison (~70 s)
-- `/brick-mockup-video` : une video PAR parcours, pour valider des mockups
+- `/brick-mockup-video` : une seule video chapitree des mockups, pour valider
+  (plus courte, sans recette, narration au futur)
 - `/brick-promo-video` : motion design de vente, pas un parcours d'app
 - `/brick-code-guide` : le PDF jumeau de cette video (memes sources, memes
   chapitres) — les produire ensemble quand c'est possible
