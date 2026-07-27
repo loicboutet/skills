@@ -133,5 +133,7 @@ la liste des changements (avant), cartons + assemblage + envoi (apres).
 
 ## Ensuite
 
-→ fin de journee. Reboucler `brick-mockup-feedback` / `brick-code-feedback` a la
-prochaine vague de retours, puis re-`brick-daily-video` le lendemain.
+→ fin de journee. Le lendemain matin, `brick-daily-triage` refait le tour des
+canaux (emails / WhatsApp / tracker), traite l'actionnable et rappelle
+`brick-daily-video` pour le bilan suivant. Entre-temps, `brick-mockup-feedback` /
+`brick-code-feedback` a chaque vague de retours.

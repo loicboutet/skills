@@ -45,9 +45,11 @@ remplit un slot que s'il sert (pas de video de design, video d'analyse seulement
 | 4f | `/brick-code-feedback` | Rassembler les retours (tracker + emails + WhatsApp + Drive), corriger, specs & tracker |
 | 4x | `/brick-code-fix` | Methode bug rigoureuse : comprendre → test qui reproduit → fix → verifier |
 
-**Transverse (fin de journee)** : `/brick-daily-video` assemble TOUS les changements du jour
-(mockup + code) en un bilan video chapitre et l'envoie au client avec un message recap. C'est la
-sortie commune des deux boucles feedback.
+**Transverse (rythme quotidien)** : `/brick-daily-triage` le matin (va voir emails + WhatsApp +
+tracker, trie par scope, traite l'actionnable, prepare une reponse sur le canal d'origine, escalade
+les points a trancher) ; `/brick-daily-video` le soir (assemble TOUS les changements du jour,
+mockup + code, en un bilan video chapitre + message recap). Triage enchaine sur video par defaut,
+sauf s'il reste des decisions pour l'humain. C'est la sortie commune des deux boucles feedback.
 
 **Hors-cycle** : `/brick-promo-video` (video de vente en motion design, hors livraison d'une brick).
 
