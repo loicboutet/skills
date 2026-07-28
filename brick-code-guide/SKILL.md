@@ -98,6 +98,7 @@ les HTML/captures par chapitre dans le repertoire de travail du depot.
 - [ ] Chaque etape : une instruction imperative + une capture reconnaissable
 - [ ] Aucune donnee de test moche visible sur les captures
 - [ ] Langue de l'espace client, vocabulaire du client (zero jargon)
+- [ ] Chaque chapitre relu avec `/ecriture-client` (notation 4 axes, rien sous 16/20)
 - [ ] Publication API reussie (reponse chapters/images aux bons comptes)
 - [ ] Rendu verifie sur /external/guide : chapitre affiche AVEC ses images
 - [ ] Session playwright-cli fermee

@@ -110,9 +110,8 @@ la liste des changements (avant), cartons + assemblage + envoi (apres).
    La reponse renvoie le lien COURT `video_url` (`/v/xxxxxxx`) — c'est celui a
    transmettre, jamais le fichier brut ni le `legacy_video_url` long.
 7. **Message recap au client** :
-   - Court, direct, ton 5000.dev (factuel, sans superlatif). Relu contre la
-     checklist anti-IA du prompt (pas de tiret cadratin, pas de vocabulaire IA,
-     pas de triades ni de « non seulement... mais aussi »).
+   - Court, direct, ton 5000.dev (factuel, sans superlatif). Relu avec
+     `/ecriture-client` (notation 4 axes, pas d'envoi sous 16/20).
    - Contenu : ce qui a avance aujourd'hui (le sommaire), le lien court, et
      l'invitation aux retours (widget de capture sur les pages).
    - **Rédiger puis CONFIRMER avec l'utilisateur avant d'envoyer** — c'est un

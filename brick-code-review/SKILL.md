@@ -146,8 +146,26 @@ Comparer `doc/memory/acceptance_criteria.md` avec la recette et le code :
 
 ### 4. Pixel match (conformite aux mockups)
 
-Le respect des mockups est LE point critique cote client. Pour chaque page implementee,
-la comparer a son mockup de reference (`app/views/mockups/...`), section par section.
+Le respect des mockups est LE point critique cote client. La comparaison se fait par
+SCREENSHOTS, pas de memoire ni en lisant le code.
+
+**Protocole automatise (playwright-cli, serveur dev lance via `vps_dev_server_start`) :**
+
+1. Pour chaque page implementee, capturer les DEUX versions dans les memes conditions :
+   ```
+   playwright-cli -s=pixmatch open
+   # pour chaque page : mockup puis implementation
+   playwright-cli -s=pixmatch goto <url>/mockups/users   && playwright-cli -s=pixmatch resize 1440 900 && playwright-cli -s=pixmatch screenshot --full-page --filename shots/users-mockup.png
+   playwright-cli -s=pixmatch goto <url>/admin/users     && playwright-cli -s=pixmatch screenshot --full-page --filename shots/users-impl.png
+   playwright-cli -s=pixmatch close
+   ```
+2. Ouvrir les deux captures (Read) cote a cote et comparer section par section :
+   structure, ordre, espacements, couleurs, typographie, etats visibles. Refaire le
+   passage en mobile 390x844 sur les pages critiques.
+3. Sur un ecart douteux, trancher au DOM (comparer le markup mockup vs reel) : la seule
+   difference autorisee est la liaison de donnees.
+4. Si la brique est grosse : deleguer chaque paire de captures a un sous-agent juge
+   (1 page = 1 sous-agent) qui rend le tableau ci-dessous, puis verifier ses "A CORRIGER".
 
 Generer un tableau des differences :
 
@@ -198,6 +216,20 @@ Derouler la "Checklist review" de `/brick-seo` :
 - [ ] 404 reel sur URL bidon ; test d'integration d'unicite des <title>
 - [ ] Image heros : pas de lazy, fetchpriority=high ; toutes images width/height
 - [ ] Coherence nombres/dates ; aucun placeholder visible ; aucun jargon interne
+
+### 6ter. Performance (pages publiques) : les prerequis CWV se verifient au HTML
+
+Sur le staging, pour la home + 1 page de chaque gabarit public :
+- [ ] Poids : CSS < 20 Ko gz, page HTML < 150 Ko, aucune image > 300 Ko
+      (`curl -so /dev/null -w '%{size_download}'`, et lister les assets via
+      `playwright-cli requests` apres un goto)
+- [ ] Image heros : `fetchpriority="high"`, PAS de `loading="lazy"` ; toutes les images
+      avec width/height ou aspect-ratio (sinon CLS)
+- [ ] Polices : woff2 self-hosted + `preload`, pas de requetes Google Fonts en prod
+- [ ] TTFB staging < 800 ms sur les pages publiques (`curl -so /dev/null -w '%{time_starttransfer}'`) ;
+      si au-dessus, verifier fresh_when / fragment caching
+- [ ] DOM < 1500 noeuds sur les pages publiques (`playwright-cli eval "document.querySelectorAll('*').length"`)
+- [ ] Aucune image uploadee par le client servie brute : variants ActiveStorage partout
 
 ### 7. Repetition : repasser les points de friction
 
