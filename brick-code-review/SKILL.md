@@ -186,6 +186,19 @@ Verifier les parcours utilisateurs de `doc/memory/user_journeys.md` :
 - [ ] Pas de N+1 queries (utiliser `includes`)
 - [ ] Fichiers < 400 lignes
 
+### 6bis. SEO (si pages publiques)
+
+Derouler la "Checklist review" de `/brick-seo` :
+- [ ] Chaque page publique : title unique 50-60c, meta description unique, canonical
+- [ ] curl staging → X-Robots-Tag: noindex present ; curl prod → ABSENT
+- [ ] robots.txt prod : pas de Disallow: /, ligne Sitemap, bots IA non bloques
+- [ ] sitemap.xml.gz accessible en prod, soumis GSC + Bing
+- [ ] JSON-LD valide (validator.schema.org) sur home + 1 page de chaque gabarit
+- [ ] NAP identique au caractere pres JSON-LD / footer
+- [ ] 404 reel sur URL bidon ; test d'integration d'unicite des <title>
+- [ ] Image heros : pas de lazy, fetchpriority=high ; toutes images width/height
+- [ ] Coherence nombres/dates ; aucun placeholder visible ; aucun jargon interne
+
 ### 7. Repetition : repasser les points de friction
 
 On ne relit pas toute la brick avec la meme attention. Les bugs et les

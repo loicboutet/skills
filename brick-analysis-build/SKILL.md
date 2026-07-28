@@ -39,6 +39,10 @@ Regles :
 - Max 3-5 actions rapides par ressource
 - TOUJOURS des routes pour gerer les cles API
 - JAMAIS de routes monitoring systeme
+- Si la brique a des pages PUBLIQUES : noter pour chacune sa requete cible SEO
+  (metier + ville en local, besoin + qualificatif sinon) directement dans routes.md,
+  et collecter aupres du client les donnees que le SEO exigera (NAP exact, avis/verbatims,
+  diplomes/preuves, acces/parking, fourchettes de prix) — cf. `/brick-seo`
 
 ### 4. Creer `doc/memory/acceptance_criteria.md`
 

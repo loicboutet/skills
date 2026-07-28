@@ -29,6 +29,13 @@ Cree les vues mockees du projet. L'objectif : un prototype navigable complet que
 - **JAMAIS d'emoji** dans l'UI (🔔📊✅…) — ils rendent le design amateur et incoherent
   selon les OS. Utiliser une **police d'icones** adaptee et coherente (ex. Bootstrap Icons
   `bi bi-*`, Heroicons, Lucide, Font Awesome) — une seule famille pour tout le projet.
+- **Pages publiques → appliquer `/brick-seo`** (section "Phase mockup" : head complet,
+  JSON-LD par gabarit, structure de contenu citable, coherence nombres/dates).
+- **Controle visuel avant de marquer une tache `done`** : appliquer la passe 3 de
+  `/brick-design-build` — screenshot desktop 1440 + mobile 390 (playwright-cli, session
+  nommee, fermee a la fin), APRES la derniere modification. Bloquants : section vide ou
+  effondree, visuel qui ne rend rien, chevauchement, scroll horizontal mobile, hero a
+  moitie vide, page > ~5500px. Corriger puis re-screenshoter.
 
 ## Tailwind CSS
 

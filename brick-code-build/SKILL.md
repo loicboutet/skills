@@ -187,6 +187,8 @@ Avant d'implementer un retour client, TOUJOURS :
 - SQLite + Solid libraries (Rails 8)
 - Migrations via generateur : `rails generate migration ...`
 - Modeles : voir `/rails-models` pour les conventions
+- Pages publiques : appliquer `/brick-seo` (section "Phase code" : helpers SEO, friendly_id,
+  301, sitemap au build Kamal, staging noindex, CWV)
 
 ## Sous-agents
 
