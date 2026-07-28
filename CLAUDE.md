@@ -45,6 +45,11 @@ remplit un slot que s'il sert (pas de video de design, video d'analyse seulement
 | 4f | `/brick-code-feedback` | Rassembler les retours (tracker + emails + WhatsApp + Drive), corriger, specs & tracker |
 | 4x | `/brick-code-fix` | Methode bug rigoureuse : comprendre → test qui reproduit → fix → verifier |
 
+**Transverse (connaissance)** : `/brain` = le second cerveau cross-projet. On
+CHERCHE (`brain_tool` search) une connaissance metier reutilisable avant de
+creuser un sujet (cable dans `/brick-analysis-build`), et on DISTILLE (create)
+une conclusion en fin de tache. Range par domaine, partage entre tous les projets.
+
 **Transverse (rythme quotidien)** : `/brick-daily-triage` le matin (va voir emails + WhatsApp +
 tracker, trie par scope, traite l'actionnable, prepare une reponse sur le canal d'origine, escalade
 les points a trancher) ; `/brick-daily-video` le soir (assemble TOUS les changements du jour,

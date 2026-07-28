@@ -32,7 +32,7 @@ Boucle code   : code-build → code-review → code-video (→ code-guide, code-
 | **code** | `/brick-code-build` | `/brick-code-review` | `/brick-code-video` | `/brick-code-feedback` |
 
 Livrables en plus de l'etape code : `/brick-code-guide`, `/brick-code-walkthrough` (video longue),
-`/brick-code-fix` (methode bug). Rythme quotidien transverse : `/brick-daily-triage` (matin : tour
+`/brick-code-fix` (methode bug). Connaissance transverse : `/brain` (second cerveau cross-projet : chercher une conclusion réutilisable avant, distiller après). Rythme quotidien transverse : `/brick-daily-triage` (matin : tour
 des canaux, tri par scope, execution + reponse sur le canal d'origine, escalade des decisions) puis
 `/brick-daily-video` (soir : bilan chapitre de tous les changements, envoye au client). Hors-cycle :
 `/brick-promo-video`.

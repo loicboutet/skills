@@ -18,6 +18,11 @@ Analyse les specs et cree la documentation technique avec des criteres d'accepta
 
 - Lire les specs fournies (system prompt, fichiers, conversations)
 - Si des outils Leexi sont disponibles, recuperer les conversations client
+- **Interroger le second cerveau** (`/brain`) sur les domaines du projet AVANT de
+  defricher : `brain_tool(action: "search", query: "<mots-cles metier>")`. Si on
+  a deja creuse ce sujet ailleurs (reglementation, integration, un metier
+  recurrent...), on part de nos conclusions au lieu de repartir de zero. Traiter
+  chaque note comme une piste a recouper (voir sa `confidence`), pas une verite.
 - **Toujours demander** : "Y a-t-il des bricks additionnelles ?"
 - Demander clarifications si necessaire
 
