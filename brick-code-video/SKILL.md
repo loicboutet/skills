@@ -348,18 +348,15 @@ Utiliser `bin/rails runner` pour creer/reset les données de demo.
    ```
    elevenlabs_tts_tool(text: "Bonjour et bienvenue... Connectez-vous...", voice_id: "wufFsVwuYBePWKO6dMMN", model_id: "eleven_v3")
    ```
-3. Le tool retourne :
-   - Une **audio URL** (chemin ActiveStorage)
-   - Le **alignment JSON** (timestamps par caractere)
-4. Telecharger l'audio :
+3. Le tool retourne DEUX URLs de telechargement (audio + alignment) :
+   - **Audio URL** (chemin ActiveStorage)
+   - **Alignment URL** (l'alignment stocke en blob, timestamps par caractere)
+4. Telecharger les DEUX en curl — NE JAMAIS retaper le JSON d'alignment (~30 Ko) a
+   la main, et NE JAMAIS estimer le timing depuis la duree audio (eleven_v3 lit a
+   vitesse variable, du simple au double : l'estimation echoue toujours) :
    ```bash
-   curl -o "$WORK/out/voice.mp3" "$PLATFORM_API_URL{audio_url}"
-   ```
-5. Sauver l'alignment dans un fichier :
-   ```bash
-   cat > "$WORK/out/alignment.json" << 'EOF'
-   { "characters": [...], "character_start_times_seconds": [...], "character_end_times_seconds": [...] }
-   EOF
+   curl -o "$WORK/out/voice.mp3"      "$PLATFORM_API_URL{audio_url}"
+   curl -o "$WORK/out/alignment.json" "$PLATFORM_API_URL{alignment_url}"
    ```
 
 #### ⚠️ Textes longs : quand decouper le TTS (et quand ne PAS le faire)
