@@ -1,0 +1,77 @@
+{
+  "_commentaire": "Exemple calibré sur p0-gesproj (Rails, maquettes sous /mockups). Adapter les URL, les identifiants de démo et les paires.",
+
+  "base_mockup": "http://127.0.0.1:3995",
+  "base_app": "http://127.0.0.1:3995",
+
+  "viewports": [
+    { "name": "desktop", "width": 1440, "height": 900 },
+    { "name": "mobile", "width": 390, "height": 844 }
+  ],
+
+  "tolerances": {
+    "font": 0,
+    "line_height": 0.5,
+    "tracking": 0.2,
+    "spacing": 1,
+    "box": 2,
+    "offset": 8
+  },
+
+  "root_selector": "body",
+
+  "ignore_selectors": [],
+
+  "mask_selectors": [],
+
+  "foreign_css_allow": [],
+
+  "auth": {
+    "entreprise": {
+      "url": "/session/new",
+      "fill": [
+        ["#email_address", "valentin@bati-concept.fr"],
+        ["#password", "gespilot2026demo"]
+      ],
+      "submit": "button[type=submit]",
+      "expect_url": "/app/dashboard"
+    },
+    "superadmin": {
+      "url": "/session/new",
+      "fill": [
+        ["#email_address", "admin@gespilot.fr"],
+        ["#password", "gespilot2026demo"]
+      ],
+      "submit": "button[type=submit]",
+      "expect_url": "/admin/dashboard"
+    }
+  },
+
+  "default_auth_profile": "entreprise",
+
+  "allowlist": [
+    {
+      "category": "structure",
+      "message": "démo du bandeau flash",
+      "reason": "Bandeau flash de démonstration propre aux maquettes (content_for :flash_demo) : l'app n'affiche un flash qu'après une action"
+    }
+  ],
+
+  "pairs": [
+    { "name": "Dashboard entreprise", "mockup_url": "/mockups/dashboard", "app_url": "/app/dashboard" },
+    { "name": "Contacts — liste", "mockup_url": "/mockups/clients", "app_url": "/app/clients" },
+    { "name": "Contacts — fiche", "mockup_url": "/mockups/clients/1", "app_url": "/app/clients/1" },
+    { "name": "Contacts — nouveau", "mockup_url": "/mockups/clients/new", "app_url": "/app/clients/new" },
+    { "name": "Pipeline", "mockup_url": "/mockups/opportunities", "app_url": "/app/opportunities" },
+    { "name": "Tâches — liste", "mockup_url": "/mockups/tasks", "app_url": "/app/tasks" },
+    { "name": "Catalogue", "mockup_url": "/mockups/products", "app_url": "/app/products" },
+    { "name": "Devis — liste", "mockup_url": "/mockups/quotes", "app_url": "/app/quotes" },
+    { "name": "Devis — fiche", "mockup_url": "/mockups/quotes/1", "app_url": "/app/quotes/1" },
+    { "name": "Factures — liste", "mockup_url": "/mockups/invoices", "app_url": "/app/invoices" },
+    { "name": "Réglages — entreprise", "mockup_url": "/mockups/settings/company", "app_url": "/app/settings/company" },
+    { "name": "Réglages — équipe", "mockup_url": "/mockups/settings/team", "app_url": "/app/settings/team" },
+    { "name": "Admin — dashboard", "mockup_url": "/mockups/admin/dashboard", "app_url": "/admin/dashboard", "auth_profile": "superadmin" },
+    { "name": "Admin — entreprises", "mockup_url": "/mockups/admin/companies", "app_url": "/admin/companies", "auth_profile": "superadmin" },
+    { "name": "Connexion", "mockup_url": "/mockups/login", "app_url": "/session/new", "auth_profile": null }
+  ]
+}

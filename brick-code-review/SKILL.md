@@ -139,7 +139,21 @@ Comparer `doc/memory/acceptance_criteria.md` avec la recette et le code :
 
 ### 4. Rapport de parite maquette / appli
 
-La comparaison se fait par SCREENSHOTS, jamais de memoire ni en lisant le code.
+**Lance d'abord `style_diff` (`/outils-recette`)** : il compare les styles calcules
+des deux cotes et sort la propriete qui differe, la ou l'oeil ne voit rien. Sur une
+livraison declaree « 32/32 conformes » il a trouve 157 ecarts reels.
+
+```bash
+node ~/.claude/skills/outils-recette/style_diff.js --pairs pairs.json \
+  --out doc/memory/brick-{N}/parite/
+```
+
+Tu ne juges ensuite a l'oeil que le residu : les ecarts que l'outil signale et que
+tu dois trancher (corriger, ou justifier par ecrit avec la spec qui l'exige). Le
+rapport genere est celui qu'on publie au client
+(`~/.nexrai/bin/nexrai-parite`, page Conformite de l'espace client).
+
+La comparaison complementaire se fait par SCREENSHOTS, jamais de memoire ni en lisant le code.
 **Reference = le tag `mockups-valides-brique-{N}`** (si `/mockups` a bouge depuis,
 capturer les maquettes depuis le tag), pas l'etat courant du repo.
 
