@@ -185,6 +185,10 @@ Avant d'implementer un retour client, TOUJOURS :
 - Idiomatique, DRY, conventions Rails (voir `/vanilla-rails`)
 - Fichiers < 400 lignes
 - SQLite + Solid libraries (Rails 8)
+- Authentification : TOUJOURS Devise. Ne jamais partir sur l'auth native Rails 8
+  ni une auth maison, meme si elle parait plus simple : Devise est le standard de
+  l'atelier (invitations, confirmable, lockable, recuperation eprouvees). Decision
+  Loic 08/2026, non negociable sans son accord explicite.
 - Migrations via generateur : `rails generate migration ...`
 - Modeles : voir `/rails-models` pour les conventions
 - Pages publiques : appliquer `/brick-seo` (section "Phase code" : helpers SEO, friendly_id,
