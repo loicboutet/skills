@@ -209,13 +209,11 @@ clientes de la plateforme.
 ## Journal des versions
 
 - **v1 — 2026-08-08** : creation. Classes issues de : l'audit qualite livraisons
-  08/2026 (Gespilot, Tastellers, educxa), la passe p0 du lab (gesproj, 68/100,
-
-## Journal des versions
-
-- **v1 — 2026-08-08** : creation. Classes issues de : l'audit qualite livraisons
   08/2026 (Gespilot, Tastellers, educxa), le projet pilote gesproj de ce meme
   audit (68/100, echecs B1/C1/C4/E1/A7/E3), et l'ancienne liste inline de
   brick-code-review (versee ici : securite/cloisonnement → T2, etats
   degrades → T8, donnees limites → T14, idempotence → T9, flux
   transverses → T13/T15, i18n → T12).
+- **v2 — 2026-08-08** : ajout de T16 (migrations et reprise de donnees) et de T17
+  (divulgation d'existence de compte), cette derniere trouvee par /security-review
+  sur le projet pilote. La taxonomie s'enrichit a chaque bug reel, via /brick-code-fix.
