@@ -95,6 +95,14 @@ Relire decisions_comportement.md maquette en main :
 Reponses autorisees : "gere", "hors scope assume (ecrit)", "non applicable".
 Case vide ou contradiction maquette/decision = A CORRIGER.
 
+### 5b. Pages publiques : conformite SEO des maquettes
+
+Si la brique a des pages publiques, derouler la section "Phase mockup" de `/brick-seo` sur
+chacune : head complet (title, meta description, canonical, OG/Twitter), un seul H1 et une
+hierarchie de titres coherente, blocs de contenu citable (FAQ, donnees factuelles) presents,
+NAP coherent partout. La requete cible de l'analyse doit se retrouver dans la page. Un ecart
+se corrige ici, pas au moment du code : le markup des maquettes est repris tel quel.
+
 ### 6. Mise a jour bidirectionnelle
 
 Chaque ecart se corrige d'UN cote (maquette OU analyse), jamais des deux en silence :
@@ -125,6 +133,7 @@ Ecrire `doc/memory/brick-{N}/reanalyse.md` :
 ## Matrice AC ↔ maquette : X/Y AC couverts
 ## Data model : X champs, Y decisions ecrites, Z corrections
 ## Parcours navigues : X/Y OK (captures : reanalyse-shots/)
+## Pages publiques : SEO maquette OK/KO (ou : aucune page publique)
 ## Jeu de donnees : quotas OK/KO, sous-ensemble montre OK/KO
 ## Decisions de comportement : completes OUI/NON
 ## Corrections journalisees : [quoi / quel cote / pourquoi]

@@ -36,6 +36,11 @@ chef de projet si c'est un choix produit).
    que l'analyse ne rate rien de ce que le client a demande, et n'invente rien qu'il n'a pas demande.
 6. **Scope** : ce qui est hors brique courante est explicitement marque comme tel.
 
+7. **Pages publiques** : si la brique en comporte, verifier que l'analyse porte bien ce que
+   `/brick-seo` exige en amont : requete cible par page, intention de recherche, et les donnees
+   a collecter aupres du client (NAP exact, avis, preuves, prix). Une page publique sans requete
+   cible est une page qu'on ecrira au hasard.
+
 ## Validation gate
 
 - [ ] Chaque brick signee est couverte par des criteres d'acceptance tracables
@@ -43,6 +48,7 @@ chef de projet si c'est un choix produit).
 - [ ] Data models coherents avec les criteres
 - [ ] Un parcours complet par profil
 - [ ] Analyse confrontee aux echanges client reels (aucun manque, aucune invention)
+- [ ] Pages publiques : requete cible et donnees SEO a collecter presentes dans l'analyse
 - [ ] Ecarts corriges dans les fichiers, ou signales au chef de projet
 
 ## Ensuite
