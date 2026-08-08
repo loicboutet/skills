@@ -71,12 +71,17 @@ Le client a valide les mockups au pixel pres. Toute liberte prise avec le rendu 
 
 4. **Garder les memes noms de partials** pour faciliter la comparaison avec les mockups
 
-5. **Ne JAMAIS supprimer `/mockups/` ni ses routes.** Le namespace reste dans le repo
-   pour toute la vie du projet : c'est la reference du rapport de parite et des briques
-   suivantes. En prod il n'est simplement PAS EXPOSE (le restreindre aux environnements
-   dev/staging — classe T11 de la taxonomie de recette,
-   `~/.claude/skills/taxonomie-recette/SKILL.md`), jamais supprime. La version validee
-   client est figee par le tag `mockups-valides-brique-{N}`.
+5. **Ne JAMAIS supprimer `/mockups/` ni ses routes, et les laisser ACCESSIBLES
+   EN PRODUCTION.** C'est voulu : le client suit les briques a venir sur l'app
+   livree. Le namespace reste dans le repo pour toute la vie du projet, cumulatif
+   d'une brique a l'autre (les maquettes de la brique 1 restent quand la 2 arrive) :
+   c'est la reference du rapport de parite ET la vitrine de la suite. Deux seules
+   contraintes : `noindex` sur ces pages (elles ne doivent pas remonter dans les
+   moteurs a la place des vraies) et aucune donnee client reelle dans les donnees
+   fictives. La version validee client est figee par le tag
+   `mockups-valides-brique-{N}` : c'est le tag, pas une copie, qui garantit la
+   reference. Quand une page maquette a ete livree pour de vrai, le hub `/mockups`
+   l'indique et pointe vers l'ecran reel.
 
 ## Authentification : Devise, obligatoire
 

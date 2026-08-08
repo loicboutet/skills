@@ -136,9 +136,10 @@ n'avait jamais ouvert l'app en 390 px").
 ## T11 — Dev / prod
 
 Verifier : APP_HOST configure (liens des mails sur le host reel, pas app.5000.dev) ;
-pages legales / footer existent ; `/mockups` NON expose en prod (mais jamais
-supprime du repo) ; aucun compte/mot de passe en dur (migrations, seeds joues en
-prod, superadmin "secret") ; widget feedback gated.
+pages legales / footer existent ; `/mockups` EST expose en prod (c'est voulu :
+le client y suit les briques a venir) mais en `noindex` et sans donnee client
+reelle ; aucun compte/mot de passe en dur (migrations, seeds joues en prod,
+superadmin "secret") ; widget feedback gated.
 Methode : grep des hosts en dur et des credentials ; lire la config par env ;
 curl des routes footer et /mockups sur l'env cible.
 Provenance : Tastellers ET educxa (mails pointant sur app.5000.dev) ; Gespilot
