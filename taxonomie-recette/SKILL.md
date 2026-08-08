@@ -184,6 +184,33 @@ telecharger chaque type de document et lire son nom + son titre.
 Provenance : classe flux transverses historique de brick-code-review ; gesproj D5
 (PDF d'avoir nomme `FAC-2026-0005.pdf`).
 
+plus a partir de zero) ; seeds casses par les retours client successifs ; audit 08/2026
+(personne ne remonte jamais l'app depuis rien avant la livraison).
+
+## T17 — Divulgation d'existence de compte (enumeration)
+
+Verifier : sur CHAQUE ecran public qui prend une adresse e-mail ou un jeton (connexion,
+mot de passe oublie, activation d'invitation, renvoi de lien, desinscription), la reponse
+est IDENTIQUE que le compte existe ou non : meme statut HTTP, meme redirection, meme
+message. Aucun message ne dit « adresse introuvable » ni « ce compte n'existe pas ».
+Corollaire : les ecrans AUTHENTIFIES ont le droit de dire « cet e-mail est deja membre »
+(c'est une information legitime pour l'administrateur qui invite).
+Methode : poster deux fois le meme formulaire, une fois avec une adresse du jeu canonique,
+une fois avec une adresse inexistante, et comparer statut + redirection + message
+(pas le corps entier : le formulaire re-affiche l'adresse saisie, ce qui differe sans
+rien reveler). Verifier aussi que `config.paranoid` est actif cote Devise.
+Provenance : Gespilot p2, revue de securite du 08/08/2026 — l'ecran « mot de passe oublie »
+repondait 303 + « vous allez recevoir un e-mail » pour une adresse connue et 422 +
+« E-mail n'a pas ete trouve(e) » pour une inconnue, alors que l'ecran de connexion et
+l'activation d'invitation tenaient deja la regle. Un attaquant non authentifie pouvait
+enumerer les employes de chaque entreprise cliente, et savoir quelles entreprises sont
+clientes de la plateforme.
+
+## Journal des versions
+
+- **v1 — 2026-08-08** : creation. Classes issues de : l'audit qualite livraisons
+  08/2026 (Gespilot, Tastellers, educxa), la passe p0 du lab (gesproj, 68/100,
+
 ## Journal des versions
 
 - **v1 — 2026-08-08** : creation. Classes issues de : l'audit qualite livraisons
