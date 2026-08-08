@@ -1,6 +1,6 @@
 ---
 name: brick-code-build
-description: "Phase 3 : implementation brick par brick avec tests, commits, tracabilite vers les criteres d'acceptance. Utilise /brick-code-build pour developper une brick."
+description: "Phase 3 : implementation brick par brick, par lots recettes, avec tests, system tests par parcours, commits, tracabilite vers les criteres d'acceptance. Utilise /brick-code-build pour developper une brick."
 ---
 
 # Brick Implementation
@@ -18,10 +18,11 @@ pendant toute l'implementation :
 
 ## Pre-requis
 
-- Phase MOCKUPS validee
+- Phase MOCKUPS validee ET reanalyse rendue : `doc/memory/brick-{N}/reanalyse.md`
+  avec **verdict PRET** (sinon → `brick-mockup-reanalyse` d'abord)
+- Tag `mockups-valides-brique-{N}` pose (reference visuelle de la brique)
 - README indique `Etat: IMPLEMENTATION - Brick #X`
-- `doc/memory/acceptance_criteria.md` existe
-- `doc/memory/user_journeys.md` existe
+- `doc/memory/acceptance_criteria.md`, `user_journeys.md`, `jeu_de_donnees.md` existent
 
 ## Transition depuis les mockups
 
@@ -51,7 +52,7 @@ Le client a valide les mockups au pixel pres. Toute liberte prise avec le rendu 
 
 4. **Auto-check pixel avant de marquer la tache `done`** : ouvrir cote a cote la vue mockup
    et la vue implementee, comparer section par section. Tout ecart non justifie = a corriger
-   avant de continuer. Le check systematique se fait en `/brick-code-review` (etape Pixel match).
+   avant de continuer. Le check systematique se fait en `/brick-code-review` (rapport de parite).
 
 ### Comment reutiliser les mockups
 
@@ -66,18 +67,33 @@ Le client a valide les mockups au pixel pres. Toute liberte prise avec le rendu 
    app/views/mockups/shared/_sidebar.html.erb   → app/views/shared/_sidebar.html.erb
    ```
 
-3. **Remplacer les donnees fictives** par les vraies :
-   ```erb
-   <%% # AVANT (mockup) : hash %>
-   <%%= user[:name] %>
-
-   <%% # APRES (implementation) : modele %>
-   <%%= user.name %>
-   ```
+3. **Remplacer les donnees fictives** par les vraies (`user[:name]` → `user.name`)
 
 4. **Garder les memes noms de partials** pour faciliter la comparaison avec les mockups
 
-5. **Supprimer les routes `/mockups/`** une fois toutes les vues copiees
+5. **Ne JAMAIS supprimer `/mockups/` ni ses routes.** Le namespace reste dans le repo
+   pour toute la vie du projet : c'est la reference du rapport de parite et des briques
+   suivantes. En prod il n'est simplement PAS EXPOSE (le restreindre aux environnements
+   dev/staging — classe T11 de la taxonomie de recette,
+   `~/.claude/skills/taxonomie-recette/SKILL.md`), jamais supprime. La version validee
+   client est figee par le tag `mockups-valides-brique-{N}`.
+
+## Authentification : Devise, obligatoire
+
+Decision 08/2026 : toute authentification passe par **Devise**. JAMAIS d'auth native
+ou maison (`has_secure_password`, sessions a la main, generateur d'auth Rails 8).
+Si un socle existant a une auth maison : signaler a l'utilisateur, ne pas l'etendre.
+
+## Seeds & fixtures = jeu de donnees canonique
+
+`db/seeds.rb` et les fixtures reproduisent `doc/memory/jeu_de_donnees.md` :
+- Memes personas (noms, emails, roles, droits), memes entites, memes valeurs exactes.
+- TOUS les cas etiquetes du jeu (etats difficiles, argent aux bornes, chaines hostiles,
+  temps, volumes, second tenant) — regle de propagation : les seeds les implementent TOUS.
+- Dates en RELATIF (ERB dans les fixtures, `Date.current - n` dans les seeds) : la suite
+  doit rester verte a J+90.
+- INTERDIT d'inventer d'autres donnees de demo : la meme donnee traverse
+  maquette → seed → recette → video.
 
 ## Widget de feedback : TOUJOURS verifier qu'il est installe
 
@@ -101,30 +117,19 @@ que si un testeur tape "bug" ou visite avec `?debug=true`.
 
 1. Recuperer l'app id dans `.nexrai/binding.json` a la racine du projet
 2. Appeler l'outil MCP `get_feedback_widget` avec cet `app_id` — utiliser le champ
-   `app_snippet` (version gated) :
-
-```erb
-<%% # app/views/shared/_feedback_widget.html.erb %>
-<script src="https://5000dev.nexrai.ai/feedback-widget.js"
-        data-app-id="..."
-        data-secret="..."
-        data-project="..."
-        data-gated="true"
-        defer></script>
-```
-
+   `app_snippet` (version gated)
 3. Rendre le partial dans chaque layout de l'app
-4. Verifier l'activation : en navigation normale le widget est invisible ; il apparait
-   quand on **tape "bug"** sur la page (ou avec `?debug=true`). Tester les deux.
+4. Verifier l'activation : invisible en navigation normale ; apparait quand on tape
+   "bug" (ou avec `?debug=true`). Tester les deux.
 
 Guide complet : artefact nexrai `feedback_widget_install` (app 37).
 
 ## Process
 
-### 1. Creer les taches
+### 1. Creer les taches, organisees en LOTS
 
 Dossier : `doc/memory/brick-{N}/tasks/`
-Nommage : `{NNN}-{titre}-{etat}.md`
+Nommage : `{NNN}-{titre}-{etat}.md` — Etats : `todo` → `coding` → `testing` → `done`
 
 Chaque tache reference les criteres d'acceptance :
 ```markdown
@@ -133,12 +138,11 @@ Chaque tache reference les criteres d'acceptance :
 ## Criteres couverts
 - R1/AC1.1: L'utilisateur peut s'inscrire avec email/password
 - R1/AC1.2: Un email de confirmation est envoye
-
-## Implementation
-...
 ```
 
-Etats : `todo` → `coding` → `testing` → `done`
+**Regrouper les taches en lots de 4-5 maximum** (numeroter le lot dans le fichier de
+tache). JAMAIS toute la brique d'un bloc : le premier regard exterieur sur 15 000
+lignes d'un coup, c'est trop tard (constat de l'audit 08/2026 : 19 taches en un jour).
 
 ### 2. Pour chaque tache
 
@@ -147,11 +151,31 @@ Etats : `todo` → `coding` → `testing` → `done`
    - **Chaque AC = un test d'integration** dans `test/integration/`
    - **Validations critiques = test model** dans `test/models/`
    - Nommer le test avec la ref AC : `# R1/AC1.1: User peut s'inscrire`
-3. Lancer : `rails test path/to/test.rb 2>&1 | head -50`
-4. Renommer la tache en `done`
-5. **Committer** (message clair, ne PAS push sans demande)
+3. **System test par parcours, ecrit AU FIL DES TACHES** : si la tache termine ou
+   modifie un parcours de `user_journeys.md`, ecrire/completer le system test
+   navigateur de ce parcours dans `test/system/` — un test PAR parcours, qui deroule
+   le parcours de bout en bout avec le persona et les donnees canoniques.
+   Raison : les bugs Turbo ("form must redirect", action Stimulus non branchee,
+   select sans `data-action`) sont INVISIBLES aux tests d'integration
+   (constat de l'audit 08/2026). Le walkthrough final = tournage, pas decouverte.
+4. Lancer : `rails test path/to/test.rb 2>&1 | head -50`
+5. Renommer la tache en `done`
+6. **Committer** (message clair, ne PAS push sans demande)
 
-### 3. Convergence
+### 3. Mini-recette de FIN DE LOT (obligatoire, bloquante)
+
+Apres chaque lot de 4-5 taches, AVANT d'ouvrir le lot suivant :
+
+1. Suite COMPLETE : `rails test 2>&1 | tail -20` (pas fichier par fichier)
+2. System tests : `rails test:system 2>&1 | tail -20`
+3. Scan de facades (script `facade_scan` ou equivalent : inputs sans `name`, actions
+   Stimulus orphelines, liens vers routes inexistantes, donnees en dur dans les vues
+   copiees) si disponible — en jugeant les resultats : le scan ne voit pas les facades
+   semantiques (colonne affichee sans saisie, cle stockee jamais lue), c'est la matrice
+   de la reanalyse et les classes T4/T5 de la taxonomie de recette qui les couvrent
+4. Tout rouge se corrige DANS le lot. Un lot ne se ferme pas avec des tests rouges.
+
+### 4. Convergence
 
 Si un test echoue :
 1. Diagnostiquer le probleme
@@ -159,7 +183,7 @@ Si un test echoue :
 3. Relancer les tests
 4. Max 3 iterations — apres, demander aide a l'utilisateur
 
-### 4. Si bloque
+### 5. Si bloque
 
 - Demander de l'aide a l'utilisateur
 - Ne pas tourner en boucle sur un bug
@@ -174,10 +198,12 @@ Si un test echoue :
 ## Retours client
 
 Avant d'implementer un retour client, TOUJOURS :
-1. Verifier `doc/memory/acceptance_criteria.md`
-2. Si hors spec → signaler, demander confirmation
-3. Si confirme → documenter le changement de scope
-4. Ne JAMAIS implementer silencieusement un truc hors spec
+1. Arbitrer contre `doc/memory/objectif.md` (le QUOI signe) : la demande sert le
+   QUOI → due ; hors du QUOI → later_brick ou avenant, reponse qui cite l'objectif
+2. Verifier `doc/memory/acceptance_criteria.md` (le COMMENT)
+3. Si hors spec → signaler, demander confirmation
+4. Si confirme → documenter le changement de scope (journal de scope)
+5. Ne JAMAIS implementer silencieusement un truc hors spec
 
 ## Regles techniques
 
@@ -185,10 +211,7 @@ Avant d'implementer un retour client, TOUJOURS :
 - Idiomatique, DRY, conventions Rails (voir `/vanilla-rails`)
 - Fichiers < 400 lignes
 - SQLite + Solid libraries (Rails 8)
-- Authentification : TOUJOURS Devise. Ne jamais partir sur l'auth native Rails 8
-  ni une auth maison, meme si elle parait plus simple : Devise est le standard de
-  l'atelier (invitations, confirmable, lockable, recuperation eprouvees). Decision
-  Loic 08/2026, non negociable sans son accord explicite.
+- Auth : Devise (voir plus haut), jamais d'auth maison
 - Migrations via generateur : `rails generate migration ...`
 - Modeles : voir `/rails-models` pour les conventions
 - Pages publiques : appliquer `/brick-seo` (section "Phase code" : helpers SEO, friendly_id,
@@ -205,11 +228,12 @@ Pour un process multi-taches (pas une tache isolee) :
 ## Passage a la brick suivante
 
 0. Verifier que le widget de feedback (version gated) est present dans tous les layouts
-1. Lancer `/brick-code-review` pour la validation pre-livraison
-2. L'utilisateur valide la review
-3. Creer `doc/memory/brick-{N+1}/tasks/`
-4. Mettre a jour le README
+1. Verifier que chaque parcours de `user_journeys.md` a son system test vert
+2. Lancer `/brick-code-review` pour la validation pre-livraison
+3. L'utilisateur valide la review
+4. Creer `doc/memory/brick-{N+1}/tasks/`
+5. Mettre a jour le README
 
 ## Ensuite
 
-→ `brick-code-review` (pré-livraison).
+→ `brick-code-review` (pre-livraison).
