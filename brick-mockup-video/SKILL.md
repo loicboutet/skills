@@ -199,4 +199,4 @@ chemin `$CHAP` + consigne de NE PAS toucher aux autres repertoires.
 
 ## Ensuite
 
-→ envoyer au client, puis `brick-mockup-feedback` à chaque vague de retours. Mockups validés → `brick-code-build`.
+→ envoyer au client, puis `brick-mockup-feedback` à chaque vague de retours. Mockups validés → `brick-mockup-reanalyse`, puis `brick-code-build` sur verdict PRET.

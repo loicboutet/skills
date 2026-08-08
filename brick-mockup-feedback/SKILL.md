@@ -57,4 +57,5 @@ filmant les changements du jour avec `brick-mockup-video`.
 → `brick-mockup-video` pour filmer un parcours modifie tout de suite. En fin de journee,
 `brick-daily-video` assemble tous les changements du jour en un bilan chapitre et l'envoie au
 client avec un message recap. Reboucler sur `brick-mockup-feedback` a la vague suivante. Mockups
-valides → `brick-code-build`.
+valides → `brick-mockup-reanalyse` (controle bloquant maquettes ↔ analyse), puis
+`brick-code-build` sur verdict PRET.

@@ -32,6 +32,7 @@ remplit un slot que s'il sert (pas de video de design, video d'analyse seulement
 | 3r | `/brick-mockup-review` | Controle avant client : scope brique, sync specs, outil de capture |
 | 3v | `/brick-mockup-video` | Une seule video chapitree des mockups (un chapitre par parcours), pour la validation a distance |
 | 3f | `/brick-mockup-feedback` | Rassembler les retours (tracker + emails + WhatsApp + Drive), corriger, tenir specs & tracker a jour |
+| 3x | `/brick-mockup-reanalyse` | APRES validation client, AVANT le code : matrice AC↔maquette, champ a champ affiche/saisi, parcours navigues, tag git, verdict bloquant PRET |
 
 **Boucle code** (repetee jusqu'a validation client)
 

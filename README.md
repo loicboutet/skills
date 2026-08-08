@@ -19,7 +19,7 @@ c'est utile. Chaque skill finit par un pointeur `Ensuite →` : le workflow se n
 
 ```
 Fondations : analysis-build → analysis-review → [design-brief → design-build → design-review]
-Boucle mockup : mockup-build → mockup-review → mockup-video ↻ mockup-feedback
+Boucle mockup : mockup-build → mockup-review → mockup-video ↻ mockup-feedback → mockup-reanalyse (gate)
 Boucle code   : code-build → code-review → code-video (→ code-guide, code-walkthrough) ↻ code-feedback
                                                                           code-fix = methode bug
 ```
@@ -29,10 +29,15 @@ Boucle code   : code-build → code-review → code-video (→ code-guide, code-
 | **analysis** | `/brick-analysis-build` | `/brick-analysis-review` | `/brick-analysis-video` *(interne, option)* | — |
 | **design** *(option)* | `/brick-design-brief` puis `/brick-design-build` | `/brick-design-review` | — | — |
 | **mockup** | `/brick-mockup-build` | `/brick-mockup-review` | `/brick-mockup-video` | `/brick-mockup-feedback` |
+
+Sortie de la boucle mockup : `/brick-mockup-reanalyse`, gate bloquante entre la validation
+client des maquettes et `/brick-code-build` (matrice AC↔maquette, champ a champ affiche/saisi,
+parcours navigues, tag `mockups-valides-brique-{N}`, verdict PRET / A CORRIGER).
 | **code** | `/brick-code-build` | `/brick-code-review` | `/brick-code-video` | `/brick-code-feedback` |
 
 Livrables en plus de l'etape code : `/brick-code-guide`, `/brick-code-walkthrough` (video longue),
-`/brick-code-fix` (methode bug). Connaissance transverse : `/brain` (second cerveau cross-projet : chercher une conclusion réutilisable avant, distiller après). Rythme quotidien transverse : `/brick-daily-triage` (matin : tour
+`/brick-code-fix` (methode bug). Referentiel partage : `/taxonomie-recette` (classes de bugs T1-T15,
+deroulees par code-review, alimentees par code-fix). Connaissance transverse : `/brain` (second cerveau cross-projet : chercher une conclusion réutilisable avant, distiller après). Rythme quotidien transverse : `/brick-daily-triage` (matin : tour
 des canaux, tri par scope, execution + reponse sur le canal d'origine, escalade des decisions) puis
 `/brick-daily-video` (soir : bilan chapitre de tous les changements, envoye au client). Hors-cycle :
 `/brick-promo-video`.
