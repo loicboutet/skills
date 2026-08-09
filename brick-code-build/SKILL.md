@@ -228,7 +228,9 @@ Apres chaque lot de 4-5 taches, AVANT d'ouvrir le lot suivant :
    fois (idempotence, pas de doublon). Une migration qui appelle un modele applicatif
    se reecrit en SQL/`execute` ou en classe locale legere : le modele evoluera, pas
    la migration. (Provenance : `CreateDefaultAdmin` cassee sur base fraiche.)
-4. `facade_scan` (`/outils-recette`, modes `static` et `crawl`) — en jugeant les
+4. `facade_scan` (`/outils-recette`, modes `readwrite` et `static`, `crawl` si le
+   serveur tourne) — `readwrite` est le plus rentable des trois : il sort la colonne
+   affichee que personne ne peut saisir et le champ saisi que personne ne lit. En jugeant les
    resultats : le scan ne voit pas les facades semantiques (colonne affichee sans
    saisie, cle stockee jamais lue), ce sont la matrice de la reanalyse et les classes
    T4/T5 de la taxonomie qui les couvrent

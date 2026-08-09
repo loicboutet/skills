@@ -185,6 +185,37 @@ Verifier :
 
 **Toute ligne A CORRIGER non justifiee bloque la livraison** (verdict NEEDS FIXES).
 
+### 4b. Chasse aux facades a l'outil (BLOQUANT)
+
+`style_diff` compare ce qui se voit. Ces deux scans trouvent ce qui ne se voit
+pas : la donnee affichee que personne ne peut saisir, et le controle qui ne mene
+nulle part.
+
+```bash
+ruby ~/.claude/skills/outils-recette/facade_scan.rb readwrite .
+ruby ~/.claude/skills/outils-recette/facade_scan.rb static .
+```
+
+`readwrite` sort deux listes. **Colonne lue mais jamais saisissable** : l'ecran
+(ou pire, le PDF ou l'e-mail) montre une valeur qu'aucun formulaire ne permet de
+renseigner — chez un vrai client, le champ restera vide pour toujours.
+**Colonne saisie mais jamais lue** : l'utilisateur remplit un champ qui ne sert a
+rien. Les deux sont bloquantes des que la colonne part dans un document sortant.
+
+Chaque remontee se tranche par ECRIT : defaut corrige, ou faux positif avec la
+raison (colonne technique, alimentee par un service, homonyme dans une autre
+table — l'outil rapproche sur le nom). Ne jamais se contenter du compte.
+
+Si un scan sort en code 2, il s'est interrompu : son rapport ne prouve rien, on
+le relance. Un rapport vide n'est un feu vert que si le scan est alle au bout.
+
+Provenance : audit 08/2026 (clients.postal_code imprime sur les factures sans
+champ de saisie, cle d'API saisie que l'envoi ne lit pas) ; mesure 08/2026 sur le
+parc : 27 colonnes lues et non saisissables sur un projet client, 13 sur un
+autre. Le mode `reachability` existe aussi mais reste EN INFORMATION : mesure a
+l'appui, il ne produit presque que des faux positifs (actions appelees en
+`fetch`, helpers resolus a l'execution).
+
 ### 5. Matrice de permissions : URL directe ET blocs d'affichage
 
 Pour CHAQUE role (les personas du jeu canonique, dont ceux a droits restreints) x
