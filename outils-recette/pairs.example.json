@@ -1,5 +1,5 @@
 {
-  "_commentaire": "Exemple calibré sur p0-gesproj (Rails, maquettes sous /mockups). Adapter les URL, les identifiants de démo et les paires.",
+  "_commentaire": "RÉFÉRENCE DE FORMAT, écrite à la main sur p0-gesproj. Ne pas recopier telle quelle : les mots de passe et les paires ont vieilli. Pour un vrai balayage, générer le fichier avec pairs_gen.rb, puis corriger ce que ses avertissements signalent.",
 
   "base_mockup": "http://127.0.0.1:3995",
   "base_app": "http://127.0.0.1:3995",
