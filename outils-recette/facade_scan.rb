@@ -1078,12 +1078,17 @@ class GestureIndex
   # `data-…-url-value="<%= x_path %>"` ou `data: { url: x_path }` : le geste
   # part du JS, on ne peut pas prouver le verbe — on le note comme tel.
   def scan_js_wiring(path, src)
-    src.scan(/data-[\w-]*(?:url|path|src|endpoint)[\w-]*\s*=\s*"([^"]*)"/i) do
-      Regexp.last_match(1).scan(/(\w+_(?:path|url))\b/) { |h| @js_helpers << base(h[0]) }
-      Regexp.last_match(1).scan(%r{\A(/[\w\-/.]*)}) { |p| @js_literals << p[0] }
+    # Le contenu capture est fige AVANT les scans imbriques : ceux-ci ecrasent
+    # Regexp.last_match, et le lire apres donnait nil.scan (le scanner levait,
+    # l'exception etait avalee et le rapport annoncait « aucune facade »).
+    src.scan(/data-[\w-]*(?:url|path|src|endpoint)[\w-]*\s*=\s*"([^"]*)"/i) do |caps|
+      val = Array(caps).first.to_s
+      val.scan(/(\w+_(?:path|url))\b/) { |h| @js_helpers << base(h[0]) }
+      val.scan(%r{\A(/[\w\-/.]*)}) { |p| @js_literals << p[0] }
     end
-    src.scan(/\bdata:\s*\{([^{}]*)\}/m) do
-      Regexp.last_match(1).scan(/\b(?:url|path|src|endpoint)\w*:\s*[^,}]*?(\w+_(?:path|url))\b/) { |h| @js_helpers << base(h[0]) }
+    src.scan(/\bdata:\s*\{([^{}]*)\}/m) do |caps|
+      val = Array(caps).first.to_s
+      val.scan(/\b(?:url|path|src|endpoint)\w*:\s*[^,}]*?(\w+_(?:path|url))\b/) { |h| @js_helpers << base(h[0]) }
     end
   end
 
@@ -1836,9 +1841,12 @@ begin
     end
   end
 rescue StandardError => e
-  report.note("erreur du scanner : #{e.class} #{e.message}")
+  report.note("SCAN INTERROMPU : #{e.class} #{e.message} — le rapport est INCOMPLET, ne pas le lire comme un feu vert")
+  warn "facade_scan : SCAN INTERROMPU (#{e.class}: #{e.message})"
+  warn e.backtrace.first(5).join("\n")
+  @scan_aborted = true
 end
 
 report.print_text unless json_only
 puts JSON.pretty_generate(report.summary)
-exit 0
+exit(@scan_aborted ? 2 : 0)
