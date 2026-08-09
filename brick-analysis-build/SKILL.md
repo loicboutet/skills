@@ -1,6 +1,6 @@
 ---
 name: brick-analysis-build
-description: "Phase 1 : analyse des specs, objectif metier signe, jeu de donnees canonique, data models, routes, decisions de comportement, criteres d'acceptance. Utilise /brick-analysis-build pour demarrer l'analyse d'un projet ou d'une nouvelle brick."
+description: "Phase 1 : analyse des specs, objectif metier signe, jeu de donnees canonique, data models, routes, journal de decisions, manifeste de config, criteres d'acceptance. Utilise /brick-analysis-build pour demarrer l'analyse d'un projet ou d'une nouvelle brick."
 ---
 
 # Brick Analysis
@@ -12,6 +12,14 @@ Analyse les specs et cree la documentation technique avec des criteres d'accepta
 - Nouveau projet sans README ou avec `Etat: ANALYSIS`
 - Nouvelle brick ajoutee au projet
 
+## Principe directeur (vaut pour toute la phase)
+
+**Calculer plutot que declarer, decider plutot que demander.**
+Le client connait le QUOI ; le COMMENT est notre travail. On ne pose presque jamais
+de question : on tranche avec un defaut motive, on consigne dans `decisions.md`, et on
+signale a la livraison les rares decisions qui touchent au QUOI. Une seule interdiction
+absolue : fabriquer une DONNEE (voir plus bas).
+
 ## Process
 
 ### 1. Collecter les informations
@@ -22,7 +30,7 @@ Analyse les specs et cree la documentation technique avec des criteres d'accepta
   defricher : `brain_tool(action: "search", query: "<mots-cles metier>")`. Traiter
   chaque note comme une piste a recouper (voir sa `confidence`), pas une verite.
 - **Toujours demander** : "Y a-t-il des bricks additionnelles ?"
-- Demander clarifications si necessaire
+- Toute autre inconnue se tranche (voir 5), elle ne se demande pas.
 
 ### 2. Creer `doc/memory/objectif.md` — le QUOI
 
@@ -111,15 +119,15 @@ exercices, dans l'ordre :
    la completude. Cette relecture ajoute, ne retire jamais.
 7. **Premortem itere** : "L'application a eu un bug en production cause par un cas
    de donnees absent de ce jeu. Nomme ce cas." Repeter jusqu'a deux reponses vides
-   consecutives. Chaque cas nomme rejoint le jeu ou une decision d'analyse ecrite.
+   consecutives. Chaque cas nomme rejoint le jeu ou une decision ecrite.
 8. **Personas qui cassent** : 3 personas metier plausibles (la secretaire pressee
    qui double-clique, le comptable pointilleux qui verifie chaque arrondi, le gerant
    qui fait tout depuis son telephone) ; pour chacun, un scenario de donnees qui le
    fait trebucher.
 9. **Examen** : relecture finale categorie par categorie, quotas en main.
    **Discernement** : chaque cas limite qui revele une decision non prise remonte en
-   decision d'analyse ("gere / hors scope assume / non applicable", motif en une
-   ligne, dans decisions_comportement.md), jamais en implementation silencieuse.
+   entree de `decisions.md` ("gere / hors scope assume / non applicable", motif en
+   une ligne), jamais en implementation silencieuse.
 
 #### Regle de propagation
 
@@ -150,36 +158,81 @@ exercices, dans l'ordre :
 
 ### 4. Creer `doc/memory/data_models.md`
 
-Pour chaque modele :
-- Responsabilites
-- Attributs (nom, type, description)
-- Relations
-- Methodes principales
+Pour chaque modele : responsabilites, attributs (nom, type, description), relations,
+methodes principales. Inclure un historique des modifications (date + modeles
+ajoutes/modifies).
 
-Inclure un historique des modifications (date + modeles ajoutes/modifies).
+### 5. Creer `doc/memory/decisions.md` — le journal de decisions UNIQUE
 
-### 5. Creer `doc/memory/decisions_comportement.md`
+Un seul fichier pour toute la vie du projet. Il absorbe ce qui s'appelait
+`decisions_comportement.md` : ne PAS creer de second fichier de decisions.
 
-Pour CHAQUE entite du data model, decider par ecrit. Reponses autorisees :
-**"gere"** (avec le comportement choisi), **"hors scope assume (ecrit)"**, ou
-**"non applicable"**. Aucune case vide. On decide, on ne sur-implemente pas.
+#### Regles (a recopier en tete du fichier)
+
+- **Inconnue sur le COMMENT** (technique, ergonomie, structure, nommage, defaut d'un
+  champ) → on decide, on consigne, on ne remonte RIEN.
+- **Inconnue sur le QUOI** (regle metier, montant, droit, obligation legale) → on
+  decide QUAND MEME avec un defaut motive, on coche « a signaler », et c'est presente
+  a la livraison comme un choix explique. JAMAIS comme une question.
+- **Fabriquer une DONNEE est interdit, sans exception** : compteur en dur, image
+  inventee, score bidon, texte de demo presente comme reel, moyenne calculee sur du
+  vide. C'est la SEULE interdiction absolue du projet. A la place : **etat vide
+  honnete** ("aucune donnee pour l'instant") ou la donnee reelle, rien d'autre.
+- **Chaque decision consignee devient un critere de recette** : `brick-code-review`
+  deroule ce journal ligne a ligne et exige une preuve pour chacune.
+- On AJOUTE, on ne reecrit jamais une entree passee.
+
+#### Format
 
 ```markdown
-# Decisions de comportement — Brick #{N}
+# Journal de decisions — {projet}
 
-## Par entite
+## Regles
+{les 5 regles ci-dessus, recopiees}
+
+## Decisions d'analyse — par entite (prises en phase ANALYSIS)
 | Entite | Suppression (bloquer/archiver/cascader + pourquoi) | Etats degrades (desactive/suspendu) |
-|--------|-----------------------------------------------------|--------------------------------------|
-| Client | archiver (les factures doivent survivre)            | suspendu : jobs recurrents exclus    |
+|--------|----------------------------------------------------|--------------------------------------|
+| Client | archiver (les factures doivent survivre)           | suspendu : jobs recurrents exclus    |
 
-## Transverse
+## Decisions d'analyse — transverses
 - Responsive : {dans le scope : ecrans vises utilisables a 390 px / hors scope assume (ecrit)}
 - Fuseau horaire : {ex : Europe/Paris, config.time_zone}
+- {toute autre decision structurante prise en analyse}
+
+## Journal courant (une ligne par decision, ajoutee au fil du projet)
+| Date | Decision (la question tranchee) | Defaut retenu | Motif (1 ligne) | Reversible | A signaler |
+|------|--------------------------------|---------------|-----------------|------------|------------|
+| 2026-08-08 | Delai de validite d'un devis | 30 jours | usage du BTP, modifiable en config | oui | oui (QUOI) |
+| 2026-08-08 | Tri par defaut de la liste clients | nom A→Z | le plus previsible | oui | non |
 ```
 
-Provenance : audit qualite livraisons 08/2026 — cascades latentes
-(`dependent: :destroy` non audite), jobs recurrents sur entreprises suspendues,
-mobile jamais ouvert avant livraison.
+Pour CHAQUE entite du data model, une ligne suppression + une ligne etats degrades.
+Reponses autorisees : **"gere"** (avec le comportement choisi), **"hors scope assume
+(ecrit)"**, ou **"non applicable"**. Aucune case vide. On decide, on ne sur-implemente pas.
+
+Provenance : audit qualite 08/2026 — cascades latentes (`dependent: :destroy` non
+audite), jobs recurrents sur entreprises suspendues, mobile jamais ouvert avant
+livraison ; Tastellers (compteurs en dur "127 connexions" sur le dashboard d'un vrai client).
+
+### 5b. Amorcer `doc/memory/config.md` — le manifeste de configuration
+
+Une ligne par variable d'environnement / cle / reglage d'environnement, avec son
+**consommateur nomme** (le fichier de code qui la LIT) et sa valeur attendue PAR
+environnement. En analyse on amorce avec ce que les specs imposent deja (host des
+mails, fuseau, services externes cites). Chaque tache de code qui en introduit une
+l'ajoute ; `brick-code-review` confronte le manifeste a l'environnement livre.
+
+```markdown
+# Manifeste de configuration — {projet}
+| Cle | Consommateur (fichier:ligne) | dev | staging | prod | Si absente |
+|-----|------------------------------|-----|---------|------|------------|
+| APP_HOST | config/environments/production.rb (default_url_options) | localhost:3000 | {slug}-staging.5000.dev | {slug}.5000.dev | mails avec liens morts |
+```
+
+Provenance : audit qualite 08/2026 — APP_HOST absent (mails pointant sur app.5000.dev
+chez Tastellers ET educxa), superadmin en dur en prod chez Gespilot, cle Postmark
+soigneusement stockee derriere un ecran de config et jamais lue a l'envoi.
 
 ### 6. Creer `doc/memory/routes.md`
 
@@ -211,10 +264,9 @@ Chaque feature a des criteres testables et tracables.
 | Date | Demande | Origine | Impact |
 ```
 
-Chaque critere doit etre :
-- **Specifique** : pas "ca marche bien" mais "l'utilisateur voit un message de succes"
-- **Testable** : peut etre verifie par un test automatise ou manuel
-- **Tracable** : reference dans les taches d'implementation (R1 → tache 003)
+Chaque critere doit etre **specifique** (pas "ca marche bien" mais "l'utilisateur voit
+un message de succes"), **testable** (verifiable par un test automatise ou manuel) et
+**tracable** (reference dans les taches d'implementation : R1 → tache 003).
 
 #### Rattachement : chaque feature sert une fin
 
@@ -233,8 +285,7 @@ test deroulera et que la video filmera.
 
 #### Composition de lieu (a faire AVANT d'ecrire les parcours)
 
-Avant d'ecrire les parcours d'un profil, se representer concretement la situation
-reelle et repondre par ecrit :
+Se representer concretement la situation reelle et repondre par ecrit :
 
 - A quelle heure il ouvre l'app, sur quel appareil, quelle taille d'ecran
 - Ce qu'il faisait juste avant, ce qu'il fera juste apres
@@ -247,18 +298,15 @@ reelle et repondre par ecrit :
 Trois a cinq lignes par profil, en tete de sa section. Si on ne sait pas repondre a
 une question, c'est une question a poser au client, jamais a inventer.
 
-Pour chaque parcours :
-- **Entree** : comment l'utilisateur arrive
-- **Etapes** : chaque action et la reponse attendue
-- **Succes** : ou ca mene quand tout va bien
-- **Erreurs** : les cas d'erreur et comment on les gere
-- **Sortie** : ou l'utilisateur finit
+Pour chaque parcours : **Entree** (comment l'utilisateur arrive), **Etapes** (chaque
+action et la reponse attendue), **Succes** (ou ca mene quand tout va bien),
+**Erreurs** (les cas d'erreur et comment on les gere), **Sortie** (ou il finit).
 
 ### 9. Verifier `doc/memory/style_guide.html`
 
 - Si fourni : utiliser tel quel
 - Si elements fournis : generer
-- Si rien : DEMANDER (couleurs, fonts, style)
+- Si rien : DEMANDER (couleurs, fonts, style) — c'est une des rares vraies questions
 
 ### 10. Mettre a jour le README.md
 
@@ -270,7 +318,8 @@ Etat: ANALYSIS COMPLETE
 - [x] objectif.md (signe le {date})
 - [x] jeu_de_donnees.md
 - [x] data_models.md
-- [x] decisions_comportement.md
+- [x] decisions.md
+- [x] config.md (amorce)
 - [x] routes.md
 - [x] acceptance_criteria.md
 - [x] user_journeys.md
@@ -285,8 +334,10 @@ Avant de passer a MOCKUPS, verifier :
 - [ ] `objectif.md` existe, 5-15 lignes de QUOI metier, signe par le client
 - [ ] Jeu de donnees : quotas respectes (au moins un cas par categorie, chaque cas
       etiquete), genere par le protocole (partitions, repetition, premortem, examen)
-- [ ] Decisions de comportement : chaque entite a sa ligne suppression + etats
-      degrades ; responsive et fuseau decides ; aucune case vide
+- [ ] `decisions.md` : regles recopiees ; chaque entite a sa ligne suppression + etats
+      degrades ; responsive et fuseau decides ; aucune case vide ; aucune decision
+      laissee sous forme de question ouverte
+- [ ] `config.md` amorce (au minimum APP_HOST et le fuseau, avec consommateur nomme)
 - [ ] Tous les modeles ont des relations coherentes
 - [ ] Les routes couvrent toutes les features des specs
 - [ ] Chaque feature a au moins 2 criteres d'acceptance
