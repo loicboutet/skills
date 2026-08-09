@@ -58,6 +58,43 @@ exclu (c'est la reference, elle a le droit d'etre inerte).
 Toujours code de sortie 0 : c'est un rapport, pas un gate. Beaucoup de reglages
 et l'allowlist sont en tete de script.
 
+### La fleche inverse : `reachability` et `readwrite`
+
+`static` et `crawl` verifient qu'un controle mene quelque part. Ces deux modes
+verifient l'inverse : ce que le serveur sait faire, et que l'interface ne permet
+pas de declencher ni de remplir.
+
+```bash
+ruby ~/.claude/skills/outils-recette/facade_scan.rb reachability .            # routes sans geste
+ruby ~/.claude/skills/outils-recette/facade_scan.rb readwrite .               # colonnes en sens unique
+ruby ~/.claude/skills/outils-recette/facade_scan.rb reachability . --mockups  # phase maquettes
+ruby ~/.claude/skills/outils-recette/facade_scan.rb readwrite . --mockups
+```
+
+`reachability` confronte les routes (`bin/rails routes`, repli sur
+`config/routes.rb` avec `--no-boot`) aux gestes des vues : `form_with`,
+`button_to`, `link_to` avec `turbo_method`, `formaction`, `<form action>`.
+Bloquant : action non-GET qu'aucun geste ne vise, et route declaree vers une
+action inexistante. Info : page GET vers laquelle aucun lien ne mene, et action
+atteinte seulement par du JS (le verbe n'est alors pas verifiable).
+
+`readwrite` confronte chaque colonne de `db/schema.rb` a ses lectures (vue,
+helper, mailer, PDF, requete) et a ses ecritures (`permit`/`expect`, champ de
+formulaire, affectation, seed). Sort la colonne **lue mais jamais saisissable**
+et la colonne **saisie mais jamais lue** : deux facades symetriques. Bloquant si
+la colonne part dans un document sortant (PDF, e-mail).
+
+`--mockups` cadre les deux sur la phase maquettes, avant le code : les routes
+prevues face aux gestes de `app/views/mockups`, et les champs de
+`doc/memory/data_models.md` face a ce que les maquettes affichent et saisissent.
+C'est la que ca coute le moins cher de corriger.
+
+Limites connues : une lecture dont le receveur n'est pas identifiable compte pour
+toutes les tables portant la colonne (le rapport le signale) ; une ecriture qui
+passe par un attribut virtuel autre que `<colonne>_input` echappe au scan ; en
+mode maquettes le rapprochement se fait sur les noms, un champ nomme autrement
+dans la maquette que dans `data_models.md` remonte comme absent.
+
 ## Quand s'en servir
 
 - Pendant `/brick-code-review` : `style_diff` sur toutes les pages de la brique
