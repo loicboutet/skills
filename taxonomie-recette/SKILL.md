@@ -206,20 +206,26 @@ Provenance : classe flux transverses historique de brick-code-review ; gesproj D
 
 ## T16 — Migrations & reprise de donnees
 
-Verifier : la base FRAICHE se monte depuis zero (`db:drop db:prepare db:seed` sur un
-environnement vide passe sans erreur) ; `db:seed` rejoue ne cree pas de doublon
+Verifier : la base FRAICHE se monte depuis zero (voir la methode : jamais en une seule
+invocation) ; `db:seed` rejoue ne cree pas de doublon
 (idempotence) ; aucune migration ne depend d'un modele applicatif (il evoluera, la
 migration doit rester rejouable dans dix versions) ; tout backfill est teste sur une
 copie realiste (volume et cas laids du jeu canonique) et rejouable sans double effet ;
 les migrations ne creent aucun compte ni secret en dur (croise T11).
-Methode : `bin/rails db:drop db:prepare db:seed` sur une base vide, puis `db:seed` une
-seconde fois et comparer les compteurs ; `grep -rE '\b[A-Z][A-Za-z]+\.(find|where|create|all)' db/migrate/`
-pour reperer les modeles applicatifs appeles depuis une migration ; rejouer le backfill
-deux fois sur une copie de la base seedee et verifier l'identite du resultat.
+Methode : `db:drop`, puis `db:prepare`, puis `db:seed` en TROIS invocations
+separees ; verifier ensuite la taille du fichier de base (`ls -l storage/*.sqlite3`)
+et un comptage reel (`bin/rails runner 'puts User.count'`). Enchainees en une seule
+invocation, SQLite garde l'inode du fichier efface ouvert pour la duree du
+processus : les seeds ecrivent dans un fichier qui n'existe plus, la commande sort 0
+et la base reste vide, la « preuve » d'idempotence lit un fantome. Puis `db:seed`
+une seconde fois et comparer les compteurs.
+
 Provenance : migration `CreateDefaultAdmin` cassee sur base fraiche (l'app ne se montait
 plus a partir de zero) ; seeds casses par les retours client successifs ; audit 08/2026
 (personne ne remonte jamais l'app depuis rien avant la livraison).
-
+ ; passe de mesure 08/2026 (une base
+declaree fraiche et seedee etait en realite vide : la commande enchainee avait
+reussi sur un fichier supprime).
 ## T17 — Divulgation d'existence de compte (enumeration)
 
 Verifier : sur CHAQUE ecran public qui prend une adresse e-mail ou un jeton (connexion,
