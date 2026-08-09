@@ -16,6 +16,41 @@ livree qu'apres le smoke test et 24 h d'error tracker propres.
 - Avant de passer a la brick suivante
 - Quand l'utilisateur demande un check global
 
+## LA REGLE DU DEFAUT CONNU (elle commande le verdict)
+
+Un defaut des quatre familles suivantes, une fois CONSTATE par qui que ce soit et
+a n'importe quel moment, ne peut pas etre livre :
+
+**argent** (calcul, total, remise, avoir) · **permissions** (fuite, action
+interdite possible) · **donnee fausse** (valeur affichee qui ne vient pas de la
+donnee reelle) · **fuite** (information exposee a qui ne doit pas la voir).
+
+Deux issues, pas trois : il est CORRIGE, ou le verdict est NEEDS FIXES et la
+livraison ne part pas. Il est interdit de le « consigner » dans
+`decisions.md`, `config.md`, `initiatives.md`, le cahier de recette ou le rapport
+de review et de livrer quand meme. **Une ligne qui decrit un defaut d'argent ou
+de permission n'est pas une decision, c'est un bug ouvert.**
+
+PREMIERE ACTION DE LA REVIEW, avant tout le reste : relire `decisions.md`,
+`config.md` et tout fichier de consignation du projet en se demandant, ligne par
+ligne, « est-ce que cette ligne DECRIT un bug ? ». Chaque oui part en
+`/brick-code-fix` avant le verdict. Le rapport final compte ces lignes.
+
+Provenance : mesure 08/2026. Une passe a livre un devis qui retombait sur le
+mauvais client avec la mauvaise remise (defaut trouve par la review, laisse
+ouvert) et une cle d'API morte nommee dans le manifeste avec la mention « facade
+a trancher », jamais corrigee. Le process voyait les defauts et les rangeait.
+
+## Prerequis : projet qui n'a pas suivi la chaine complete
+
+Les artefacts `doc/memory/objectif.md`, `decisions.md`, `jeu_de_donnees.md` et
+`config.md` n'existent que sur les projets passes par la chaine actuelle. Sur un
+projet plus ancien, NE T'ARRETE PAS et ne les fabrique pas retroactivement : mene
+la review avec ce qui existe (`acceptance_criteria.md`, les maquettes, le code),
+signale en tete de rapport lesquels manquaient, et deroule quand meme la
+taxonomie, la parite, la matrice de permissions et la chasse aux facades — ce
+sont eux qui trouvent les defauts, pas les artefacts.
+
 ## Scope check
 
 - [ ] Tout le code implemente correspond a un critere d'acceptance
