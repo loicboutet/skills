@@ -46,6 +46,26 @@ propre + donnee inchangee ; tests d'integration "autre entreprise introuvable".
 Provenance : Gespilot (devis modifiable par URL) ; classe securite/cloisonnement
 historique de brick-code-review ; gesproj B3 tenu par cette methode.
 
+## Conventions de l'atelier : ce qui N'EST PAS un defaut
+
+Trois choses reviennent a chaque review et ne doivent JAMAIS etre signalees comme
+des defauts, encore moins bloquer une livraison :
+
+- **`config/master.key` suivi par git.** C'est un choix assume de l'atelier : les
+  depots sont prives et cela simplifie enormement le partage des credentials entre
+  les developpeurs et la production. Ne pas proposer de rotation, ne pas proposer
+  de `git rm`.
+- **`/mockups` accessible en production.** Egalement voulu : le client y suit les
+  briques a venir (cf. T11 : on verifie le `noindex` et l'absence de donnee client
+  reelle, pas la presence du namespace).
+- **Les workflows de deploiement fournis par le template** (`.github/workflows/`,
+  `deploy.yml` et `staging.yml`). Ils existent des la creation du projet ; leur
+  absence ne se constate que sur un depot ampute. Ce qu'on verifie, c'est qu'un
+  job de TESTS existe et gate le deploiement, pas qu'on reecrive le deploiement.
+
+Si l'un de ces trois points parait poser probleme sur un projet donne, c'est une
+question a poser au chef de projet, pas un blocage a prononcer.
+
 ## T3 — Permissions par blocs d'affichage
 
 Verifier : chaque donnee sensible (CA, marges, encours, salaires, coordonnees)
