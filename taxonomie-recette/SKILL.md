@@ -206,6 +206,73 @@ l'activation d'invitation tenaient deja la regle. Un attaquant non authentifie p
 enumerer les employes de chaque entreprise cliente, et savoir quelles entreprises sont
 clientes de la plateforme.
 
+## T18 — Cle etrangere acceptee en affectation de masse sans relecture dans le tenant
+
+Verifier : pour CHAQUE liste `permit` / `expect` d'un controleur multi-tenant, chaque cle
+etrangere autorisee (`*_id`, y compris DANS les attributs imbriques du type
+`line_items_attributes`) est soit relue dans le perimetre de l'entreprise, soit gardee par
+une validation de tenant au MODELE. La ressource ouverte peut etre parfaitement legitime :
+c'est l'identifiant POSTE dans le formulaire qui pointe ailleurs. Corollaire vue : un
+helper qui rattrape « l'objet deja porte par l'enregistrement » pour le remettre dans un
+select (produit desactive, contact archive) doit lui aussi s'arreter au tenant, sinon le
+formulaire re-affiche apres refus sert la donnee du voisin.
+Methode : `grep -rn "permit(\|params.expect" app/controllers/` puis, pour chaque `*_id`
+liste, chercher sa relecture (`current_company.xxx.find_by`, `tenant_scope`,
+`find_in_tenant`) ou sa validation de tenant ; celles qui n'en ont aucune sont exploitees a
+la main : ouvrir un enregistrement A JOUR du tenant, injecter dans le DOM l'identifiant
+d'un enregistrement du second tenant du jeu canonique (identifiants sequentiels, donc
+devinables), soumettre, et verifier que le marqueur du tenant miroir n'apparait NI en base,
+NI dans la reponse HTTP, NI dans le PDF ou l'e-mail derives.
+Attendu : refus propre (donnee non creee, message lisible), jamais un remplacement
+silencieux par nil.
+Provenance : Gespilot p2, revue de securite du 09/08/2026 — `line_items_attributes[][product_id]`
+etait permis par les trois controleurs de document et `LineItem#apply_product_snapshot`
+recopiait nom / unite / prix / taux / remise du produit sans verifier son entreprise (un
+`label` vide suffisait) : le catalogue complet de tous les tenants etait exfiltrable en
+boucle. Meme classe sur `user_id` / `client_id` / `opportunity_id` des taches commerciales
+et `user_id` des opportunites (repertoire clients, pipeline et trombinoscope du voisin).
+T2 ne l'attrapait pas : elle chasse l'acces a une RESSOURCE d'un autre tenant (URL, IDOR),
+pas la reference etrangere glissee dans le payload d'une ressource legitime.
+
+## T19 — Refus avale par le client : le serveur dit non, l'ecran ne dit rien
+
+Verifier : pour CHAQUE refus serveur declenche par un geste d'ECRITURE (permission,
+etat interdit, validation, conflit), l'utilisateur voit quelque chose a l'ecran.
+Un `render ..., status: :forbidden` (ou `:unprocessable_entity`, `:conflict`) qui
+part correctement du serveur ne prouve RIEN : sous Turbo, trois pieges le rendent
+invisible et le clic part dans le vide.
+  1. `head :forbidden` / corps vide : Turbo n'a rien a rendre. Attention au
+     `respond_to` dont le `format.any` capte `text/vnd.turbo-stream.html`, l'en-tete
+     que Turbo met EN TETE de l'Accept d'une soumission de formulaire.
+  2. Layout different de celui de la page courante : si les elements
+     `data-turbo-track="reload"` (feuilles de style, importmap) ne sont pas
+     rigoureusement identiques, Turbo constate le « tracked element mismatch » et
+     RECHARGE la page courante au lieu d'afficher la reponse. Le formulaire revient
+     vide, sans message : indiscernable d'un bouton mort.
+  3. Reponse de page pour une soumission partie d'un `turbo-frame` : le cadre cherche
+     un frame de meme id dans la reponse, ne le trouve pas, et affiche « Content
+     missing » (ou rien).
+Corollaire produit : le refus doit etre VISIBLE SANS SCROLL. Un bandeau pose en haut
+d'un long formulaire, alors que le bouton d'envoi est en bas, n'est pas vu.
+Corollaire amont : ne pas proposer ce qui sera refuse. Toute affordance d'ecriture
+(bouton de creation, lien « Modifier », case a cocher, `draggable`, glisser-deposer)
+est gardee par le meme `can?(module, :write)` que le controleur. Le refus visible est
+le filet, pas la porte d'entree.
+Methode : pour chaque persona restreint, (1) POST/PATCH direct avec l'Accept REEL de
+Turbo (`text/vnd.turbo-stream.html, text/html, application/xhtml+xml`) et exiger une
+reponse que Turbo APPLIQUE (Turbo Stream, ou HTML de meme signature de tracked
+elements) — pas seulement un corps non vide ; (2) rejouer le geste AU NAVIGATEUR,
+formulaire rempli, et verifier au DOM qu'un message est apparu ET que la saisie n'a
+pas ete perdue ; (3) grep des vues du module a la recherche d'affordances d'ecriture
+non gardees (`link_to "Nouveau`, `button_to`, `draggable`, `data: { turbo_method:`).
+Provenance : Gespilot p2 B2, 09/08/2026 — Yanis (`crm: read`) voyait « Nouveau
+contact », « Nouvelle tache », « Nouvelle opportunite », remplissait le formulaire,
+cliquait « Creer » : rien. Le serveur repondait bien la page 403 complete, mais dans
+le layout `application` (une feuille de style suivie de plus que le layout `app`) :
+Turbo jetait la reponse et rechargeait `/app/clients/new`. Meme silence pour Sofia
+(`billing: read`) cote facturation. T2 ne l'attrape pas : elle verifie le refus cote
+SERVEUR (statut + donnee inchangee), pas son arrivee a l'ecran.
+
 ## Journal des versions
 
 - **v1 — 2026-08-08** : creation. Classes issues de : l'audit qualite livraisons
@@ -217,3 +284,6 @@ clientes de la plateforme.
 - **v2 — 2026-08-08** : ajout de T16 (migrations et reprise de donnees) et de T17
   (divulgation d'existence de compte), cette derniere trouvee par /security-review
   sur le projet pilote. La taxonomie s'enrichit a chaque bug reel, via /brick-code-fix.
+- **v3 — 2026-08-09** : T18 (fuite cross-tenant par affectation de masse dans les
+  attributs imbriques) et T19 (refus serveur avale par Turbo faute de layout
+  identique), trouvees sur le projet pilote pendant la passe v2.
