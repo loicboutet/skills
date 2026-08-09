@@ -36,7 +36,7 @@ parcours navigues, tag `mockups-valides-brique-{N}`, verdict PRET / A CORRIGER).
 | **code** | `/brick-code-build` | `/brick-code-review` | `/brick-code-video` | `/brick-code-feedback` |
 
 Livrables en plus de l'etape code : `/brick-code-guide`, `/brick-code-walkthrough` (video longue),
-`/brick-code-fix` (methode bug). Referentiel partage : `/taxonomie-recette` (classes de bugs T1-T15,
+`/brick-code-fix` (methode bug). Referentiel partage : `/taxonomie-recette` (classes de bugs T1-T19,
 deroulees par code-review, alimentees par code-fix). Connaissance transverse : `/brain` (second cerveau cross-projet : chercher une conclusion réutilisable avant, distiller après). Rythme quotidien transverse : `/brick-daily-triage` (matin : tour
 des canaux, tri par scope, execution + reponse sur le canal d'origine, escalade des decisions) puis
 `/brick-daily-video` (soir : bilan chapitre de tous les changements, envoye au client). Hors-cycle :

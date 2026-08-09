@@ -1,6 +1,6 @@
 ---
 name: taxonomie-recette
-description: "Taxonomie de reference des classes de bugs (T1-T15) a chasser SYSTEMATIQUEMENT a chaque recette, chacune avec sa methode de verification et sa provenance (le bug reel qui l'a payee). Deroulee integralement par /brick-code-review, alimentee par /brick-code-fix a chaque bug reel. Utilise /taxonomie-recette pour charger les classes pendant une recette ou un bugfix."
+description: "Taxonomie de reference des classes de bugs (T1-T19) a chasser SYSTEMATIQUEMENT a chaque recette, chacune avec sa methode de verification et sa provenance (le bug reel qui l'a payee). Deroulee integralement par /brick-code-review, alimentee par /brick-code-fix a chaque bug reel. Utilise /taxonomie-recette pour charger les classes pendant une recette ou un bugfix."
 ---
 
 # Taxonomie de recette — v1 (2026-08-08)
@@ -184,6 +184,19 @@ telecharger chaque type de document et lire son nom + son titre.
 Provenance : classe flux transverses historique de brick-code-review ; gesproj D5
 (PDF d'avoir nomme `FAC-2026-0005.pdf`).
 
+## T16 — Migrations & reprise de donnees
+
+Verifier : la base FRAICHE se monte depuis zero (`db:drop db:prepare db:seed` sur un
+environnement vide passe sans erreur) ; `db:seed` rejoue ne cree pas de doublon
+(idempotence) ; aucune migration ne depend d'un modele applicatif (il evoluera, la
+migration doit rester rejouable dans dix versions) ; tout backfill est teste sur une
+copie realiste (volume et cas laids du jeu canonique) et rejouable sans double effet ;
+les migrations ne creent aucun compte ni secret en dur (croise T11).
+Methode : `bin/rails db:drop db:prepare db:seed` sur une base vide, puis `db:seed` une
+seconde fois et comparer les compteurs ; `grep -rE '\b[A-Z][A-Za-z]+\.(find|where|create|all)' db/migrate/`
+pour reperer les modeles applicatifs appeles depuis une migration ; rejouer le backfill
+deux fois sur une copie de la base seedee et verifier l'identite du resultat.
+Provenance : migration `CreateDefaultAdmin` cassee sur base fraiche (l'app ne se montait
 plus a partir de zero) ; seeds casses par les retours client successifs ; audit 08/2026
 (personne ne remonte jamais l'app depuis rien avant la livraison).
 
