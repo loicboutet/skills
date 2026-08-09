@@ -57,7 +57,10 @@ les points a trancher) ; `/brick-daily-video` le soir (assemble TOUS les changem
 mockup + code, en un bilan video chapitre + message recap). Triage enchaine sur video par defaut,
 sauf s'il reste des decisions pour l'humain. C'est la sortie commune des deux boucles feedback.
 
-**Hors-cycle** : `/brick-promo-video` (video de vente en motion design, hors livraison d'une brick).
+**Hors-cycle** : `/brick-promo-video` (video de vente en motion design, hors livraison d'une brick) ;
+`/brick-analysis-retrofit` (UNE fois par projet ANCIEN : reconstitue `objectif.md`, `decisions.md`
+et `config.md` que la chaine actuelle attend et qui n'existaient pas a son demarrage. Rien n'est
+invente, chaque ligne porte sa source, l'objectif sort en BROUILLON a valider).
 
 ### Rails / Technique
 

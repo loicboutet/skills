@@ -40,7 +40,9 @@ Livrables en plus de l'etape code : `/brick-code-guide`, `/brick-code-walkthroug
 deroulees par code-review, alimentees par code-fix). Connaissance transverse : `/brain` (second cerveau cross-projet : chercher une conclusion réutilisable avant, distiller après). Rythme quotidien transverse : `/brick-daily-triage` (matin : tour
 des canaux, tri par scope, execution + reponse sur le canal d'origine, escalade des decisions) puis
 `/brick-daily-video` (soir : bilan chapitre de tous les changements, envoye au client). Hors-cycle :
-`/brick-promo-video`.
+`/brick-promo-video`, et `/brick-analysis-retrofit` sur un projet ANCIEN (une passe unique qui
+reconstitue `objectif.md`, `decisions.md` et `config.md` a partir du depot et du tracker, chaque
+ligne avec sa source, l'objectif en brouillon a faire valider).
 
 Les etapes **mockup** et **code** sont des **boucles** : on presente au client, il renvoie ses
 retours (widget → tracker, + emails/WhatsApp/Drive), `*-feedback` les traite, `*-video` refilme
