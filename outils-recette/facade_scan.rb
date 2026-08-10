@@ -206,18 +206,33 @@ class Report
 
   def note(msg) = @notes << msg
 
+  # Tous les compteurs ci-dessous sont RECOMPTÉS depuis `@findings`, la liste
+  # même qui est imprimée. Aucun n'est incrémenté au fil de l'eau : un total
+  # tenu à part finit toujours par raconter autre chose que sa liste (un cahier
+  # de recette a déjà annoncé 672 critères pour 111 lignes écrites).
+  # Les seaux « autre » et « sans_gravite » existent pour que la somme des
+  # parties soit TOUJOURS égale au total, y compris si une catégorie ou une
+  # gravité est ajoutée plus tard sans être déclarée en tête de fichier.
   def counts
-    CATEGORIES.keys.each_with_object({}) do |cat, h|
+    h = CATEGORIES.keys.each_with_object({}) do |cat, acc|
       n = @findings.count { |f| f.category == cat }
-      h[cat] = n if n.positive?
+      acc[cat] = n if n.positive?
     end
+    other = @findings.count { |f| !CATEGORIES.key?(f.category) }
+    h["autre"] = other if other.positive?
+    h
   end
 
   def severity_counts
-    SEVERITY_ORDER.each_with_object({}) do |sev, h|
+    h = SEVERITY_ORDER.each_with_object({}) do |sev, acc|
       n = @findings.count { |f| f.severity == sev }
-      h[sev] = n if n.positive?
+      acc[sev] = n if n.positive?
     end
+    # Les catégories historiques (static/crawl) n'ont pas de gravité : sans ce
+    # seau, la somme de `by_severity` était inférieure au `total` sans le dire.
+    rest = @findings.count { |f| !SEVERITY_ORDER.include?(f.severity) }
+    h["sans_gravite"] = rest if rest.positive?
+    h
   end
 
   def summary
@@ -225,6 +240,11 @@ class Report
             "total" => @findings.size, "notes" => @notes }
     sev = severity_counts
     out["by_severity"] = sev unless sev.empty?
+    # Garde-fou : si un jour un compteur cesse de dériver de la liste, le
+    # rapport le dit lui-même au lieu de mentir en silence.
+    checks = { "counts" => counts.values.sum, "by_severity" => sev.values.sum }
+    divergent = checks.reject { |_, v| v == @findings.size }
+    out["incoherence"] = divergent.map { |k, v| "#{k} totalise #{v} pour #{@findings.size} constat(s)" } if divergent.any?
     out
   end
 
@@ -241,6 +261,20 @@ class Report
       puts
       print_categories(CATEGORIES.keys, sev)
     end
+    # Filet : un constat dont la catégorie ou la gravité n'est pas déclarée en
+    # tête de fichier serait compté sans jamais être imprimé. Il l'est ici.
+    leftovers = @findings.reject do |f|
+      CATEGORIES.key?(f.category) && (f.severity.nil? || SEVERITY_ORDER.include?(f.severity))
+    end
+    unless leftovers.empty?
+      puts "## Autres constats (#{leftovers.size})"
+      leftovers.first(CONFIG[:max_shown_per_category]).each do |f|
+        puts "  [#{f.category}/#{f.severity.inspect}] #{f.location}#{f.detail ? "  #{f.detail}" : ''}"
+      end
+      puts
+    end
+    puts "Total : #{@findings.size} constat(s) — recompté sur la liste imprimée ci-dessus, pas tenu à part."
+    summary["incoherence"]&.each { |m| puts "INCOHÉRENCE DE COMPTAGE : #{m}" }
   end
 
   private

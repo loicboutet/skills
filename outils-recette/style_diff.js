@@ -94,6 +94,23 @@ const FONT_CSS_HOSTS = [
 // c'est bloquant (deux systèmes de styles sur la même page).
 const KNOWN_CSS_FRAMEWORKS = /(bootstrap|bulma|foundation|materialize|semantic|tachyons|primer|antd|material-?ui|uikit|milligram|pico\.?css|water\.?css|normalize|skeleton)/i;
 
+// Contrôles de saisie : tailles rendues en dessous desquelles on parle de
+// défaut. 44 px est la cible tactile recommandée (WCAG 2.2 AA « Target Size
+// (Minimum) » : 24 px absolu, 44 px pour l'AAA et pour toutes les
+// recommandations plateformes). En dessous de `crushed_px`, le champ n'est plus
+// utilisable du tout : c'est le cas mesuré d'un `input` rendu à 18 px de large
+// sur un écran déclaré conforme.
+const DEFAULT_CONTROLS = {
+  min_px: 44,        // cible tactile : en dessous, défaut
+  crushed_px: 24,    // champ écrasé : inutilisable, bloquant
+  tiny_min_px: 10,   // cases à cocher / radios : légitimement petites
+  shrink_ratio: 0.5  // largeur app < ratio × largeur maquette = champ écrasé par l'app
+};
+
+// Débordement interne : en dessous de ce nombre de pixels, l'écart entre
+// `scrollWidth` et `clientWidth` relève de l'arrondi sous-pixel du moteur.
+const CLIP_MIN_EXCESS = 3;
+
 // Nombre maximum d'éléments extraits par page (garde-fou).
 const MAX_NODES = 4000;
 
@@ -464,7 +481,85 @@ function pageExtract(cfg) {
   }
   beyond.sort((a, b) => b.excess - a.excess);
 
+  // --- débordement INTERNE aux conteneurs ---------------------------------
+  // `document.documentElement.scrollWidth === 390` ne prouve RIEN. Un conteneur
+  // en `overflow-y: auto` fait calculer par le navigateur un `overflow-x: auto`
+  // implicite (spec CSS Overflow : dès qu'un axe n'est pas `visible`, l'autre
+  // devient `auto`). Le document ne déborde alors plus du tout, et pourtant le
+  // tableau qu'il contient est tronqué. Mesuré : 41 pages coupaient leurs
+  // tableaux en silence pendant que la sonde « document » affichait 46/47
+  // conformes.
+  //
+  // On distingue donc, pour tout élément dont `scrollWidth > clientWidth` :
+  //   - le conteneur défilant VOULU  : `overflow-x: auto|scroll` DÉCLARÉ dans
+  //     la cascade (ou motif de tableau défilant accessible) → information ;
+  //   - le conteneur qui ROGNE       : `overflow-x` calculé à auto/scroll sans
+  //     être déclaré (héritage d'un `overflow-y`), ou `hidden`/`clip` → défaut.
+
+  // Index des règles de la cascade qui déclarent un overflow horizontal.
+  // Lire la DÉCLARATION est le seul moyen de connaître l'intention : la valeur
+  // calculée, elle, est la même dans les deux cas.
+  const ovRules = [];
+  let sheetsReadable = 0, sheetsUnreadable = 0;
+  const declaredX = (style) => {
+    if (!style) return '';
+    const own = String(style.getPropertyValue('overflow-x') || '').trim();
+    if (own) return own.split(/\s+/)[0];
+    const sh = String(style.getPropertyValue('overflow') || '').trim();
+    return sh ? sh.split(/\s+/)[0] : '';
+  };
+  const visitRules = (list) => {
+    for (const r of list) {
+      if (r.selectorText && r.style) {
+        const v = declaredX(r.style);
+        if (v) ovRules.push({ sel: r.selectorText, v });
+        continue;
+      }
+      if (r.cssRules) {
+        // @media / @supports / @layer : on ne retient que ce qui s'applique ici
+        const cond = r.conditionText || (r.media && r.media.mediaText) || '';
+        if (cond) {
+          let ok = true;
+          try { ok = r.media ? window.matchMedia(cond).matches : (window.CSS && CSS.supports ? CSS.supports(cond) : true); }
+          catch (e) { ok = true; }
+          if (!ok) continue;
+        }
+        try { visitRules(Array.from(r.cssRules)); } catch (e) { /* illisible */ }
+      }
+    }
+  };
+  for (const s of Array.from(document.styleSheets)) {
+    const owner = s.ownerNode;
+    if (owner && owner.getAttribute && owner.getAttribute('data-style-diff') === '1') continue;
+    try {
+      const rules = s.cssRules;
+      if (!rules) { sheetsUnreadable++; continue; }
+      sheetsReadable++;
+      visitRules(Array.from(rules));
+    } catch (e) { sheetsUnreadable++; }
+  }
+  const declaredCache = new Map();
+  function declaredOverflowX(el, idx) {
+    if (declaredCache.has(idx)) return declaredCache.get(idx);
+    const found = new Set();
+    const inline = declaredX(el.style);
+    if (inline) found.add(inline);
+    for (const r of ovRules) {
+      try { if (el.matches(r.sel)) found.add(r.v); } catch (e) { /* sélecteur exotique */ }
+    }
+    declaredCache.set(idx, found);
+    return found;
+  }
+  // Motif « tableau défilant assumé » : la région focalisable au clavier qui
+  // enveloppe un tableau large est une intention explicite, même sans classe.
+  function assumedScroller(el) {
+    if (el.getAttribute('tabindex') === '0' && (el.getAttribute('role') === 'region' || el.querySelector('table'))) return true;
+    const cl = String(el.getAttribute('class') || '');
+    return /(^|\s)(overflow-x-(auto|scroll)|overflow-(auto|scroll)|table-responsive|scroll-x)(\s|$)/.test(cl);
+  }
+
   const clipped = [];
+  const scrollers = [];
   for (let i = 0; i < els.length; i++) {
     const el = els[i];
     const n = nodes[i];
@@ -475,17 +570,89 @@ function pageExtract(cfg) {
     // Les contrôles de formulaire "débordent" dès que leur valeur dépasse leur
     // largeur : c'est leur fonctionnement normal, pas un défaut de mise en page.
     if (n.tag === 'input' || n.tag === 'textarea' || n.tag === 'select') continue;
+    const excess = el.scrollWidth - el.clientWidth;
+    if (excess < (cfg.clipMinExcess || 3)) continue;
     const csEl = getComputedStyle(el);
     if (csEl.textOverflow === 'ellipsis') continue; // troncature voulue
     const ox = csEl.overflowX;
-    // Seul `hidden`/`clip` coupe réellement le contenu ; `visible` déborde mais
-    // reste lisible (et le contrôle "sort du viewport" s'en charge).
-    if (ox !== 'hidden' && ox !== 'clip') continue;
-    if (el.scrollWidth - el.clientWidth > 1) {
-      clipped.push({ lbl: n.lbl, sp: n.sp, scrollWidth: el.scrollWidth, clientWidth: el.clientWidth, excess: el.scrollWidth - el.clientWidth, overflowX: ox });
+    // `visible` : le contenu déborde mais reste lisible ; s'il sort du viewport
+    // la sonde « beyond » s'en charge, avec le coupable le plus haut.
+    if (ox === 'visible') continue;
+    const decl = declaredOverflowX(el, i);
+    const scrollable = (ox === 'auto' || ox === 'scroll');
+    const declaredScroll = decl.has('auto') || decl.has('scroll');
+    const entry = {
+      lbl: n.lbl, sp: n.sp, sig: n.sig.slice(0, 160), i, p: n.p,
+      scrollWidth: el.scrollWidth, clientWidth: el.clientWidth, excess,
+      overflowX: ox,
+      declared: Array.from(decl).join('/') || null,
+      overflowY: csEl.overflowY,
+      cssReadable: sheetsReadable > 0
+    };
+    if (scrollable && (declaredScroll || assumedScroller(el))) {
+      entry.cause = 'defilant-voulu';
+      scrollers.push(entry);
+      continue;
     }
+    if (scrollable) {
+      // Cas mesuré : `overflow-y: auto` déclaré, `overflow-x` jamais écrit,
+      // calculé à `auto` par le navigateur. Rien ne signale à l'utilisateur
+      // qu'il reste du contenu à droite : la colonne est perdue.
+      entry.cause = 'rogne-implicite';
+    } else {
+      entry.cause = decl.has(ox) ? 'rogne-declare' : 'rogne-non-declare';
+    }
+    clipped.push(entry);
   }
+  // On ne garde que le conteneur le plus HAUT d'une même chaîne : un tableau
+  // coupé dans un wrapper coupé dans une carte coupée = un seul défaut.
+  const clipIdx = new Set(clipped.map((c) => c.i));
+  const clipTop = clipped.filter((c) => {
+    for (let p = c.p; p >= 0; p = nodes[p].p) if (clipIdx.has(p)) return false;
+    return true;
+  });
+  clipped.length = 0;
+  for (const c of clipTop) clipped.push(c);
   clipped.sort((a, b) => b.excess - a.excess);
+  scrollers.sort((a, b) => b.excess - a.excess);
+
+  // --- contrôles de saisie écrasés ----------------------------------------
+  // Un écran « conforme à 390 px » peut rendre ses `input` à 18 px de large :
+  // le document ne déborde pas, la charte est respectée, et le formulaire est
+  // inutilisable. On mesure la boîte RENDUE de chaque contrôle.
+  const CONTROL_TAGS = new Set(['input', 'select', 'textarea', 'button']);
+  const controls = [];
+  for (let i = 0; i < els.length; i++) {
+    const n = nodes[i];
+    if (!CONTROL_TAGS.has(n.tag)) continue;
+    const el = els[i];
+    const type = String(el.getAttribute('type') || '').toLowerCase();
+    if (type === 'hidden') continue;
+    if (!n.vis) continue;
+    const r = el.getBoundingClientRect();
+    // Un contrôle VOLONTAIREMENT masqué (`sr-only`, radio de 1×1px derrière une
+    // pastille de couleur, `opacity: 0` sous un label stylé) n'est pas un
+    // contrôle écrasé : c'est un motif d'accessibilité courant. On le sort de
+    // la mesure, sinon chaque sélecteur de couleur remonte en défaut.
+    let csC = null;
+    try { csC = getComputedStyle(el); } catch (e) { /* noop */ }
+    const cls = String(el.getAttribute('class') || '');
+    const visuallyHidden = !!csC && (
+      csC.opacity === '0'
+      || (csC.clipPath && csC.clipPath !== 'none')
+      || (csC.clip && csC.clip !== 'auto')
+      || /(^|\s)(sr-only|visually-hidden|screen-reader-only)(\s|$)/.test(cls)
+      || (r.width <= 2 && r.height <= 2)
+    );
+    if (visuallyHidden) continue;
+    controls.push({
+      lbl: n.lbl, sp: n.sp, sig: n.sig.slice(0, 160), tag: n.tag, type: type || null,
+      name: el.getAttribute('name') || null,
+      w: Math.round(r.width * 100) / 100, h: Math.round(r.height * 100) / 100,
+      tiny: type === 'checkbox' || type === 'radio',
+      pressable: n.tag === 'button' || type === 'submit' || type === 'button' || type === 'reset' || type === 'image'
+    });
+  }
 
   // --- feuilles de style ---------------------------------------------------
   const sheets = [];
@@ -514,7 +681,17 @@ function pageExtract(cfg) {
     url: location.href,
     title: document.title,
     nodes: nodes.map((n) => { const { kids, ...rest } = n; return { ...rest, kids }; }),
-    overflow: { doc: docOverflow, beyond: beyond.slice(0, 12), clipped: clipped.slice(0, 12) },
+    overflow: {
+      doc: docOverflow,
+      beyond: beyond.slice(0, 12),
+      clipped: clipped.slice(0, 12),
+      clipped_total: clipped.length,
+      scrollers: scrollers.slice(0, 8),
+      scrollers_total: scrollers.length,
+      css_readable: sheetsReadable > 0,
+      sheets_unreadable: sheetsUnreadable
+    },
+    controls,
     css: { sheets, linkHrefs, fonts }
   };
 }
@@ -963,6 +1140,25 @@ function compareTrees(A, B, tol, ctx) {
       });
     }
     boxDiffsByPair.set(p, deltas);
+
+    // --- contrôle écrasé PAR RAPPORT À LA MAQUETTE ---
+    // La comparaison de boîte ci-dessus est tolérante et se tait quand les
+    // textes diffèrent. Un champ que la maquette montrait normal et que l'app
+    // rend à un tiers de sa largeur n'est pas une nuance de gabarit : le
+    // formulaire est cassé, et ça se dit fort.
+    const cc = (ctx && ctx.controls) || DEFAULT_CONTROLS;
+    const isCtl = (n) => n.tag === 'input' || n.tag === 'select' || n.tag === 'textarea' || n.tag === 'button';
+    if (isCtl(a) && isCtl(b) && a.box.w >= cc.crushed_px
+        && b.box.w < a.box.w * cc.shrink_ratio && a.box.w - b.box.w > 8) {
+      raw.push({
+        severity: 'bloquant', category: 'controle', kind: 'control-shrunk',
+        property: 'w', element: a.lbl, spath: 'ctlw:' + a.sp, sig: a.sig.slice(0, 200),
+        mockup: `${a.box.w}px`, app: `${b.box.w}px`,
+        message: `${a.lbl} : <${b.tag}> rendu à ${b.box.w}px de large dans l'app contre ${a.box.w}px en maquette`
+          + ` (${Math.round(100 * b.box.w / a.box.w)}% de la largeur attendue) — la maquette le montrait normal, l'app l'a écrasé`,
+        context: p.parent ? p.parent.a.lbl : null
+      });
+    }
   }
 
   const stats = {
@@ -1021,12 +1217,173 @@ function analyseOverflow(A, B, viewport) {
       context: null
     });
   }
-  for (const c of B.overflow.clipped.slice(0, 5)) {
+  // --- conteneurs qui rognent ---------------------------------------------
+  // Indépendant du débordement du document : c'est même le cas dangereux, celui
+  // où `documentElement.scrollWidth === viewport` et où le contenu est perdu
+  // quand même. On dit lequel des deux cas on a rencontré, sinon la correction
+  // est un jeu de devinettes.
+  const docQuiet = a.excess <= 1;
+  const mockupClipped = new Map((A.overflow.clipped || []).map((c) => [c.sp, c]));
+  const CAUSE_FR = {
+    'rogne-implicite': "overflow-x calculé à « %s » sans jamais avoir été déclaré : c'est le navigateur qui l'a dérivé d'un overflow-y (%s). Rien n'indique à l'utilisateur qu'il reste du contenu à droite",
+    'rogne-declare': "overflow-x: %s déclaré dans la feuille de style : le contenu est coupé net",
+    'rogne-non-declare': "overflow-x calculé à « %s » (déclaration introuvable dans la cascade) : le contenu est coupé net"
+  };
+  for (const c of (B.overflow.clipped || []).slice(0, 6)) {
+    const twin = mockupClipped.get(c.sp);
+    const cause = (CAUSE_FR[c.cause] || 'overflow-x: %s').replace('%s', c.overflowX).replace('%s', c.overflowY);
     out.push({
-      severity: 'mineur', category: 'debordement', kind: 'clipped',
-      property: null, element: c.lbl, spath: 'clip:' + c.sp,
-      mockup: '—', app: `contenu ${c.scrollWidth}px dans ${c.clientWidth}px`,
-      message: `${c.lbl} : contenu coupé en ${viewport.name} (${c.scrollWidth}px de contenu pour ${c.clientWidth}px visibles, overflow-x: ${c.overflowX})`,
+      severity: c.cssReadable ? 'bloquant' : 'majeur',
+      category: 'debordement', kind: c.cause === 'rogne-implicite' ? 'clip-implicite' : 'clip-declare',
+      property: null, element: c.lbl, spath: 'clip:' + c.sp, sig: c.sig,
+      mockup: twin ? `coupé aussi (${twin.scrollWidth}px dans ${twin.clientWidth}px)` : 'pas de coupe',
+      app: `contenu ${c.scrollWidth}px dans ${c.clientWidth}px`,
+      message: `${c.lbl} : contenu coupé en ${viewport.name} — ${c.scrollWidth}px de contenu pour ${c.clientWidth}px visibles (${c.excess}px perdus). ${cause}.`
+        + (docQuiet ? ` Le document, lui, ne déborde pas (scrollWidth ${a.doc.docScrollWidth}px = viewport) : ce défaut est INVISIBLE pour la sonde « page ».` : '')
+        + (twin ? ' La maquette coupe au même endroit.' : '')
+        + (c.cssReadable ? '' : ' (cascade illisible depuis la page : la déclaration n\'a pas pu être vérifiée, gravité abaissée)'),
+      context: null
+    });
+  }
+  const clipExtra = (B.overflow.clipped_total || 0) - Math.min(6, (B.overflow.clipped || []).length);
+  if (clipExtra > 0) {
+    out.push({
+      severity: 'majeur', category: 'debordement', kind: 'clip-reste',
+      property: null, element: 'page', spath: 'clip:reste',
+      mockup: '—', app: `${clipExtra} conteneur(s) de plus`,
+      message: `${clipExtra} autre(s) conteneur(s) rognent leur contenu en ${viewport.name} (seuls les ${Math.min(6, B.overflow.clipped.length)} plus larges sont détaillés)`,
+      context: null
+    });
+  }
+  // Maquette qui rogne alors que l'app tient : c'est la maquette qu'il faut
+  // corriger, et ça se dit avant que le code ne la recopie.
+  const appClipped = new Set((B.overflow.clipped || []).map((c) => c.sp));
+  for (const c of (A.overflow.clipped || []).slice(0, 3)) {
+    if (appClipped.has(c.sp)) continue;
+    out.push({
+      severity: 'majeur', category: 'debordement', kind: 'clip-maquette',
+      property: null, element: c.lbl, spath: 'clipm:' + c.sp, sig: c.sig,
+      mockup: `contenu ${c.scrollWidth}px dans ${c.clientWidth}px`, app: 'pas de coupe',
+      message: `${c.lbl} : c'est la MAQUETTE qui coupe son contenu en ${viewport.name} (${c.excess}px perdus, ${c.cause}) — l'app, elle, tient`,
+      context: null
+    });
+  }
+  // Conteneurs défilants assumés : information. Un tableau qui défile
+  // horizontalement est une décision, pas un défaut — mais elle doit être
+  // visible dans le rapport pour qu'on sache que le tableau ne tient pas.
+  for (const c of (B.overflow.scrollers || []).slice(0, 5)) {
+    out.push({
+      severity: 'info', category: 'debordement', kind: 'scroll-voulu',
+      property: null, element: c.lbl, spath: 'scroll:' + c.sp, sig: c.sig,
+      mockup: '—', app: `défile sur ${c.excess}px`,
+      message: `${c.lbl} : conteneur défilant VOULU (overflow-x: ${c.declared || c.overflowX} déclaré), ${c.scrollWidth}px de contenu pour ${c.clientWidth}px visibles — information, pas un défaut`,
+      context: null
+    });
+  }
+  return out;
+}
+
+// ---------------------------------------------------------------------------
+// Contrôles de saisie : taille rendue
+// ---------------------------------------------------------------------------
+
+/**
+ * Un écran peut être déclaré conforme (pas de débordement, charte respectée) et
+ * rendre ses `input` à 18 px de large. La parité de styles ne le voit pas : les
+ * styles calculés sont les mêmes des deux côtés, c'est la boîte RÉSOLUE qui
+ * s'effondre (grille, flex, `min-width: 0`, largeur en % d'un parent écrasé).
+ * On mesure donc la boîte rendue de chaque contrôle, en valeur absolue.
+ */
+function analyseControls(A, B, viewport, cc) {
+  const out = [];
+  // Retrouver le MÊME contrôle en maquette : le chemin structurel ne suffit pas
+  // (un wrapper de plus côté app et il ne matche plus). On tente, dans l'ordre,
+  // le chemin, puis le nom du champ, puis le libellé. Sans équivalent trouvé,
+  // on le dit au lieu de conclure à une régression.
+  const idxSp = new Map(), idxName = new Map(), idxLbl = new Map();
+  for (const c of (A.controls || [])) {
+    if (!idxSp.has(c.sp)) idxSp.set(c.sp, c);
+    const nk = c.tag + '|' + (c.type || '') + '|' + (c.name || '');
+    if (c.name && !idxName.has(nk)) idxName.set(nk, c);
+    const lk = c.tag + '|' + c.lbl;
+    if (!idxLbl.has(lk)) idxLbl.set(lk, c);
+  }
+  const twinOf = (c) => idxSp.get(c.sp)
+    || (c.name && idxName.get(c.tag + '|' + (c.type || '') + '|' + c.name))
+    || idxLbl.get(c.tag + '|' + c.lbl)
+    || null;
+
+  const seen = new Set();
+  for (const c of (B.controls || [])) {
+    // Un même champ répété (une ligne de tableau par enregistrement) ne vaut
+    // qu'un défaut : c'est le gabarit qui est en cause.
+    const key = c.sp + '|' + Math.round(c.w) + 'x' + Math.round(c.h);
+    if (seen.has(key)) continue;
+    seen.add(key);
+
+    const twin = twinOf(c);
+    const what = c.tag === 'button' ? 'bouton' : (c.tag === 'select' ? 'liste déroulante' : (c.tag === 'textarea' ? 'zone de texte' : 'champ'));
+    // La maquette est la référence : si elle rend le même contrôle aussi petit,
+    // c'est un défaut de charte, pas une régression de l'app. On le dit et on
+    // descend d'un cran, pour que le gate de parité ne se mette pas à rouge sur
+    // un choix de design déjà validé.
+    const twinShort = (axis) => twin && twin[axis] < cc.min_px;
+    const demote = (sev) => (sev === 'majeur' ? 'mineur' : (sev === 'mineur' ? 'info' : sev));
+    const promote = (sev) => (sev === 'info' ? 'mineur' : (sev === 'mineur' ? 'majeur' : sev));
+
+    if (c.tiny) {
+      // Cases à cocher et boutons radio : légitimement petits (13 à 20 px).
+      // On ne les mesure qu'à la recherche de l'écrasement franc.
+      if (c.w >= cc.tiny_min_px && c.h >= cc.tiny_min_px) continue;
+      const tinyBoth = twin && (twin.w < cc.tiny_min_px || twin.h < cc.tiny_min_px);
+      out.push({
+        severity: tinyBoth ? 'mineur' : 'majeur', category: 'controle', kind: 'control-tiny',
+        property: null, element: c.lbl, spath: 'ctl:' + c.sp, sig: c.sig,
+        mockup: twin ? `${twin.w}×${twin.h}px` : '—', app: `${c.w}×${c.h}px`,
+        message: `${c.lbl} : ${c.type === 'radio' ? 'bouton radio' : 'case à cocher'} rendu à ${c.w}×${c.h}px en ${viewport.name} — en dessous de ${cc.tiny_min_px}px, la case est inutilisable`,
+        context: null
+      });
+      continue;
+    }
+
+    if (c.w < cc.crushed_px || c.h < cc.crushed_px / 2) {
+      out.push({
+        severity: 'bloquant', category: 'controle', kind: 'control-crushed',
+        property: null, element: c.lbl, spath: 'ctl:' + c.sp, sig: c.sig,
+        mockup: twin ? `${twin.w}×${twin.h}px` : '—', app: `${c.w}×${c.h}px`,
+        message: `${c.lbl} : ${what} écrasé à ${c.w}×${c.h}px en ${viewport.name} (largeur ${viewport.width}px)`
+          + (c.name ? `, name="${c.name}"` : '')
+          + ` — en dessous de ${cc.crushed_px}px il n'est plus saisissable`
+          + (twin ? `. En maquette : ${twin.w}×${twin.h}px.` : '.'),
+        context: null
+      });
+      continue;
+    }
+
+    const shortW = c.w < cc.min_px, shortH = c.h < cc.min_px;
+    if (!shortW && !shortH) continue;
+    // Trop ÉTROIT pour saisir n'est pas la même chose que trop court d'un
+    // cheveu : un champ de 36px de large ne reçoit pas de texte, un champ de
+    // 38px de haut se saisit très bien (il rate juste la cible tactile de 44).
+    // La hauteur seule reste donc une remarque de charte (info) tant qu'elle ne
+    // vient pas d'une régression par rapport à la maquette.
+    let sev;
+    let why;
+    if (!c.pressable && shortW) { sev = 'majeur'; why = 'trop étroit pour une saisie'; }
+    else if (shortW && shortH) { sev = 'majeur'; why = 'sous la cible tactile sur les deux axes'; }
+    else { sev = 'info'; why = `${shortW ? 'largeur' : 'hauteur'} de ${shortW ? c.w : c.h}px, sous la cible tactile de ${cc.min_px}px`; }
+    const alsoMockup = (shortW && twinShort('w')) || (shortH && twinShort('h'));
+    const regression = twin && (c.w < twin.w - 8 || c.h < twin.h - 4);
+    if (regression) sev = promote(sev);
+    else if (alsoMockup) sev = demote(sev);
+    out.push({
+      severity: sev, category: 'controle', kind: 'control-target',
+      property: null, element: c.lbl, spath: 'ctl:' + c.sp, sig: c.sig,
+      mockup: twin ? `${twin.w}×${twin.h}px` : '—', app: `${c.w}×${c.h}px`,
+      message: `${c.lbl} : ${what} rendu à ${c.w}×${c.h}px en ${viewport.name}, ${why}`
+        + (regression ? ` — plus petit que la maquette (${twin.w}×${twin.h}px) : c'est l'app qui a rétréci` : '')
+        + (!regression && alsoMockup ? ' — déjà le cas en maquette, c\'est la charte qu\'il faut reprendre, pas l\'app' : '')
+        + (!twin ? ' — pas d\'équivalent trouvé en maquette, comparaison impossible' : ''),
       context: null
     });
   }
@@ -1141,6 +1498,28 @@ function countBySeverity(findings) {
   const c = { bloquant: 0, majeur: 0, mineur: 0, info: 0 };
   for (const f of findings) c[f.severity] = (c[f.severity] || 0) + 1;
   return c;
+}
+
+// Un total ne se tient jamais à part : il se recompte depuis la liste qu'il
+// résume. Ces trois fonctions sont la seule source des chiffres du rapport.
+function allFindings(pairs) {
+  const out = [];
+  for (const p of pairs) for (const vp of Object.values(p.viewports)) out.push(...(vp.findings || []));
+  return out;
+}
+function allIgnored(pairs) {
+  const out = [];
+  for (const p of pairs) for (const vp of Object.values(p.viewports)) out.push(...(vp.ignored || []));
+  return out;
+}
+function viewportErrors(pairs) {
+  const out = [];
+  for (const p of pairs) {
+    for (const [name, vp] of Object.entries(p.viewports)) {
+      if (vp.error) out.push({ pair: p.name, viewport: name, error: vp.error });
+    }
+  }
+  return out;
 }
 
 // ===========================================================================
@@ -1344,7 +1723,9 @@ code{background:#1d2229}.occ{background:#1d2229}}
 <header>
   <h1>Diff de styles calculés — maquette vs application</h1>
   <div class="dim">${esc(report.generated_at)} · ${report.pairs.length} paire(s) · ${report.viewports.map((v) => `${v.name} ${v.width}×${v.height}`).join(' · ')}</div>
-  <div style="margin-top:8px">${badges(totals, true)}</div>
+  <div style="margin-top:8px">${badges(totals, true)}
+    <span class="dim">· ${allFindings(report.pairs).length} ligne(s) listée(s), total recompté depuis la liste</span></div>
+  ${report.totals_errors ? `<div class="err" style="margin-top:6px"><b>${report.totals_errors} écran(s) non mesuré(s)</b> : ${esc(report.errors.slice(0, 3).map((e) => e.pair + ' [' + e.viewport + ']').join(', '))}${report.totals_errors > 3 ? '…' : ''} — leurs zéros ne sont pas des conformités.</div>` : ''}
   <div class="filters">
     ${SEVERITIES.map((s) => `<label><input type="checkbox" class="fs" value="${s}" ${s === 'info' ? '' : 'checked'}> ${s}</label>`).join('')}
     <input type="search" id="q" placeholder="filtrer (texte, catégorie, propriété)…">
@@ -1426,6 +1807,8 @@ async function main() {
   ]).filter((v) => !args.viewport || v.name === args.viewport);
 
   const tol = { ...DEFAULT_TOLERANCES, ...(cfg.tolerances || {}) };
+  const controlsCfg = { ...DEFAULT_CONTROLS, ...(cfg.controls || {}) };
+  const clipMinExcess = cfg.clip_min_excess != null ? cfg.clip_min_excess : CLIP_MIN_EXCESS;
   const baseM = cfg.base_mockup || cfg.base_url || '';
   const baseA = cfg.base_app || cfg.base_url || '';
   const globalIgnore = DEFAULT_IGNORE_SELECTORS.concat(cfg.ignore_selectors || []);
@@ -1509,7 +1892,7 @@ async function main() {
 
         const pageM = await anon.newPage();
         const pageA = await appCtx.newPage();
-        const exArgs = { props: PROPS, ignoreSelectors, maskSelectors, rootSelector, maxNodes: MAX_NODES };
+        const exArgs = { props: PROPS, ignoreSelectors, maskSelectors, rootSelector, maxNodes: MAX_NODES, clipMinExcess };
 
         await preparePage(pageM, mockupUrl, args.timeout);
         const A = await pageM.evaluate(pageExtract, exArgs);
@@ -1517,34 +1900,52 @@ async function main() {
         const B = await pageA.evaluate(pageExtract, exArgs);
         await pageM.close(); await pageA.close();
 
-        const { raw, stats } = compareTrees(A, B, tol, { pair: pc.name, vp: vp.name });
+        const { raw, stats } = compareTrees(A, B, tol, { pair: pc.name, vp: vp.name, controls: controlsCfg });
         const over = analyseOverflow(A, B, vp);
+        const ctl = analyseControls(A, B, vp, controlsCfg);
         const cssRes = analyseCss(A, B, foreignAllow);
         if (!entry.css_inventory) entry.css_inventory = cssRes.inventory;
 
-        const all = raw.concat(over, cssRes.findings);
+        const all = raw.concat(over, ctl, cssRes.findings);
         const { kept, ignored } = applyAllowlist(all, pc.name, vp.name, extraRules);
         vpEntry.findings = aggregate(kept);
         vpEntry.ignored = aggregate(ignored);
         vpEntry.counts = countBySeverity(vpEntry.findings);
-        vpEntry.stats = { ...stats, ignored_by_allowlist: vpEntry.ignored.length };
-        report.totals_ignored += vpEntry.ignored.length;
+        vpEntry.stats = {
+          ...stats,
+          ignored_by_allowlist: vpEntry.ignored.length,
+          controls_app: (B.controls || []).length,
+          clipped_app: B.overflow.clipped_total || 0,
+          scrollers_app: B.overflow.scrollers_total || 0,
+          doc_scroll_width_app: B.overflow.doc.docScrollWidth,
+          css_readable_app: B.overflow.css_readable !== false
+        };
       } catch (err) {
         vpEntry.error = `Échec sur ${vp.name} : ${err.message}`;
         vpEntry.stats = { ignored_by_allowlist: 0 };
         console.error(`   ! ${vpEntry.error}`);
       }
-      for (const s of SEVERITIES) { entry.counts[s] += vpEntry.counts[s] || 0; report.totals[s] += vpEntry.counts[s] || 0; }
       entry.viewports[vp.name] = vpEntry;
       const c = vpEntry.counts;
       process.stdout.write(`  ${vp.name.padEnd(8)} ${c.bloquant} bloquant · ${c.majeur} majeur · ${c.mineur} mineur · ${c.info} info`
         + (vpEntry.stats.matched ? ` (${vpEntry.stats.matched} éléments appariés)` : '') + '\n');
     }
+    // Les compteurs d'une paire SONT la liste de ses écarts, recomptée : rien
+    // n'est incrémenté à côté, donc rien ne peut diverger de ce qui est affiché.
+    entry.counts = countBySeverity(allFindings([entry]));
     report.pairs.push(entry);
     fs.writeFileSync(path.join(args.out, 'paires', `${slug}.json`), JSON.stringify(entry, null, 2));
   }
 
   await browser.close();
+
+  // Idem au niveau du rapport : les totaux sont RECALCULÉS depuis les listes
+  // publiées, jamais tenus à part. Un livrable qui se résume lui-même ment par
+  // défaut : le seul résumé qui ne ment pas est celui qu'on dérive.
+  report.totals = countBySeverity(allFindings(report.pairs));
+  report.totals_ignored = allIgnored(report.pairs).length;
+  report.totals_errors = viewportErrors(report.pairs).length;
+  report.errors = viewportErrors(report.pairs);
 
   const gate = args.failOn === 'aucun' ? null : SEV_RANK[args.failOn];
   const blocking = gate == null ? 0 : SEVERITIES.filter((s) => SEV_RANK[s] <= gate).reduce((n, s) => n + report.totals[s], 0);
@@ -1557,6 +1958,12 @@ async function main() {
   const t = report.totals;
   console.log(`\n${t.bloquant} bloquant · ${t.majeur} majeur · ${t.mineur} mineur · ${t.info} info`
     + ` (${report.totals_ignored} filtrés par l'allowlist)`);
+  if (report.totals_errors) {
+    // Un écran qui a planté rend 0 écart : sans cette ligne, l'échec de mesure
+    // se lit comme un feu vert.
+    console.log(`${report.totals_errors} écran(s)/viewport(s) NON MESURÉ(S) (erreur) : leurs zéros ne sont pas des conformités.`);
+    for (const e of report.errors.slice(0, 5)) console.log(`   · ${e.pair} [${e.viewport}] : ${e.error}`);
+  }
   console.log(`Rapport : ${path.resolve(args.out, 'index.html')}`);
   process.exit(report.exit_code);
 }

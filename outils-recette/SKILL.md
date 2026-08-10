@@ -145,9 +145,13 @@ inconnu), et **maquette validée jamais implémentée** (`non_appariees`, raison
 « aucune route applicative »).
 
 **(c) Le mobile et le style.** Débordement horizontal à 390 px (dis de quel
-côté : app ou maquette, le script le précise), puis les écarts bloquants et
-majeurs de `style_diff`, **groupés par cause** et non par page : « padding 16
-au lieu de 24 sur 39 pages » est une ligne du gabarit, pas trente-neuf.
+côté : app ou maquette, le script le précise), **conteneurs qui rognent leur
+contenu** (`clip-implicite` / `clip-declare` : ceux-là ne font pas déborder le
+document, ils coupent en silence) et **contrôles écrasés**, puis les écarts
+bloquants et majeurs de `style_diff`, **groupés par cause** et non par page :
+« padding 16 au lieu de 24 sur 39 pages » est une ligne du gabarit, pas
+trente-neuf. N'écris jamais « pas de débordement mobile » sur la seule foi du
+`scrollWidth` du document : c'est la mesure qui a laissé passer 41 pages.
 
 **(d) Le reste, en information.** Colonnes mortes, écarts mineurs, ambiguïtés du
 générateur de paires.
@@ -233,19 +237,84 @@ Options : `--only <motif>` (filtre sur le nom de la paire), `--viewport mobile`,
 (filtres par gravité), un JSON par paire, `resume.json`. Code de sortie non nul
 s'il reste des écarts hors tolérance, donc utilisable comme gate.
 
-Détecte en plus, et ce sont les deux qui coûtent le plus cher en livraison :
+Détecte en plus, et ce sont les quatre qui coûtent le plus cher en livraison :
 
-- le **débordement horizontal** par viewport (mobile 390 px surtout), en disant
-  de quel côté il se produit ;
+- le **débordement horizontal du document** par viewport (mobile 390 px
+  surtout), en disant de quel côté il se produit ;
+- les **conteneurs qui rognent leur contenu** sans que le document déborde
+  (voir la mise en garde ci-dessous) ;
+- les **contrôles de saisie écrasés** (un `input` rendu à 18 px de large) et
+  ceux qui passent sous la cible tactile de 44 px ;
 - les **feuilles de style étrangères** chargées à côté des nôtres (un export
   Lovable ou Figma qui cohabite avec le design system : c'est ce qui a déformé
   une application entière pendant des semaines).
 
+#### ⚠️ Un `scrollWidth` de document conforme ne prouve RIEN
+
+`document.documentElement.scrollWidth === 390` a longtemps servi de feu vert.
+C'est un faux vert, et le mode de défaillance le plus dangereux d'un instrument.
+Dès qu'un conteneur porte `overflow-y: auto` (le gabarit `<main>` de presque
+toutes nos applis), le navigateur calcule un `overflow-x: auto` implicite sur ce
+même conteneur. Le document ne déborde donc plus, le chiffre est propre, **et le
+tableau à l'intérieur est tronqué** : mesuré une fois, 41 pages coupaient leurs
+tableaux en silence pendant que l'outil annonçait 46 conformes sur 47.
+
+La sonde parcourt donc les éléments et compare `scrollWidth` à `clientWidth`,
+puis **lit la cascade CSS** pour trancher entre les deux cas, parce que la valeur
+CALCULÉE est identique dans les deux :
+
+| Ce que dit le rapport | Ce que ça veut dire | Gravité |
+|---|---|---|
+| `scroll-voulu` | `overflow-x: auto\|scroll` **déclaré** dans la feuille de style (ou région focalisable enveloppant un tableau) : décision assumée | info |
+| `clip-implicite` | `overflow-x` calculé à `auto` **sans être déclaré nulle part** : le navigateur l'a dérivé d'un `overflow-y`. Rien n'indique à l'utilisateur qu'il reste du contenu à droite | bloquant |
+| `clip-declare` | `overflow-x: hidden\|clip` déclaré : le contenu est coupé net | bloquant |
+| `clip-maquette` | c'est la maquette qui coupe, l'app tient | majeur |
+
+Chaque ligne porte le sélecteur, la largeur du contenu et celle du conteneur, et
+dit si le document, lui, était silencieux. Sans cette distinction, la correction
+est un jeu de devinettes : on ne sait pas s'il faut retirer un `overflow`,
+ajouter un `overflow-x-auto` explicite, ou refaire la mise en page.
+
+Si la cascade n'est pas lisible (feuille CSS cross-origin), la gravité est
+abaissée à majeur et le rapport le dit.
+
+#### Contrôles de saisie
+
+Un écran peut être conforme à 390 px (pas de débordement, charte respectée) et
+rendre ses `input` à 18 px de large : les styles calculés sont les mêmes des deux
+côtés, c'est la boîte résolue qui s'effondre. La sonde mesure la boîte RENDUE de
+chaque `input` / `select` / `textarea` / `button` :
+
+- moins de **24 px** de large : `control-crushed`, bloquant, le champ n'est plus
+  saisissable ;
+- moins de **44 px** (cible tactile) : `control-target`, majeur si le champ est
+  trop étroit pour une saisie ou trop petit sur les deux axes, mineur si c'est
+  seulement la hauteur ;
+- largeur dans l'app **inférieure de moitié** à celle de la maquette :
+  `control-shrunk`, bloquant (la maquette le montrait normal, l'app l'a écrasé) ;
+- cases à cocher et boutons radio : légitimement petits, mesurés à un seuil de
+  10 px seulement, et les contrôles volontairement masqués (`sr-only`, radio de
+  1×1 px derrière une pastille) sont exclus ;
+- si la maquette a le même défaut, la gravité descend d'un cran et le message le
+  dit : c'est la charte qu'il faut reprendre, pas l'app.
+
+Seuils réglables dans `pairs.json` : `"controls": {"min_px": 44, "crushed_px":
+24, "tiny_min_px": 10, "shrink_ratio": 0.5}` et `"clip_min_excess": 3`.
+
+#### Les totaux
+
+Tous les chiffres du rapport (par paire, par viewport, en tête de page) sont
+**recalculés depuis la liste publiée**, jamais incrémentés à côté. Le nombre de
+lignes listées est affiché à côté des totaux. Un écran qui a planté apparaît
+dans un bandeau « n écran(s) non mesuré(s) » : sans lui, un échec de mesure se
+lit comme un feu vert (c'est le même piège qu'un cahier de recette qui annonce
+672 critères pour 111 lignes écrites).
+
 Ce qu'il ne voit pas : un seul état par page (ni survol, ni focus, ni modale, ni
-formulaire en erreur), ni le contraste, ni la taille des cibles tactiles. Les
-positions sont volontairement tolérantes (un décalage isolé de 3 px passe).
-La précision monte quand les deux côtés affichent les MÊMES données : c'est la
-raison d'être du jeu de données canonique (`doc/memory/jeu_de_donnees.md`).
+formulaire en erreur), ni le contraste. Les positions sont volontairement
+tolérantes (un décalage isolé de 3 px passe). La précision monte quand les deux
+côtés affichent les MÊMES données : c'est la raison d'être du jeu de données
+canonique (`doc/memory/jeu_de_donnees.md`).
 
 ### facade_scan.rb — contrôles non branchés
 
