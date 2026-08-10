@@ -4,11 +4,18 @@
 # mockup_scan.rb - qualite de transcription des maquettes
 #
 #   ruby mockup_scan.rb <rails_app_dir> [options]
+#   ruby mockup_scan.rb inventory <rails_app_dir> [--json]
 #
-# Mesure l'HYGIENE d'un dossier app/views/mockups : palette, typographie,
-# valeurs arbitraires, duplication, hygiene de contenu, volume. Avec --source,
-# confronte en plus les valeurs numeriques et les couleurs produites a celles
-# d'une source externe (export Lovable/Figma, CSS, TSX).
+# Mode par defaut : mesure l'HYGIENE d'un dossier app/views/mockups (palette,
+# typographie, valeurs arbitraires, duplication, hygiene de contenu, volume).
+# Avec --source, confronte en plus les valeurs numeriques et les couleurs
+# produites a celles d'une source externe (export Lovable/Figma, CSS, TSX).
+#
+# Mode `inventory` : confronte, ecran par ecran, l'INVENTAIRE DES BLOCS de la
+# vue applicative et celui de sa maquette. Il repond a une seule question, celle
+# que le score d'hygiene ne pose pas : est-ce que l'application montre des blocs
+# que la maquette validee ne contient pas (bloc invente), ou l'inverse (promesse
+# non tenue) ?
 #
 # Ce que le score NE dit PAS : voir SKILL.md. Un score propre prouve
 # l'hygiene, pas la fidelite a la maquette source.
@@ -18,6 +25,7 @@ require "set"
 require "digest"
 require "optparse"
 require "strscan"
+require_relative "pairing"
 
 # ---------------------------------------------------------------------------
 # Options
@@ -36,8 +44,10 @@ OPTS = {
   mockups_dir: nil
 }
 
+MODE = ARGV.first == "inventory" ? ARGV.shift : "hygiene"
+
 parser = OptionParser.new do |o|
-  o.banner = "usage: ruby mockup_scan.rb <rails_app_dir> [options]"
+  o.banner = "usage: ruby mockup_scan.rb [inventory] <rails_app_dir> [options]"
   o.on("--json", "sortie JSON complete")                       { OPTS[:json] = true }
   o.on("--tokens PATH", "tailwind.config.js (sinon autodetecte)") { |v| OPTS[:tokens] = v }
   o.on("--source DIR", "dossier de la source externe (CSS/TSX/HTML)") { |v| OPTS[:source] = v }
@@ -979,6 +989,517 @@ end
 # ---------------------------------------------------------------------------
 
 SEV_LABEL = { 3 => "!!", 2 => "! ", 1 => "  " }.freeze
+
+# ---------------------------------------------------------------------------
+# Mode `inventory` : inventaire de blocs, application confrontee a la maquette
+# ---------------------------------------------------------------------------
+#
+# Le defaut vise : un bloc present dans l'application et ABSENT de la maquette
+# (invente en cours de route), ou present dans la maquette et absent de
+# l'application (promesse non tenue). Cas reel paye : trois pastilles de
+# visibilite `tdb-vis-state-btn` posees par un commit « pixel-perfect » alors
+# que la maquette, dans le meme depot, n'en contient aucune trace. Huit
+# semaines de survie.
+#
+# Precision avant exhaustivite. Tout ce qui suit est un reglage a ouvrir si le
+# rapport est trop bruyant, ou a fermer s'il l'est trop peu.
+INV = {
+  # Premier segment des classes utilitaires Tailwind. Une classe dont la tete
+  # est ici n'est PAS un nom de composant : elle ne dit rien du bloc.
+  tailwind_heads: %w[
+    absolute accent align animate antialiased appearance aspect auto backdrop backface basis bg block
+    blur border bottom box break brightness capitalize caption caret clear col collapse columns contain container
+    content contents contrast cursor dark decoration delay divide drop duration ease end even fill filter fixed
+    flex float flow font forced from gap grayscale grid group grow h has hidden hue hyphens indent
+    inline inset invert invisible isolate italic items justify last leading left line linear list lowercase
+    ltr m max mb me min mix ml motion mr ms mt mx my no normal not object odd opacity order origin
+    outline overflow overline overscroll p pb pe perspective pl place placeholder pointer pr print ps pt
+    px py relative resize right ring rotate rounded row rtl saturate scale scroll select self sepia
+    shadow shrink size skew snap space sr start static sticky stroke subpixel table text to top touch
+    tracking transform transition translate truncate underline uppercase via visible w whitespace will z
+    first focus hover active disabled checked required valid invalid empty target open sm md lg xl 2xl
+  ].freeze,
+  # Classes de composant a taire quand meme (bruit connu, a completer par projet).
+  class_denylist: %w[clearfix hidden sr-only js-hook turbo-frame].freeze,
+  # En deca, un libelle ne distingue rien (« ok », « x », « + »).
+  min_label: 4,
+  # Profondeur d'inlining des partials : une vue applicative est decoupee, la
+  # maquette non. Sans inlining, tout le contenu des partials passerait pour
+  # « absent de l'application ».
+  max_depth: 4,
+  # Sous-dossiers de app/views qui ne sont pas le produit livre.
+  not_shipped: %w[mockups lovable figma design_system styleguide layouts].freeze,
+  # Combien d'items detailler par ecran dans le rapport texte.
+  per_pair: 12,
+  # Nombre de classes partageant un prefixe a partir duquel on parle d'UN
+  # composant plutot que de N classes.
+  cluster_min: 4
+}.freeze
+
+class Inventory
+  Block = Struct.new(:family, :key, :file, :line, :dynamic)
+  Pair  = Struct.new(:app_view, :mockup_view, :app_blocks, :mockup_blocks, :notes)
+
+  FAMILIES = {
+    "classe"   => "classes de composant",
+    "stimulus" => "controleurs et actions Stimulus",
+    "controle" => "boutons et liens (libelle)",
+    "titre"    => "titres et en-tetes"
+  }.freeze
+  LABEL_FAMILIES = %w[controle titre].freeze
+
+  attr_reader :pairs, :orphan_app, :orphan_mockup, :notes, :aborted
+
+  def initialize(root, opts)
+    @root = root
+    @opts = opts
+    @notes = []
+    @pairs = []
+    @orphan_app = []
+    @orphan_mockup = []
+    @cache = {}
+    @aborted = false
+  end
+
+  def rel(p) = p.sub(%r{\A#{Regexp.escape(@root)}/?}, "")
+
+  def run
+    views_dir = File.join(@root, "app/views")
+    unless File.directory?(views_dir)
+      @notes << "app/views introuvable : rien a inventorier"
+      return self
+    end
+    mockups = records(views_dir, mockup: true)
+    apps    = records(views_dir, mockup: false)
+    if mockups.empty?
+      @notes << "aucune maquette sous app/views/mockups : l'inventaire n'a rien a confronter"
+      return self
+    end
+    forbidden = Pairing.namespaces(mockups)
+    taken = {}
+
+    mockups.each do |mv|
+      ctrl_base = Pairing.strip_mockup(mv[:controller])
+      if ctrl_base.empty? || ctrl_base == "home"
+        @orphan_mockup << { maquette: mv[:file], raison: "hub des maquettes, pas un ecran du produit" }
+        next
+      end
+      if (why = Pairing.no_counterpart(mv[:action]))
+        @orphan_mockup << { maquette: mv[:file], raison: why }
+        next
+      end
+      hit = Pairing.candidates(apps, ctrl_base, mv[:action], forbidden, leaf: true).first
+      if hit.nil?
+        @orphan_mockup << { maquette: mv[:file], raison: "aucune vue applicative pour #{ctrl_base}##{mv[:action]} : maquette jamais implementee (ou renommee)" }
+        next
+      end
+      av = hit[:item]
+      if taken[av[:file]]
+        @orphan_mockup << { maquette: mv[:file], raison: "#{av[:file]} est deja apparie a #{taken[av[:file]]}" }
+        next
+      end
+      taken[av[:file]] = mv[:file]
+      @pairs << build_pair(av, mv)
+    end
+
+    @orphan_app = apps.reject { |a| taken.key?(a[:file]) }.map { |a| a[:file] }
+    @notes << "#{@pairs.size} paire(s) vue<->maquette, #{@orphan_mockup.size} maquette(s) sans vue, " \
+              "#{@orphan_app.size} vue(s) applicative(s) sans maquette"
+    self
+  rescue StandardError => e
+    @aborted = true
+    @notes << "SCAN INTERROMPU : #{e.class} #{e.message} — inventaire INCOMPLET, ne pas le lire comme un feu vert"
+    warn "mockup_scan inventory : SCAN INTERROMPU (#{e.class}: #{e.message})"
+    warn e.backtrace.first(5).join("\n")
+    self
+  end
+
+  # --- collecte des vues ---------------------------------------------------
+
+  def records(views_dir, mockup:)
+    Dir.glob(File.join(views_dir, "**/*.html*.erb")).sort.filter_map do |f|
+      r = rel(f).sub("app/views/", "")
+      next if File.basename(r).start_with?("_")
+      segs = File.dirname(r).split("/")
+      in_mockups = segs.first == "mockups"
+      next if mockup != in_mockups
+      next if !mockup && (INV[:not_shipped].any? { |d| segs.include?(d) } || segs.first.to_s.end_with?("_mailer"))
+      { controller: File.dirname(r), action: File.basename(r).split(".").first, file: rel(f), path: nil }
+    end
+  end
+
+  # --- inventaire d'un ecran, partials inlines -----------------------------
+
+  def blocks_of(view_rel)
+    @cache[view_rel] ||= begin
+      out = []
+      collect(File.join(@root, view_rel), out, 0, Set.new)
+      out
+    end
+  end
+
+  def collect(abs, out, depth, seen)
+    return if depth > INV[:max_depth] || seen.include?(abs) || !File.file?(abs)
+    seen << abs
+    src = File.read(abs, encoding: "UTF-8", invalid: :replace, undef: :replace)
+    doc = ErbDoc.new(abs, src)
+    extract(doc, src, rel(abs), out)
+    partial_refs(src).each { |ref| collect(resolve_partial(ref, abs), out, depth + 1, seen) if resolve_partial(ref, abs) }
+  end
+
+  def partial_refs(src)
+    refs = []
+    src.scan(/\brender\b[^\n]{0,80}?(?:partial:\s*)?["']([a-z0-9_\/]+)["']/i) { refs << ::Regexp.last_match(1) }
+    refs.uniq
+  end
+
+  def resolve_partial(ref, from_abs)
+    dir, base = ref.include?("/") ? [ File.dirname(ref), File.basename(ref) ] : [ nil, ref ]
+    root_dir = dir ? File.join(@root, "app/views", dir) : File.dirname(from_abs)
+    Dir.glob(File.join(root_dir, "_#{base}.html*.erb")).first
+  end
+
+  # --- extraction des blocs ------------------------------------------------
+
+  # `class="a <%= "b" if … %>"` : la valeur contient de l'ERB, donc des `<` et
+  # des guillemets. On la lit sur la source brute, en autorisant les tags ERB
+  # dans la valeur — ErbDoc ne sait pas lexer un tag HTML qui contient de l'ERB,
+  # et c'est precisement la forme du bloc qu'on cherche (`tdb-vis-state-btn`).
+  CLASS_ATTR = /class:?\s*=?>?\s*(["'])((?:(?!\1)[^<]|<%.*?%>)*)\1/m
+
+  def extract(_doc, src, file, out)
+    src.scan(CLASS_ATTR) do
+      m = ::Regexp.last_match
+      line = line_at(src, m.begin(0))
+      class_tokens(m[2]).each { |tok| out << Block.new("classe", tok, file, line, false) }
+    end
+
+    # Stimulus : attribut HTML et forme `data: { controller: … }`.
+    src.scan(/data-controller\s*=\s*["']([^"'<]*)["']|(?<![-\w])controller:\s*["']([^"'<]*)["']/) do
+      m = ::Regexp.last_match
+      (m[1] || m[2]).to_s.split.each do |c|
+        out << Block.new("stimulus", c, file, line_at(src, m.begin(0)), false) if c.match?(/\A[a-z][\w-]*\z/)
+      end
+    end
+    src.scan(/data-action\s*=\s*["']([^"'<]*)["']|(?<![-\w])action:\s*["']([^"'<]*)["']/) do
+      m = ::Regexp.last_match
+      (m[1] || m[2]).to_s.split.each do |a|
+        pair = a[/([a-z][\w-]*#[a-zA-Z_]\w*)\z/, 1]
+        out << Block.new("stimulus", pair, file, line_at(src, m.begin(0)), false) if pair
+      end
+    end
+
+    # Boutons, liens et titres se lisent sur une source dont l'ERB est remplace
+    # par un marqueur. Sinon `<button data-pole="<%= p[:id] %>">` casse au
+    # premier `>` de l'ERB et le tag lui-meme devient du « libelle » :
+    # `data et` remontait comme un bouton de la maquette.
+    flat = flatten_erb(src)
+
+    flat.scan(%r{<(a|button)\b[^>]*>(.*?)</\1>}mi) do
+      m = ::Regexp.last_match
+      push_label(out, "controle", m[2], file, line_at(flat, m.begin(0)))
+    end
+    src.scan(/\b(?:link_to|button_to|submit_tag|button_tag)\s*\(?\s*(["'])(.*?)\1/m) do
+      m = ::Regexp.last_match
+      push_label(out, "controle", m[2], file, line_at(src, m.begin(0)))
+    end
+    src.scan(/\b(?:link_to|button_to|submit_tag|button_tag|\.submit)\s*\(?\s*(?:t\(|I18n\.t\(|@|\w+\.)/) do
+      m = ::Regexp.last_match
+      out << Block.new("controle", nil, file, line_at(src, m.begin(0)), true)
+    end
+
+    # Titres.
+    flat.scan(%r{<h([1-6])\b[^>]*>(.*?)</h\1>}mi) do
+      m = ::Regexp.last_match
+      push_label(out, "titre", m[2], file, line_at(flat, m.begin(0)))
+    end
+  end
+
+  DYN = "\u0001"   # marqueur : ici il y avait un tag ERB
+
+  # Remplace chaque tag ERB par un marqueur, en gardant les sauts de ligne pour
+  # que les numeros de ligne restent vrais.
+  def flatten_erb(src)
+    src.gsub(/<%.*?%>/m) { |m| DYN + ("\n" * m.count("\n")) }
+  end
+
+  def push_label(out, family, raw, file, line)
+    label = normalize(raw)
+    if label.empty?
+      out << Block.new(family, nil, file, line, true) if dynamic?(raw)
+    else
+      out << Block.new(family, label, file, line, dynamic?(raw))
+    end
+  end
+
+  def line_at(src, idx) = src[0...idx].count("\n") + 1
+
+  def dynamic?(raw) = raw.to_s.include?("<%") || raw.to_s.include?(DYN)
+
+  # Une classe de composant : ni utilitaire Tailwind, ni valeur arbitraire, ni
+  # fragment d'ERB. Les litteraux de chaine DANS l'ERB comptent : c'est la
+  # forme `class="tdb-vis-state-btn <%= "…-active" if … %>"`.
+  def class_tokens(value)
+    literal = value.gsub(/<%.*?%>/m) { |erb| erb.scan(/["']([^"'<>]*)["']/).flatten.join(" ") }
+    # `class: "eo-tab#{' active' unless @active_type}"` : dans une interpolation,
+    # seules les chaines sont des classes. Sans ca, `unless` devenait un bloc.
+    literal = literal.gsub(/\#\{.*?\}/m) { |ip| ip.scan(/'([^']*)'|"([^"]*)"/).flatten.compact.join(" ") }
+    literal.split(/[\s"']+/).filter_map { |t| t if component_class?(t) }.uniq
+  end
+
+  RUBY_WORDS = %w[if unless else elsif end do then and or not true false nil
+                  each map render yield return next break case when while for
+                  class def module self super new to safe html raw].freeze
+
+  def component_class?(tok)
+    return false if tok.nil? || tok.length < 3
+    return false unless tok.match?(/\A-?[a-z][a-z0-9]*(?:-[a-z0-9]+)*\z/)
+    return false if INV[:class_denylist].include?(tok) || RUBY_WORDS.include?(tok)
+    head = tok.sub(/\A-/, "").split("-").first
+    !INV[:tailwind_heads].include?(head)
+  end
+
+  # Libelle normalise : sans balises, sans accents, sans ponctuation et SANS
+  # CHIFFRES. « 12 candidatures » et « 3 candidatures » sont le meme bloc :
+  # l'ecart est une donnee branchee, pas un bloc invente.
+  def normalize(raw)
+    s = raw.to_s.gsub(/<%.*?%>/m, " ").gsub(DYN, " ").gsub(/<[^>]*>/m, " ")
+    s = s.gsub(/&[a-z]+;|&#\d+;/i, " ")
+    s = begin
+      s.unicode_normalize(:nfd).gsub(/\p{Mn}/, "")
+    rescue StandardError
+      s
+    end
+    words = s.downcase.gsub(/[^a-z0-9]+/, " ").split.reject { |w| w.match?(/\A\d/) }
+    out = words.join(" ")
+    out.length >= INV[:min_label] ? out : ""
+  end
+
+  # --- confrontation -------------------------------------------------------
+
+  def build_pair(app_view, mockup_view)
+    a = blocks_of(app_view[:file])
+    m = blocks_of(mockup_view[:file])
+    Pair.new(app_view[:file], mockup_view[:file], a, m, [])
+  end
+
+  # Inventaire de TOUT un cote, partials compris. Sert de garde-fou au diff par
+  # ecran : un bloc absent de LA maquette appariee mais present dans une AUTRE
+  # maquette a bien ete dessine, il est seulement sur le mauvais ecran (ou porte
+  # par un partial partage). Ce n'est pas un bloc invente, et c'est ce qui
+  # produisait l'essentiel du bruit. Ne partent en bloquant que les blocs
+  # absents de TOUT le corpus d'en face.
+  def corpus(mockup:)
+    key = mockup ? :mockup : :app
+    @corpus ||= {}
+    @corpus[key] ||= begin
+      out = []
+      Dir.glob(File.join(@root, "app/views/**/*.html*.erb")).sort.each do |f|
+        segs = File.dirname(rel(f).sub("app/views/", "")).split("/")
+        in_mockups = segs.first == "mockups"
+        next if in_mockups != mockup
+        next if !mockup && INV[:not_shipped].any? { |d| segs.include?(d) }
+        src = File.read(f, encoding: "UTF-8", invalid: :replace, undef: :replace)
+        extract(nil, src, rel(f), out)
+        out.concat(css_classes_of(rel(f), src).map { |c| Block.new("classe", c, rel(f), 0, false) })
+      end
+      out.group_by(&:family).transform_values { |bs| bs.map(&:key).compact.uniq.to_set }
+    end
+  end
+
+  # « Ce bloc existe-t-il en face, n'importe ou ? » Pour Stimulus, un
+  # `talent-search#nav` dont le CONTROLEUR est deja dessine en face n'est pas un
+  # bloc invente : le composant est la, c'est le cablage qui differe. On ne
+  # garde en bloquant que les controleurs entierement absents.
+  def in_corpus?(fam, key, mockup:)
+    known = corpus(mockup: mockup).fetch(fam, Set.new)
+    return true if known.include?(key)
+    fam == "stimulus" && key.include?("#") && known.any? { |k| k.split("#").first == key.split("#").first }
+  end
+
+  # Trois listes, plus un seau « non comparable ». Le seau existe pour une
+  # raison mesuree : l'application traduit ses libelles (`t('.envoyer')`), la
+  # maquette les ecrit en clair. Comparer les deux mot a mot produirait des
+  # centaines d'ecarts qui ne sont que de la i18n. Quand le cote oppose a des
+  # libelles dynamiques dans cette famille, le diff sort du bloquant.
+  def diff(pair)
+    result = { app_only: [], mockup_only: [], commun: [], ailleurs: [], non_comparable: [] }
+    FAMILIES.each_key do |fam|
+      app = pair.app_blocks.select { |b| b.family == fam && b.key }
+      moc = pair.mockup_blocks.select { |b| b.family == fam && b.key }
+      app_keys = app.map(&:key).uniq
+      moc_keys = moc.map(&:key).uniq
+      # Une classe seulement declaree en CSS dans la maquette prouve que le
+      # bloc etait prevu : elle ne compte pas comme « invente par l'appli ».
+      moc_seen = fam == "classe" ? (moc_keys + css_classes(pair.mockup_view)).uniq : moc_keys
+
+      reliable = { app_only: true, mockup_only: true }
+      if LABEL_FAMILIES.include?(fam)
+        moc_dyn = pair.mockup_blocks.count { |b| b.family == fam && b.dynamic }
+        app_dyn = pair.app_blocks.count { |b| b.family == fam && b.dynamic }
+        reliable[:app_only] = moc_dyn.zero?
+        reliable[:mockup_only] = app_dyn.zero?
+      end
+
+      (app_keys - moc_seen).each do |k|
+        b = app.find { |x| x.key == k }
+        row = { famille: fam, bloc: k, ou: "#{b.file}:#{b.line}", ecran: pair.app_view, maquette: pair.mockup_view }
+        if !reliable[:app_only]
+          result[:non_comparable] << row.merge(sens: "app_only", raison: "libelles traduits d'un cote, en clair de l'autre")
+        elsif in_corpus?(fam, k, mockup: true)
+          result[:ailleurs] << row.merge(sens: "app_only")
+        else
+          result[:app_only] << row
+        end
+      end
+      (moc_keys - app_keys).each do |k|
+        b = moc.find { |x| x.key == k }
+        row = { famille: fam, bloc: k, ou: "#{b.file}:#{b.line}", ecran: pair.app_view, maquette: pair.mockup_view }
+        if !reliable[:mockup_only]
+          result[:non_comparable] << row.merge(sens: "mockup_only", raison: "libelles traduits d'un cote, en clair de l'autre")
+        elsif in_corpus?(fam, k, mockup: false)
+          result[:ailleurs] << row.merge(sens: "mockup_only")
+        else
+          result[:mockup_only] << row
+        end
+      end
+      (app_keys & moc_keys).each { |k| result[:commun] << { famille: fam, bloc: k, ecran: pair.app_view, maquette: pair.mockup_view } }
+    end
+    result
+  end
+
+  def css_classes(view_rel)
+    @css ||= {}
+    @css[view_rel] ||= begin
+      abs = File.join(@root, view_rel)
+      src = File.file?(abs) ? File.read(abs, encoding: "UTF-8", invalid: :replace, undef: :replace) : ""
+      css_classes_of(view_rel, src)
+    end
+  end
+
+  # Une classe seulement declaree dans le <style> d'une maquette prouve que le
+  # bloc etait prevu, meme s'il n'est pas pose dans le markup.
+  def css_classes_of(view_rel, src)
+    ErbDoc.new(File.join(@root, view_rel), src).css_text
+          .scan(/\.(-?[a-z][a-z0-9-]*)/).flatten.select { |c| component_class?(c) }.uniq
+  end
+
+  # Un composant, c'est une FAMILLE de classes (`tsm-why`, `tsm-why-pop`,
+  # `tsm-why-head`… = un seul bloc, la fenetre « pourquoi ce score »). Les
+  # lister une par une gonfle le rapport et noie le constat. Au-dela de
+  # #{INV[:cluster_min]} classes qui partagent le meme prefixe a deux segments,
+  # on rend UNE ligne pour le composant. En deca on garde le detail : c'est
+  # ainsi que `tdb-vis-state-btn` reste nommee.
+  def cluster(rows)
+    keep, group = rows.partition { |r| r[:famille] != "classe" }
+    group.group_by { |r| [ r[:ecran], r[:bloc].split("-").first(2).join("-") ] }.each do |(_, prefix), rs|
+      if rs.size >= INV[:cluster_min]
+        keep << rs.first.merge(bloc: "#{prefix}-* (#{rs.size} classes)",
+                               classes: rs.map { |r| r[:bloc] }.sort)
+      else
+        keep.concat(rs)
+      end
+    end
+    keep.sort_by { |r| [ r[:ecran].to_s, r[:famille].to_s, r[:bloc].to_s ] }
+  end
+
+  # Tous les totaux sont recalcules ici, depuis les listes memes qui seront
+  # imprimees. Aucun compteur n'est tenu a part.
+  def report
+    all = { app_only: [], mockup_only: [], commun: [], ailleurs: [], non_comparable: [] }
+    @pairs.each do |p|
+      d = diff(p)
+      all.each_key { |k| all[k].concat(d[k]) }
+    end
+    all[:app_only] = cluster(all[:app_only])
+    all[:mockup_only] = cluster(all[:mockup_only])
+    all
+  end
+end
+
+def inventory_text(inv, all)
+  out = []
+  out << "mockup_scan — inventaire de blocs — #{ROOT}"
+  out << "=" * 78
+  inv.notes.each { |n| out << "  #{n}" }
+  out << ""
+  out << "  Familles inventoriees : #{Inventory::FAMILIES.values.join(' · ')}"
+  out << "  Ce qui releve du branchement de donnees (chiffres, ids, valeurs) est neutralise."
+  out << ""
+
+  print_group = lambda do |title, rows|
+    out << "== #{title} (#{rows.size}) =="
+    if rows.empty?
+      out << "   rien"
+    else
+      rows.group_by { |r| [ r[:ecran], r[:maquette] ] }.each do |(ecran, maquette), rs|
+        out << "   #{ecran}  <->  #{maquette}"
+        rs.first(INV[:per_pair]).each do |r|
+          out << format("      %-9s %-34s %s%s", r[:famille], r[:bloc], r[:ou], r[:raison] ? "  [#{r[:raison]}]" : "")
+        end
+        out << "      ... #{rs.size - INV[:per_pair]} autre(s)" if rs.size > INV[:per_pair]
+      end
+    end
+    out << ""
+  end
+
+  out << "=== BLOQUANT ==="
+  out << ""
+  print_group.call("Present dans l'application, ABSENT de la maquette (bloc invente)", all[:app_only])
+  print_group.call("Present dans la maquette, ABSENT de l'application (promesse non tenue)", all[:mockup_only])
+  out << "=== INFO ==="
+  out << ""
+  out << "== Correspondances (#{all[:commun].size}) =="
+  all[:commun].group_by { |r| r[:famille] }.sort.each { |fam, rs| out << "   #{fam} : #{rs.size} bloc(s) presents des deux cotes" }
+  out << ""
+  out << "== Presents des deux cotes mais pas sur le meme ecran (#{all[:ailleurs].size}) =="
+  out << "   Le bloc existe bien en face, ailleurs (partial partage, ecran voisin) : ce n'est"
+  out << "   pas un bloc invente, c'est au mieux un ecart de placement."
+  all[:ailleurs].group_by { |r| [ r[:sens], r[:famille] ] }.sort_by { |k, _| k.map(&:to_s) }
+                .each { |(sens, fam), rs| out << "   #{sens} · #{fam} : #{rs.size}" }
+  out << ""
+  print_group.call("Non comparable (libelles traduits d'un cote, en clair de l'autre)", all[:non_comparable])
+  if inv.orphan_mockup.any?
+    out << "== Maquettes sans ecran applicatif (#{inv.orphan_mockup.size}) =="
+    inv.orphan_mockup.each { |o| out << "   #{o[:maquette]} — #{o[:raison]}" }
+    out << ""
+  end
+  if inv.orphan_app.any?
+    out << "== Ecrans applicatifs sans maquette (#{inv.orphan_app.size}) =="
+    inv.orphan_app.first(30).each { |f| out << "   #{f}" }
+    out << "   ... #{inv.orphan_app.size - 30} autre(s)" if inv.orphan_app.size > 30
+    out << ""
+  end
+  total = all.values.sum(&:size)
+  out << format("Total : %d constat(s) — %d inventes, %d non tenus, %d communs, %d ailleurs, %d non comparables.",
+                total, all[:app_only].size, all[:mockup_only].size, all[:commun].size,
+                all[:ailleurs].size, all[:non_comparable].size)
+  out << "  (recompte sur les listes imprimees ci-dessus, aucun compteur tenu a part)"
+  out.join("\n")
+end
+
+if MODE == "inventory"
+  inv = Inventory.new(ROOT, OPTS).run
+  all = inv.report
+  if OPTS[:json]
+    puts JSON.pretty_generate({
+      mode: "inventory", root: ROOT, notes: inv.notes,
+      paires: inv.pairs.map { |p| { ecran: p.app_view, maquette: p.mockup_view } },
+      app_only: all[:app_only], mockup_only: all[:mockup_only],
+      commun_par_famille: all[:commun].group_by { |r| r[:famille] }.transform_values(&:size),
+      ailleurs: all[:ailleurs], non_comparable: all[:non_comparable],
+      maquettes_sans_ecran: inv.orphan_mockup, ecrans_sans_maquette: inv.orphan_app,
+      totaux: { app_only: all[:app_only].size, mockup_only: all[:mockup_only].size,
+                commun: all[:commun].size, ailleurs: all[:ailleurs].size,
+                non_comparable: all[:non_comparable].size,
+                total: all.values.sum(&:size) },
+      interrompu: inv.aborted
+    })
+  else
+    puts inventory_text(inv, all)
+  end
+  exit(inv.aborted ? 2 : 0)
+end
 
 def file_weight(fr)
   fr.findings.sum { |f| f[:severity] * Math.log(1 + f[:count]) }

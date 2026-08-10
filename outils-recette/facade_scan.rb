@@ -127,6 +127,26 @@ CONFIG = {
   # Répertoires dont l'écriture ne compte PAS comme une saisie utilisateur
   # (jeux de données, pas gestes d'interface).
   rw_data_only_dirs: %w[db/seeds db/seeds.rb db/migrate test spec features],
+
+  # -------------------------------------------------------------------------
+  # Détecteur « colonne alimentée UNIQUEMENT par les seeds ».
+  # -------------------------------------------------------------------------
+  # Fichiers de données qui ne tournent JAMAIS chez le client : ce qu'ils
+  # écrivent n'existe que sur le poste du développeur (`db:seed` ne se rejoue
+  # pas en production, les fixtures encore moins).
+  rw_seed_paths: [ %r{\Adb/seeds\.rb\z}, %r{\Adb/seeds/}, %r{\A(test|spec)/fixtures/} ],
+  # Fichiers de données REJOUABLES en production : une tâche rake lancée au
+  # déploiement, une migration de données. Une colonne alimentée là n'est pas
+  # une façade, c'est un import. Les fichiers de seeds qu'une tâche rake
+  # require / appelle basculent dans ce seau (cas réel : `lib/tasks/ontology.rake`
+  # qui exécute `db/seeds/ontology/import.rb`).
+  rw_replayable_paths: [ %r{\Alib/tasks/}, %r{\Adb/migrate/}, %r{\Adb/data/} ],
+  # Surfaces où une colonne est réellement VUE par l'utilisateur final : c'est
+  # là que l'écart dev/prod se transforme en mensonge à l'écran.
+  rw_render_surface: %r{\Aapp/(views|helpers|mailers|components|serializers|presenters)/},
+  # Sous-dossiers de app/views qui ne sont pas le produit livré (maquettes,
+  # exports d'outils de design) : y lire une colonne ne prouve rien.
+  rw_not_shipped_dirs: %w[mockups lovable figma design_system styleguide],
   # Fichiers qui produisent un document sortant : une colonne lue là et jamais
   # saisissable est bloquante (le client reçoit un document faux).
   rw_outgoing_path: /mailer|_mail\b|pdf|prawn|wicked|document_template|renderer|\/documents?\//i,
@@ -170,6 +190,7 @@ class Report
     "write_route_js_only"      => "Action non-GET atteinte seulement par du JS (branchement non vérifiable)",
     "get_route_orphan"         => "Page GET vers laquelle aucun lien ne mène (page d'entrée légitime ? à vérifier)",
     # --- readwrite ---------------------------------------------------------
+    "column_seed_only"         => "Colonne affichée mais alimentée par les seuls seeds/fixtures (vide ou figée chez un vrai utilisateur)",
     "column_read_not_writable" => "Colonne lue mais jamais saisissable (l'utilisateur voit sans pouvoir renseigner)",
     "column_written_not_read"  => "Colonne saisie mais jamais lue (l'utilisateur remplit dans le vide)",
     "column_displayed_only"    => "Colonne affichée, alimentée par le code seul (dérivée ? ou saisie manquante)",
@@ -182,6 +203,7 @@ class Report
   SEVERITIES = {
     "route_without_action"      => "bloquant",
     "write_route_unreachable"   => "bloquant",
+    "column_seed_only"          => "bloquant",
     "column_read_not_writable"  => "majeur",
     "column_written_not_read"   => "majeur",
     "field_absent_from_mockups" => "majeur",
@@ -697,9 +719,19 @@ module Src
        .gsub(/<!--.*?-->/m) { |m| "\n" * m.count("\n") }
   end
 
+  # Un `# …` en début de ligne DANS un `<% %>` est un commentaire Ruby, pas du
+  # HTML. Sans ce nettoyage, la note qui explique pourquoi une façade a été
+  # retirée fait croire que la façade est toujours là (constaté : le commentaire
+  # « users.last_active_at n'est écrit que par les seeds » relevé comme lecture).
+  def strip_erb_ruby_comments(src)
+    src.gsub(/<%[^%]*(?:%(?!>)[^%]*)*%>/m) do |tag|
+      tag.gsub(/^([ \t]*)#[^\n]*$/) { Regexp.last_match(1) }
+    end
+  end
+
   def clean(path)
     src = File.read(path, encoding: "UTF-8", invalid: :replace, undef: :replace)
-    src = strip_erb_comments(src) if path.end_with?(".erb")
+    src = strip_erb_ruby_comments(strip_erb_comments(src)) if path.end_with?(".erb")
     src = strip_ruby_comments(src) if path.end_with?(".rb", ".rake")
     src
   rescue StandardError
@@ -758,7 +790,10 @@ module Src
     else
       stop = start
       depth = 0
-      8.times do
+      # 24 lignes, pas 8 : `solicitations.new(` ouvrait un hash de 9 lignes et
+      # les 3 dernières colonnes tombaient hors fenêtre, donc « jamais écrites ».
+      # La vraie borne reste `max` (en caractères), pas le nombre de lignes.
+      24.times do
         eol = src.index("\n", stop) || src.length
         chunk = src[stop...eol]
         depth += chunk.count("(") - chunk.count(")")
@@ -1347,7 +1382,7 @@ end
 # ---------------------------------------------------------------------------
 # Mode readwrite
 # ---------------------------------------------------------------------------
-Column = Struct.new(:table, :name, :type)
+Column = Struct.new(:table, :name, :type, :default)
 
 class ReadWriteScanner
   WRITE_NAMES = "update_all|update_columns?|update!?|create_with|create!?|new|build|" \
@@ -1379,12 +1414,23 @@ class ReadWriteScanner
     @report.note("#{columns.size} colonne(s) métier retenue(s) dans db/schema.rb")
     @tables = columns.map(&:table).uniq
     @names = columns.map(&:name).to_set
-    corpus = build_corpus
-    @report.note("#{corpus[:code].size} fichier(s) de code, #{corpus[:data].size} fichier(s) de données scannés")
+    # Une colonne dont le nom n'existe QUE dans une table peut être attribuée
+    # sans risque même quand le receveur est illisible. Les homonymes (`icon`
+    # sur deux tables) n'ont pas ce luxe : ils ne partent jamais en bloquant.
+    tally = Hash.new(0)
+    columns.each { |c| tally[c.name] += 1 }
+    @unique_names = tally.select { |_, n| n == 1 }.keys.to_set
 
-    code_index = build_index(corpus[:code])
-    data_index = build_index(corpus[:data])
-    columns.each { |col| classify(col, code_index, data_index) }
+    corpus = build_corpus
+    @report.note("#{corpus[:code].size} fichier(s) de code, " \
+                 "#{corpus[:seed].size} de seeds/fixtures, " \
+                 "#{corpus[:replayable].size} rejouable(s) en production (rake, migrations)")
+
+    idx = { code: build_index(corpus[:code], seed: false),
+            seed: build_index(corpus[:seed], seed: true),
+            replayable: build_index(corpus[:replayable], seed: true),
+            data: build_index(corpus[:data], seed: false) }
+    columns.each { |col| classify(col, idx) }
   end
 
   # Occurrences retenues pour une colonne : celles attribuées à sa table, plus
@@ -1410,22 +1456,63 @@ class ReadWriteScanner
         type, name = m.captures
         next if type == "index"
         next if CONFIG[:rw_skip_columns].any? { |re| name.match?(re) }
-        cols << Column.new(table, name, type)
+        cols << Column.new(table, name, type, line[/\bdefault:\s*("[^"]*"|[^,\s]+)/, 1])
       end
       table = nil if line.strip == "end"
     end
     cols
   end
 
+  # Trois seaux, parce que « écrit quelque part » ne veut rien dire tant qu'on
+  # ne sait pas si ce quelque part tourne chez le client :
+  #   code       — l'application elle-même ;
+  #   seed       — db/seeds*, fixtures : jamais joué en production ;
+  #   replayable — lib/tasks/*.rake, migrations : joué au déploiement.
+  # Le reste (tests) sert seulement à dire « alimentée par … » dans le texte.
   def build_corpus
     code = Dir.glob(File.join(@app_dir, "app/**/*.{rb,erb}")) +
            Dir.glob(File.join(@app_dir, "lib/**/*.rb"))
     code = code.reject { |f| f.include?("/views/mockups/") || f.include?("/controllers/mockups/") }
-    data = Dir.glob(File.join(@app_dir, "db/seeds*/**/*.rb")) + Dir.glob(File.join(@app_dir, "db/seeds.rb")) +
-           Dir.glob(File.join(@app_dir, "db/migrate/*.rb")) +
+    code = code.reject { |f| replayable_path?(rel(f)) }
+
+    data = Dir.glob(File.join(@app_dir, "db/seeds*/**/*.{rb,yml}")) + Dir.glob(File.join(@app_dir, "db/seeds.rb")) +
+           Dir.glob(File.join(@app_dir, "db/migrate/*.rb")) + Dir.glob(File.join(@app_dir, "db/data/**/*.rb")) +
+           Dir.glob(File.join(@app_dir, "lib/tasks/**/*.{rake,rb}")) +
            Dir.glob(File.join(@app_dir, "{test,spec}/**/*.{rb,yml}"))
+    data = data.uniq.sort.map { |f| [ f, Src.clean(f) ] }
+
+    replayable = data.select { |f, _| replayable_path?(rel(f)) }
+    promoted = promoted_by_tasks(replayable, data)
+    seed = data.select { |f, _| CONFIG[:rw_seed_paths].any? { |re| rel(f).match?(re) } && !promoted.include?(f) }
+
     { code: code.sort.map { |f| [ f, Src.clean(f) ] },
-      data: data.sort.map { |f| [ f, Src.clean(f) ] } }
+      seed: seed,
+      replayable: replayable + data.select { |f, _| promoted.include?(f) },
+      data: data }
+  end
+
+  def replayable_path?(relpath) = CONFIG[:rw_replayable_paths].any? { |re| relpath.match?(re) }
+
+  # Un fichier de seeds qu'une tâche rake `require` (ou dont elle appelle la
+  # constante) n'est plus un seed : c'est un import, rejouable en production.
+  # Cas réel : `lib/tasks/ontology.rake` → `db/seeds/ontology/import.rb`.
+  def promoted_by_tasks(replayable, data)
+    tasks_src = replayable.select { |f, _| rel(f).start_with?("lib/tasks/") }.map { |_, s| s }.join("\n")
+    return Set.new if tasks_src.empty?
+
+    wanted = Set.new
+    tasks_src.scan(/(?:require|require_relative|load)[\s(]+[^\n]*?["']([\w\-.\/]+)["']/) { wanted << Regexp.last_match(1) }
+    constants = tasks_src.scan(/\b([A-Z][A-Za-z0-9_]*(?:::[A-Z][A-Za-z0-9_]*)*)\s*\.\s*[a-z_]/).flatten.to_set
+
+    data.filter_map do |file, src|
+      relf = rel(file)
+      next if replayable_path?(relf)
+      stem = relf.sub(/\.\w+\z/, "")
+      hit = wanted.any? { |w| stem.end_with?(w.sub(/\.\w+\z/, "")) }
+      hit ||= src.scan(/^\s*(?:module|class)\s+([A-Z][A-Za-z0-9_]*)/).flatten
+                 .any? { |c| constants.any? { |k| k == c || k.start_with?("#{c}::") } }
+      file if hit
+    end.to_set
   end
 
   # Un identifiant de receveur (`Invoice`, `@client`, `invoices`) ramené à une
@@ -1441,11 +1528,14 @@ class ReadWriteScanner
     tables.include?(s) ? s : nil
   end
 
-  def classify(col, code_index, data_index)
+  def classify(col, idx)
+    code_index = idx[:code]
     reads = for_column(code_index[:read], col)
     writes = for_column(code_index[:write], col)
     user = for_column(code_index[:user], col)
-    data = for_column(data_index[:write], col) + for_column(data_index[:read], col)
+    seed_writes = for_column(idx[:seed][:write], col)
+    replay_writes = for_column(idx[:replayable][:write], col)
+    data = for_column(idx[:data][:write], col) + for_column(idx[:data][:read], col)
 
     real_reads = reads.reject { |o| o[:presence_only] }
     # Citer de préférence une lecture dont le receveur a pu être rattaché à la
@@ -1467,7 +1557,16 @@ class ReadWriteScanner
     elsif read
       origin = data.any? ? "alimentée seulement par #{data.first[:file]}" : "jamais écrite par l'application"
       where = "lue en #{cited[:file]}:#{cited[:line]}#{hedge}"
-      if outgoing
+      surface = seed_only_surface(real_reads, col)
+      if surface && seed_writes.any? && replay_writes.empty?
+        seed = seed_writes.find { |o| o[:table] == col.table } || seed_writes.first
+        frozen = col.default ? "figée à la valeur par défaut (#{col.default})" : "vide"
+        @report.add("column_seed_only", name,
+                    "lue en #{surface[:file]}:#{surface[:line]}, écrite seulement par #{seed[:file]}:#{seed[:line]} " \
+                    "— aucun formulaire, aucun code applicatif, aucune tâche rake ni migration ne l'alimente : " \
+                    "#{frozen} chez un vrai utilisateur, juste chez le développeur",
+                    severity: "bloquant")
+      elsif outgoing
         @report.add("column_read_not_writable", name,
                     "#{where} (document sortant : #{outgoing[:file]}:#{outgoing[:line]}) — #{origin}, aucun permit ni champ de formulaire",
                     severity: "bloquant")
@@ -1482,18 +1581,66 @@ class ReadWriteScanner
     end
   end
 
+  # Lecture qui vaut « l'utilisateur final voit ce champ à l'écran », et qui
+  # vaut assez pour un verdict BLOQUANT. Trois exigences, chacune payée par un
+  # faux positif observé :
+  #   - une vraie surface de rendu (vue, helper, mailer, PDF), pas un
+  #     contrôleur ni un service : `Skill.category` lu dans un service ne se
+  #     voit pas, et une colonne peut n'être qu'un critère de tri ;
+  #   - pas une maquette : `app/views/mockups`, `lovable`, `figma` ne sont pas
+  #     le produit livré ;
+  #   - un accès d'attribut ou de requête (`x.col`, `pluck(:col)`), jamais un
+  #     `hash[:col]` : `mission_domain(mission)[:icon]` est un Hash, pas la
+  #     colonne `icon` — c'est ce qui remontait deux fois, une par table ;
+  #   - un receveur RÉSOLU à la table de la colonne. Le repli « nom de colonne
+  #     unique dans le schéma » suffisait pour la catégorie majeure, pas pour
+  #     un bloquant : `zone.lead` (association vers un membre d'équipe) se
+  #     faisait passer pour `skill_card_templates.lead`, seule colonne `lead`
+  #     du schéma. Prix payé : une colonne toujours lue via un receveur
+  #     anonyme (`f.object.x`, `d&.x`) reste dans la catégorie majeure.
+  def seed_only_surface(real_reads, col)
+    return nil unless col.table
+    real_reads.find do |o|
+      o[:table] == col.table &&
+        %i[attr query].include?(o[:kind]) &&
+        o[:file].match?(CONFIG[:rw_render_surface]) &&
+        CONFIG[:rw_not_shipped_dirs].none? { |d| o[:file].include?("/#{d}/") }
+    end
+  end
+
   # --- Index : un seul passage par fichier, colonnes reconnues au vol -------
   RECEIVER = /(?:@{0,2}[A-Za-z_]\w*(?:\s*&?\.\s*[A-Za-z_]\w*)*)/
   FIELD_HELPERS = /(?:\w*_field|select|check_box|radio_button|text_area|collection_select|
                      collection_check_boxes|collection_radio_buttons|date_select|time_select|
                      datetime_select|rich_text_area|label|hidden_field|file_field)/x
 
-  def build_index(files)
+  def build_index(files, seed: false)
     idx = { read: Hash.new { |h, k| h[k] = [] },
             write: Hash.new { |h, k| h[k] = [] },
             user: Hash.new { |h, k| h[k] = [] } }
-    files.each { |file, src| scan_file(idx, file, src) }
+    files.each do |file, src|
+      scan_file(idx, file, src)
+      scan_data_file(idx, file, src) if seed
+    end
     idx
+  end
+
+  # Un fichier de seeds ou une fixture, c'est de la donnée pure : `last_active_at:`
+  # y est une écriture de colonne, même quand le constructeur est un helper maison
+  # (`seed_user!(…)`) que la détection d'écriture normale ne connaît pas. Ce
+  # passage-là n'est JAMAIS appliqué au code applicatif, où `total:` peut être
+  # tout autre chose.
+  def scan_data_file(idx, file, src)
+    lines = LineMap.new(src)
+    relf = rel(file)
+    yaml = file.end_with?(".yml", ".yaml")
+    re = yaml ? /^[ \t]+([a-z_]\w*):[ \t]*(?!$)/ : /(?<![\w:.])([a-z_]\w*):[ \t]*(?![\s:])/
+    src.scan(re) do
+      m = Regexp.last_match
+      next unless @names.include?(m[1])
+      idx[:write][m[1]] << { file: relf, line: lines.at(m.begin(0)),
+                             table: nil, presence_only: false, kind: :data }
+    end
   end
 
   def scan_file(idx, file, src)
@@ -1501,11 +1648,11 @@ class ReadWriteScanner
     relf = rel(file)
     own = own_table(file)
     scopes = form_scopes(src)
-    add = lambda do |bucket, name, offset, receiver, presence = false|
+    add = lambda do |bucket, name, offset, receiver, presence = false, kind = :attr|
       # `end_on_input`, `paid_on_input` : attributs virtuels de saisie qui
       # écrivent la vraie colonne. Saisir le virtuel, c'est saisir la colonne.
       if bucket == :user && name.to_s.end_with?("_input") && @names.include?(name.sub(/_input\z/, ""))
-        add.call(bucket, name.sub(/_input\z/, ""), offset, receiver, presence)
+        add.call(bucket, name.sub(/_input\z/, ""), offset, receiver, presence, kind)
       end
       next unless @names.include?(name)
       table = resolve_table(receiver, own)
@@ -1513,14 +1660,17 @@ class ReadWriteScanner
       # la classe est juste à côté.
       table ||= nearby_constant_table(src, offset)
       idx[bucket][name] << { file: relf, line: lines.at(offset),
-                             table: table, presence_only: presence }
+                             table: table, presence_only: presence, kind: kind }
     end
 
     # --- lectures ---------------------------------------------------------
     # Chaîne d'appels `a.b.c` : chaque maillon intermédiaire est une lecture
     # d'attribut. Le dernier ne compte que s'il n'est ni un appel avec arguments
     # (`SERVICES.key?(x)` est un Hash, pas une colonne `key`) ni une affectation.
-    src.scan(/@{0,2}[A-Za-z_]\w*(?:\s*&?\.\s*[a-z_]\w*[?!]?)+/) do
+    # Le lookbehind écarte les chaînes pointées qui ne sont pas du code :
+    # `t(".fields.lead")` ressemble trait pour trait à `objet.fields.lead` et
+    # faisait passer la clé i18n `lead` pour une lecture de colonne.
+    src.scan(/(?<![."'\w])@{0,2}[A-Za-z_]\w*(?:\s*&?\.\s*[a-z_]\w*[?!]?)+/) do
       m = Regexp.last_match
       parts = m[0].split(/\s*&?\.\s*/)
       # `x.col == y` reste une lecture ; `x.col = y` et `x.col(arg)` non.
@@ -1534,12 +1684,12 @@ class ReadWriteScanner
         add.call(:read, name, m.begin(0), parts[i - 1], presence)
       end
     end
-    src.scan(/(#{RECEIVER})?\s*&?\.?\s*\[\s*:([a-z_]\w*)\s*\]/o) { add.call(:read, Regexp.last_match(2), Regexp.last_match.begin(0), Regexp.last_match(1)) }
-    src.scan(/(#{RECEIVER})\s*&?\.\s*(?:dig|fetch)\(\s*:([a-z_]\w*)/o) { add.call(:read, Regexp.last_match(2), Regexp.last_match.begin(0), Regexp.last_match(1)) }
+    src.scan(/(#{RECEIVER})?\s*&?\.?\s*\[\s*:([a-z_]\w*)\s*\]/o) { add.call(:read, Regexp.last_match(2), Regexp.last_match.begin(0), Regexp.last_match(1), false, :index) }
+    src.scan(/(#{RECEIVER})\s*&?\.\s*(?:dig|fetch)\(\s*:([a-z_]\w*)/o) { add.call(:read, Regexp.last_match(2), Regexp.last_match.begin(0), Regexp.last_match(1), false, :index) }
     src.scan(/(#{RECEIVER})\s*\.\s*(?:#{QUERY_NAMES})(?:\s*\.\s*not)?\s*\(/o) do
       m = Regexp.last_match
       span = Src.expression_span(src, m.end(0) - 1, erb: false, max: 400)
-      span.scan(/:([a-z_]\w*)\b|\b([a-z_]\w*):/) { add.call(:read, Regexp.last_match(1) || Regexp.last_match(2), m.begin(0), m[1]) }
+      span.scan(/:([a-z_]\w*)\b|\b([a-z_]\w*):/) { add.call(:read, Regexp.last_match(1) || Regexp.last_match(2), m.begin(0), m[1], false, :query) }
     end
     # Dans app/models/<modele>.rb, l'attribut s'appelle sans receveur.
     if own
@@ -1550,8 +1700,11 @@ class ReadWriteScanner
     end
 
     # --- écritures --------------------------------------------------------
-    src.scan(/(#{RECEIVER})\s*&?\.\s*([a-z_]\w*)\s*=(?![=~>])/o) { add.call(:write, Regexp.last_match(2), Regexp.last_match.begin(0), Regexp.last_match(1)) }
-    src.scan(/(#{RECEIVER})?\s*\[\s*:([a-z_]\w*)\s*\]\s*=(?![=~>])/o) { add.call(:write, Regexp.last_match(2), Regexp.last_match.begin(0), Regexp.last_match(1)) }
+    # `self.applied_at ||= Time.current` est une écriture : sans le `||=`, quatre
+    # colonnes remplies par un `before_validation` passaient pour des façades.
+    assign = /\s*(?:\|\||&&|\*\*|[-+*\/%])?=(?![=~>])/
+    src.scan(/(#{RECEIVER})\s*&?\.\s*([a-z_]\w*)#{assign}/o) { add.call(:write, Regexp.last_match(2), Regexp.last_match.begin(0), Regexp.last_match(1)) }
+    src.scan(/(#{RECEIVER})?\s*\[\s*:([a-z_]\w*)\s*\]#{assign}/o) { add.call(:write, Regexp.last_match(2), Regexp.last_match.begin(0), Regexp.last_match(1)) }
     src.scan(/(#{RECEIVER})?\s*\.?\s*(?:write_attribute|update_columns?|update_attribute|increment!?|decrement!?|toggle!?)\(\s*:([a-z_]\w*)/o) do
       add.call(:write, Regexp.last_match(2), Regexp.last_match.begin(0), Regexp.last_match(1))
     end
@@ -1560,6 +1713,16 @@ class ReadWriteScanner
       next if m[0].match?(/\.\s*(?:#{QUERY_NAMES})\s*\(/o)
       span = Src.expression_span(src, m.end(0) - 1, erb: false, max: 900)
       span.scan(/\b([a-z_]\w*):\s/) { add.call(:write, Regexp.last_match(1), m.begin(0), m[1]) }
+    end
+    # `attrs = { salary_expectation_min: … } … @profile.update(attrs.compact)` :
+    # le hash d'attributs monté dans une variable reste une écriture. Sans ça,
+    # deux colonnes saisies à l'onboarding passaient pour des façades.
+    src.scan(/(?<![\w.:])([a-z_]\w*)\s*=\s*\{/) do
+      m = Regexp.last_match
+      var = Regexp.escape(m[1])
+      next unless src.match?(/\b(?:#{WRITE_NAMES})\s*\(?\s*#{var}\b/o)
+      span = Src.expression_span(src, m.end(0) - 1, erb: false, max: 1200)
+      span.scan(/\b([a-z_]\w*):\s/) { add.call(:write, Regexp.last_match(1), m.begin(0), nil) }
     end
 
     # --- saisies utilisateur ---------------------------------------------
@@ -1592,6 +1755,12 @@ class ReadWriteScanner
     src.scan(/\.\s*#{FIELD_HELPERS}\s*[( ]\s*:([a-z_]\w*)/o) do
       m = Regexp.last_match
       add.call(:user, m[1], m.begin(0), scopes.enclosing(m.begin(0)))
+    end
+    # Helpers `*_tag` : formulaires sans modèle (`number_field_tag :open_salary_min`).
+    # Un contrôle qui porte le nom de la colonne, c'est l'utilisateur qui la tape.
+    src.scan(/\b\w*(?:field|area|select|box|button)_tag\s*[( ]\s*:([a-z_]\w*)/) do
+      m = Regexp.last_match
+      add.call(:user, m[1], m.begin(0), nil)
     end
   end
 
@@ -1668,10 +1837,19 @@ class ReadWriteScanner
     nil
   end
 
+  # `JobTitle.canonical.ordered.pluck(:category)` : la table est portée par le
+  # PREMIER maillon, pas par le dernier. On remonte la chaîne de droite à gauche
+  # et on prend le premier maillon qui nomme une table — sinon des lectures
+  # parfaitement identifiables restaient « receveur non identifié ».
   def resolve_table(receiver, own)
     token = receiver.to_s[/(\w+)\z/, 1]
     return own if token.nil? || %w[self params f form].include?(token)
-    table_for(token, @tables) || own_or_nil(token, own)
+    segments = receiver.to_s.split(/\s*&?\.\s*/).reject(&:empty?)
+    segments.reverse_each do |seg|
+      t = table_for(seg, @tables)
+      return t if t
+    end
+    own_or_nil(token, own)
   end
 
   # `self.total_ht_cents = …` dans un concern : receveur inconnu, table inconnue.

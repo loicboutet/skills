@@ -52,14 +52,25 @@ Note aussi la phase, elle change la lecture :
 ### 1. Les façades (sans serveur, rapide)
 
 ```bash
-ruby $SK/facade_scan.rb readwrite .    # colonnes en sens unique
-ruby $SK/facade_scan.rb static .       # contrôles non branchés dans les vues
+ruby $SK/facade_scan.rb readwrite .        # colonnes en sens unique + colonnes seed-only
+ruby $SK/facade_scan.rb static .           # contrôles non branchés dans les vues
+ruby $SK/mockup_scan.rb inventory .        # blocs inventés / promesses non tenues
 ```
 
 Lance-les depuis le répertoire du projet (rbenv y choisit le bon Ruby). En phase
-maquettes, ajoute `--mockups` aux deux. Ajoute `reachability .` si tu veux aussi
-les routes qu'aucun geste n'atteint (plus bruyant, garde-le pour une review).
-Ces deux modes sortent toujours en 0 : ce sont des rapports.
+maquettes, ajoute `--mockups` aux deux premiers ; `inventory` n'a de sens qu'en
+phase CODE, quand les deux côtés existent. Ajoute `reachability .` si tu veux
+aussi les routes qu'aucun geste n'atteint (plus bruyant, garde-le pour une
+review). Ces modes sortent en 0 : ce sont des rapports. Une sortie 2 = scan
+interrompu, le rapport est incomplet et le dit en tête.
+
+Les deux **bloquants** à ne jamais laisser passer en livraison, parce qu'ils ne
+se voient pas en développement :
+
+- `column_seed_only` : un champ affiché que seuls `db/seeds.rb` ou des fixtures
+  remplissent. Vide ou figé chez le vrai client, juste chez toi ;
+- `inventory / app_only` : un bloc d'interface que la maquette validée ne
+  contient nulle part. Il n'a été demandé par personne.
 
 ### 2. Le serveur
 
@@ -178,6 +189,8 @@ Si la demande ne porte que sur un morceau, ne fais que ce morceau et dis-le.
 | « une page » | idem + `--only "<nom de la paire>"` | |
 | « les routes sans geste » | 0, 5 | `facade_scan reachability` |
 | « la qualité des maquettes », « c'est transcrit comment ? » | 0, 5 | `mockup_scan` |
+| « qu'est-ce qu'on a inventé ? », « ce bloc était dans la maquette ? » | 0, 1, 5 | `mockup_scan inventory` |
+| « ce champ est vrai ou c'est du seed ? » | 0, 1, 5 | `facade_scan readwrite` (catégorie `column_seed_only`) |
 
 ---
 
@@ -193,6 +206,10 @@ Il énumère les vues de `app/views/mockups/**` (partials exclus), leur donne le
 URL via `bin/rails routes`, cherche l'écran applicatif de même contrôleur privé
 du préfixe `mockups` et de même action, et **ne garde la paire que si la route
 applicative existe vraiment**. Le reste part dans `non_appariees` avec sa raison.
+
+L'heuristique d'appariement vit dans `pairing.rb`, à côté. `mockup_scan.rb
+inventory` charge le même fichier : deux outils qui apparieraient différemment
+finiraient par ne pas parler de la même paire.
 
 - Segments dynamiques : une paire n'est gardée que si l'identifiant se résout.
   Il interroge la base de dev (`bin/rails runner`), en scopant sur le tenant du
@@ -364,6 +381,44 @@ formulaire, affectation, seed). Sort la colonne **lue mais jamais saisissable**
 et la colonne **saisie mais jamais lue** : deux façades symétriques. Bloquant si
 la colonne part dans un document sortant (PDF, e-mail).
 
+##### `column_seed_only` — la colonne que seuls les seeds remplissent
+
+Le troisième constat, **bloquant**, est celui qui se voit le moins en
+développement et le plus chez le client : une colonne **affichée** à l'écran et
+**écrite uniquement** par `db/seeds.rb`, `db/seeds/**` ou des fixtures. En
+local elle a une valeur, chez un vrai utilisateur elle est vide ou figée à son
+défaut de schéma, pour toujours. `db:seed` ne se rejoue pas en production.
+
+Deux cas réels, tous deux payés sur le même projet :
+
+- `users.last_active_at` et `users.response_time` alimentaient les pastilles
+  « Actif il y a 3 h » et « Répond en < 2 h » du profil. Aucun formulaire ne les
+  saisit, aucun code ne les calcule. Sur un compte réel la première affichait
+  l'âge du seed, la seconde un délai jamais mesuré ;
+- une ontologie de 42 rôles importée par les seuls seeds : 31 rôles en
+  développement, **0 en production**, donc des filtres « Catégorie » et
+  « Domaine » vides chez le client seulement.
+
+Ce que le détecteur ne confond pas :
+- une colonne **jamais écrite du tout** reste dans `column_read_not_writable` ;
+- une colonne **écrite mais jamais lue** reste dans `column_written_not_read` ;
+- une colonne alimentée par une **tâche rake** (`lib/tasks/*.rake`), une
+  migration de données ou `db/data/**` n'est PAS un défaut : c'est un import
+  rejouable au déploiement. Un fichier de seeds qu'une tâche rake `require` (ou
+  dont elle appelle la constante) bascule avec elle. C'est exactement la
+  correction de l'ontologie : le jour où `lib/tasks/ontology.rake` exécute
+  `db/seeds/ontology/import.rb`, les colonnes concernées disparaissent du
+  rapport, sans toucher au reste.
+
+Les garde-fous, tous payés par un faux positif observé. Pour partir en bloquant,
+il faut : une lecture dans une **surface de rendu** (`app/views`, `helpers`,
+`mailers`, `components`, `serializers`) hors maquettes (`mockups`, `lovable`,
+`figma`) ; un accès **d'attribut ou de requête** (`user.col`, `pluck(:col)`),
+jamais un `hash[:col]` ; et un **receveur résolu à la table de la colonne**.
+Conséquence assumée : une colonne toujours lue via un receveur anonyme
+(`f.object.x`, `d&.x`) reste dans la catégorie majeure au lieu de monter en
+bloquant.
+
 `--mockups` cadre les deux sur la phase maquettes, avant le code : les routes
 prévues face aux gestes de `app/views/mockups`, et les champs de
 `doc/memory/data_models.md` face à ce que les maquettes affichent et saisissent.
@@ -374,6 +429,13 @@ toutes les tables portant la colonne (le rapport le signale) ; une écriture qui
 passe par un attribut virtuel autre que `<colonne>_input` échappe au scan ; en
 mode maquettes le rapprochement se fait sur les noms, un champ nommé autrement
 dans la maquette que dans `data_models.md` remonte comme absent.
+
+Ce que `column_seed_only` ne voit pas : une colonne écrite par un job de fond ou
+un webhook que le scan lit quand même comme du code applicatif (elle sort du
+bloquant, à raison) ; une colonne remplie par un `*_tag` de formulaire portant le
+nom d'une colonne d'une AUTRE table (le contrôle n'a pas de modèle, l'écriture
+compte alors pour toutes les tables et éteint le constat) ; et un projet sans
+`db/schema.rb` (structure.sql) où le mode ne démarre pas.
 
 ### mockup_scan.rb — qualité de transcription des maquettes
 
@@ -456,7 +518,84 @@ cette comparaison comme indicative.
 fidélité. Il dit que les couleurs sont dans la charte, que les fichiers sont
 courts, que rien n'est recopié six fois. Il ne dit pas que l'écran ressemble à
 ce que le client a validé. Ne jamais écrire « conforme aux maquettes » parce que
-mockup_scan est vert : pour ça il y a `--source`, `style_diff.js`, et l'œil.
+mockup_scan est vert : pour ça il y a `inventory` (ci-dessous), `--source`,
+`style_diff.js`, et l'œil.
+
+#### `inventory` — l'inventaire de blocs, application contre maquette
+
+```bash
+ruby $SK/mockup_scan.rb inventory <rails_app_dir> [--json]
+```
+
+Le mode qui répond à la question que le score d'hygiène ne pose pas : **est-ce
+que l'application montre un bloc que la maquette validée ne contient pas** (bloc
+inventé), ou l'inverse (promesse non tenue) ? Sans serveur, sans navigateur,
+3 s sur 25 écrans.
+
+Cas réel qui l'a payé : trois pastilles de visibilité (`tdb-vis-state-btn`)
+posées sur le tableau de bord par un commit intitulé « pixel-perfect », alors
+que la maquette, présente dans le même dépôt et navigable, n'en contenait
+aucune trace. Huit semaines de survie, jusqu'à ce que le client les voie.
+
+**Comment il apparie.** Même heuristique que `pairs_gen.rb`, partagée dans
+`pairing.rb` : contrôleur de maquette privé du préfixe `mockups`, préfixe de
+namespace toléré sauf s'il est lui-même un namespace de maquette. Deux règles en
+plus, propres aux fichiers de vue : `mockups/talent/dashboard` retrouve
+`talent/dashboard#index` (la maquette met l'écran dans un fichier, Rails lui
+donne son contrôleur), et `mockups/talent/profile` retrouve `talent/profiles#show`
+(singulier de la maquette, pluriel de la ressource). Une maquette sans écran, un
+écran sans maquette : les deux sont dits, ce sont des constats de recette.
+
+**Quatre familles de blocs**, sur la vue ET ses partials inlinés (l'application
+découpe, la maquette non) :
+
+| Famille | Ce qui est comparé |
+|---|---|
+| `classe` | classes de composant : ce qui n'est pas une utilitaire Tailwind, ni une valeur arbitraire, ni un fragment d'ERB |
+| `stimulus` | `data-controller` et `data-action` (`controleur#methode`) |
+| `controle` | boutons et liens, par leur libellé normalisé |
+| `titre` | `<h1>`…`<h6>`, par leur libellé normalisé |
+
+**Trois listes plus deux seaux.** *Présent dans l'app, absent de la maquette*
+(bloquant) et *présent dans la maquette, absent de l'app* (bloquant) ; les
+*correspondances* en information. Puis deux seaux qui existent pour que les deux
+premières restent lisibles :
+
+- **présent des deux côtés mais pas sur le même écran** : le bloc a bien été
+  dessiné, ailleurs (partial partagé, écran voisin). Ce n'est pas un bloc
+  inventé, au pire un écart de placement. Un bloc ne part en bloquant que s'il
+  est absent de TOUT le corpus d'en face ;
+- **non comparable** : l'application traduit ses libellés (`t('.envoyer')`), la
+  maquette les écrit en clair. Comparer mot à mot produirait des centaines
+  d'écarts qui ne sont que de l'i18n. Dès que le côté opposé a des libellés
+  dynamiques dans la famille, le diff sort du bloquant, avec sa raison.
+
+**Ce qui est neutralisé exprès** (branchement de données, pas bloc inventé) :
+les chiffres dans les libellés (« 12 candidatures » = « 3 candidatures »), les
+`id` dynamiques, les valeurs interpolées. Une classe seulement déclarée dans le
+`<style>` d'une maquette compte comme dessinée. Une `data-action` dont le
+CONTRÔLEUR existe déjà en face descend en information : le composant est là,
+c'est le câblage qui diffère.
+
+**Réglages en tête de script** (`INV`) : `tailwind_heads` (la liste des têtes
+d'utilitaires, à compléter si une classe de composant du projet est avalée),
+`class_denylist`, `cluster_min` (au-delà de 4 classes de même préfixe on parle
+d'UN composant, `tsm-why-* (9 classes)`), `not_shipped` (dossiers de vues qui ne
+sont pas le produit : `mockups`, `lovable`, `figma`…), `per_pair` (détail par
+écran dans le rapport texte ; le JSON garde tout).
+
+**Ce qu'il ne voit pas.**
+
+- La mise en page. Deux écrans avec les mêmes blocs dans un ordre différent
+  sortent identiques : c'est `style_diff.js` qui mesure le rendu.
+- Les blocs construits dynamiquement (`class="#{prefix}-card"`), les composants
+  ViewComponent rendus par constante, les partials résolus par variable.
+- Les libellés traduits face à des libellés en clair : ils partent en « non
+  comparable », pas en « conforme ».
+- Un écran entièrement réécrit remonte comme des centaines de blocs, pas comme
+  un verdict « écran divergent ». Lis d'abord la répartition par écran : quatre
+  écrans qui portent la moitié des constats, c'est quatre écrans à revoir, pas
+  600 corrections.
 
 ---
 

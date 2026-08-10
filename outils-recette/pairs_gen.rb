@@ -28,22 +28,14 @@ require "json"
 require "set"
 require "open3"
 require "tmpdir"
+require_relative "pairing"
 
 VERBS = %w[GET POST PUT PATCH DELETE].freeze
 
-# Pages système des maquettes dont l'équivalent applicatif ne porte pas le même
-# nom. On cherche la route par motif sur le chemin, pas par contrôleur.
-SYSTEM_ALIASES = [
-  { match: /\A(login|sign_?in|connexion)\z/, path: %r{/(sessions?|sign_?in|login|connexion)(/new)?\z}, public: true },
-  { match: /\A(forgot_password|password_reset|mot_de_passe_oublie)\z/, path: %r{/passwords?/(forgot|new|reset)}, public: true },
-  { match: /\A(signup|sign_?up|registration|inscription)\z/, path: %r{/(sign_?up|registrations?/new|inscription)\z}, public: true }
-].freeze
-
-# Actions de maquette qui n'ont, par construction, aucun écran applicatif.
-NO_APP_COUNTERPART = {
-  /\A(error_404|not_found|error_500|server_error|error)\z/ => "page d'erreur : rendue par Rails, pas par un contrôleur applicatif",
-  /\A(activation|invitation)\z/ => "écran d'activation : atteint par un jeton d'e-mail, pas par une URL stable"
-}.freeze
+# L'appariement maquette ↔ écran vit dans pairing.rb : mockup_scan.rb en mode
+# `inventory` s'en sert aussi, sur des fichiers de vue au lieu de routes.
+SYSTEM_ALIASES = Pairing::SYSTEM_ALIASES
+NO_APP_COUNTERPART = Pairing::NO_APP_COUNTERPART
 
 # Chemins applicatifs accessibles sans session : la paire est jouée en anonyme.
 PUBLIC_PATH = %r{\A/(sessions?|sign_?in|sign_?up|login|logout|connexion|passwords?|invitations?|users/(sign|password|confirmation))}i
@@ -219,39 +211,17 @@ mockup_namespaces = mockup_views
 # ---------------------------------------------------------------------------
 
 # URL de la maquette : la route si elle existe, sinon la convention REST.
-def conventional_path(ctrl, action)
-  base = "/" + ctrl
-  case action
-  when "index"  then base
-  when "show"   then "#{base}/:id"
-  when "new"    then "#{base}/new"
-  when "edit"   then "#{base}/:id/edit"
-  else "#{base}/#{action}"
-  end
-end
+def conventional_path(ctrl, action) = Pairing.conventional_path(ctrl, action)
 
 def find_route(get_routes, ctrl, action)
   get_routes.find { |r| r[:controller] == ctrl && r[:action] == action }
 end
 
-# Cherche l'écran applicatif : même contrôleur privé du préfixe « mockups »,
-# éventuellement précédé d'un scope (`scope module: :app`). On refuse un
-# préfixe qui est lui-même un namespace de maquette (admin, settings…) : c'est
-# ce qui apparierait le tableau de bord entreprise avec celui du superadmin.
+# Cf. Pairing.candidates. Les routes portent leur chemin dans :path ; c'est lui
+# qui départage deux candidats de même score, comme avant l'extraction.
 def app_candidates(get_routes, ctrl_base, action, forbidden)
-  ctrl_base_segments = ctrl_base.split("/")
-  get_routes.filter_map do |r|
-    next unless r[:action] == action
-    c = r[:controller]
-    next if c.start_with?("mockups/") || c == "mockups"
-    if c == ctrl_base
-      { route: r, score: 0 }
-    elsif c.end_with?("/#{ctrl_base}")
-      prefix = c[0...-(ctrl_base.size + 1)].split("/")
-      next if prefix.any? { |seg| forbidden.include?(seg) && !ctrl_base_segments.include?(seg) }
-      { route: r, score: prefix.size }
-    end
-  end.sort_by { |c| [ c[:score], c[:route][:path].length ] }
+  Pairing.candidates(get_routes, ctrl_base, action, forbidden)
+         .map { |c| { route: c[:item], score: c[:score] } }
 end
 
 def system_alias(get_routes, action)
