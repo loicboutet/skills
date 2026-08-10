@@ -1333,12 +1333,17 @@ class Inventory
       # bloc etait prevu : elle ne compte pas comme « invente par l'appli ».
       moc_seen = fam == "classe" ? (moc_keys + css_classes(pair.mockup_view)).uniq : moc_keys
 
-      reliable = { app_only: true, mockup_only: true }
+      # Une famille absente d'un cote ne se compare pas : elle n'y est pas
+      # exprimee du tout. Cas mesure : l'ecran applicatif n'a AUCUN <h*> (son
+      # titre est un <div> stylise), la maquette en a un — « titre Parametres
+      # absent de l'application » etait faux, le titre est bien la.
+      absent = { app: app_keys.empty?, mockup: moc_keys.empty? }
+      reliable = { app_only: !absent[:mockup], mockup_only: !absent[:app] }
       if LABEL_FAMILIES.include?(fam)
         moc_dyn = pair.mockup_blocks.count { |b| b.family == fam && b.dynamic }
         app_dyn = pair.app_blocks.count { |b| b.family == fam && b.dynamic }
-        reliable[:app_only] = moc_dyn.zero?
-        reliable[:mockup_only] = app_dyn.zero?
+        reliable[:app_only] &&= moc_dyn.zero?
+        reliable[:mockup_only] &&= app_dyn.zero?
       end
 
       (app_keys - moc_seen).each do |k|

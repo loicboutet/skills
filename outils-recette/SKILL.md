@@ -568,7 +568,22 @@ premières restent lisibles :
 - **non comparable** : l'application traduit ses libellés (`t('.envoyer')`), la
   maquette les écrit en clair. Comparer mot à mot produirait des centaines
   d'écarts qui ne sont que de l'i18n. Dès que le côté opposé a des libellés
-  dynamiques dans la famille, le diff sort du bloquant, avec sa raison.
+  dynamiques dans la famille, le diff sort du bloquant, avec sa raison. Même
+  chose quand une famille est **absente d'un côté** : un écran dont le titre est
+  un `<div>` stylisé n'a aucun `<h*>`, et « titre Paramètres absent de
+  l'application » était faux, le titre est bien là.
+
+**Faux positifs connus, à écarter à la lecture.**
+
+- Une classe construite en Ruby : `avatar_variants = %w[hotel resto private]`
+  puis `class="ed-mission-avatar <%= variant %>"`. Le bloc est bien là, le scan
+  ne le voit pas. C'est la principale source de faux « absent de l'application ».
+- Une classe dont la tête est un utilitaire Tailwind (`text-block`, `border-card`)
+  est écartée comme utilitaire : ajoute-la à `class_denylist` à l'envers, ou
+  retire sa tête de `tailwind_heads` pour ce projet.
+- Un bloc dont la maquette porte le CSS mais pas le markup (ou l'inverse) : le
+  scan lit le `<style>` des maquettes, PAS `app/assets/stylesheets`. Un bloc dont
+  seul le style a été porté remonte comme « promesse non tenue », ce qu'il est.
 
 **Ce qui est neutralisé exprès** (branchement de données, pas bloc inventé) :
 les chiffres dans les libellés (« 12 candidatures » = « 3 candidatures »), les
