@@ -7,6 +7,15 @@ description: "Piloter un navigateur depuis le terminal avec playwright-cli : exp
 
 On pilote le navigateur avec **`playwright-cli`**, pas avec un serveur MCP.
 
+## Si les outils MCP Playwright apparaissent (ou manquent)
+
+Le serveur MCP a ete retire des configurations le 10/08/2026. S'il reste declare
+quelque part et que ses outils echouent ou disparaissent : **c'est normal, ce
+n'est pas une panne a signaler**. N'attends aucune reconnexion, ne demande a
+personne de relancer un serveur, ne bloque pas une recette pour ca : utilise
+`playwright-cli` comme decrit plus bas. Un agent qui s'arrete en attendant que
+quelqu'un reconnecte un MCP perd la journee pour rien.
+
 ## Pourquoi la CLI et plus le MCP
 
 Le serveur MCP Playwright lance Chrome avec `handleSIGINT` et `handleSIGTERM` a
