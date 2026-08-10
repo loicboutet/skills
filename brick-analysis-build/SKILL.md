@@ -1,6 +1,6 @@
 ---
 name: brick-analysis-build
-description: "Phase 1 : analyse des specs, objectif metier signe, jeu de donnees canonique, data models, routes, journal de decisions, manifeste de config, criteres d'acceptance. Utilise /brick-analysis-build pour demarrer l'analyse d'un projet ou d'une nouvelle brick."
+description: "Phase 1 : analyse des specs, objectif metier signe, jeu de donnees canonique, data models, routes, journal de decisions avec matrice CRUD par entite, manifeste de config, criteres d'acceptance. Utilise /brick-analysis-build pour demarrer l'analyse d'un projet ou d'une nouvelle brick."
 ---
 
 # Brick Analysis
@@ -19,6 +19,10 @@ Le client connait le QUOI ; le COMMENT est notre travail. On ne pose presque jam
 de question : on tranche avec un defaut motive, on consigne dans `decisions.md`, et on
 signale a la livraison les rares decisions qui touchent au QUOI. Une seule interdiction
 absolue : fabriquer une DONNEE (voir plus bas).
+
+**Modele** : toute cette phase tourne sur le modele fort (Opus, effort de raisonnement
+maximal) — jeu de donnees, matrice CRUD et decisions conditionnent tout l'aval. Voir la
+repartition complete dans `brick-code-build`.
 
 ## Process
 
@@ -92,8 +96,7 @@ C'est lui qui porte les cas limites, pas du code speculatif.
 Le jeu de donnees est un livrable d'analyse critique : **delegue sa generation a un
 sous-agent configure sur le modele le plus capable disponible avec effort de
 raisonnement maximal ; ne le genere jamais en passant, ni avec un modele economique.**
-Les autres sections de ce skill restent au modele par defaut. Le sous-agent suit ces
-exercices, dans l'ordre :
+Le sous-agent suit ces exercices, dans l'ordre :
 
 1. **Composition de lieu** appliquee aux donnees : avant de generer une entite, se
    placer dans la scene reelle (lundi 8h, le bureau de Martin Charpente, la pile de
@@ -178,8 +181,12 @@ Un seul fichier pour toute la vie du projet. Il absorbe ce qui s'appelait
   inventee, score bidon, texte de demo presente comme reel, moyenne calculee sur du
   vide. C'est la SEULE interdiction absolue du projet. A la place : **etat vide
   honnete** ("aucune donnee pour l'instant") ou la donnee reelle, rien d'autre.
-- **Chaque decision consignee devient un critere de recette** : `brick-code-review`
-  deroule ce journal ligne a ligne et exige une preuve pour chacune.
+- **Ce journal n'accueille JAMAIS un defaut constate.** Une ligne qui decrit un bug
+  d'argent, de permission, de donnee fausse ou de fuite n'est pas une decision, c'est
+  un bug ouvert : il se corrige (regle du defaut connu, `brick-code-build`).
+- **Chaque decision consignee devient un critere de recette** : le cahier de recette
+  (ecrit a la reanalyse) tire une ligne par decision, et `brick-code-review` exige une
+  preuve pour chacune.
 - On AJOUTE, on ne reecrit jamais une entree passee.
 
 #### Format
@@ -188,12 +195,13 @@ Un seul fichier pour toute la vie du projet. Il absorbe ce qui s'appelait
 # Journal de decisions — {projet}
 
 ## Regles
-{les 5 regles ci-dessus, recopiees}
+{les 6 regles ci-dessus, recopiees}
 
-## Decisions d'analyse — par entite (prises en phase ANALYSIS)
-| Entite | Suppression (bloquer/archiver/cascader + pourquoi) | Etats degrades (desactive/suspendu) |
-|--------|----------------------------------------------------|--------------------------------------|
-| Client | archiver (les factures doivent survivre)           | suspendu : jobs recurrents exclus    |
+## Matrice CRUD — une ligne par entite du data model (phase ANALYSIS)
+| Entite | Creer (qui, conditions) | Modifier (qui, jusqu'a quand) | Supprimer | Archiver | Etats degrades |
+|--------|-------------------------|-------------------------------|-----------|----------|----------------|
+| Client | admin, commercial | admin, commercial | non offert (les factures doivent survivre) | offert, admin | suspendu : jobs recurrents exclus |
+| Devis  | admin, commercial | tant que brouillon | offert, admin, si non facture | remplace par « perdu » (motif) | — |
 
 ## Decisions d'analyse — transverses
 - Responsive : {dans le scope : ecrans vises utilisables a 390 px / hors scope assume (ecrit)}
@@ -207,13 +215,22 @@ Un seul fichier pour toute la vie du projet. Il absorbe ce qui s'appelait
 | 2026-08-08 | Tri par defaut de la liste clients | nom A→Z | le plus previsible | oui | non |
 ```
 
-Pour CHAQUE entite du data model, une ligne suppression + une ligne etats degrades.
-Reponses autorisees : **"gere"** (avec le comportement choisi), **"hors scope assume
-(ecrit)"**, ou **"non applicable"**. Aucune case vide. On decide, on ne sur-implemente pas.
+La matrice CRUD est **obligatoire et complete** : chaque entite du data model a sa
+ligne, chaque case une reponse — **"offert"** (avec qui et sous quelles conditions),
+**"non offert"** (motif en une ligne), ou **"remplace par l'archivage"** / par un
+changement d'etat metier nomme. Case vide = analyse non finie.
 
-Provenance : audit qualite 08/2026 — cascades latentes (`dependent: :destroy` non
-audite), jobs recurrents sur entreprises suspendues, mobile jamais ouvert avant
-livraison ; Tastellers (compteurs en dur "127 connexions" sur le dashboard d'un vrai client).
+Elle est le contrat de la brique sur les gestes destructifs : ce qui y est « offert »
+DOIT avoir un bouton dans les maquettes puis dans l'app (verifie a la reanalyse et a la
+review) ; ce qui n'y est pas ne doit exister ni en route, ni en action, ni en bouton.
+Les etats degrades gardent leur colonne (compte desactive, entreprise suspendue : ce qui
+s'arrete) ; "non applicable" accepte s'il est ecrit.
+
+Provenance : audit qualite 08/2026 — neuf actions `destroy` ecrites et testees sans
+aucun bouton, une route DELETE vers une action inexistante ; cascades latentes
+(`dependent: :destroy` non audite), jobs recurrents sur entreprises suspendues, mobile
+jamais ouvert avant livraison ; Tastellers (compteurs en dur "127 connexions" sur le
+dashboard d'un vrai client).
 
 ### 5b. Amorcer `doc/memory/config.md` — le manifeste de configuration
 
@@ -229,6 +246,9 @@ l'ajoute ; `brick-code-review` confronte le manifeste a l'environnement livre.
 |-----|------------------------------|-----|---------|------|------------|
 | APP_HOST | config/environments/production.rb (default_url_options) | localhost:3000 | {slug}-staging.5000.dev | {slug}.5000.dev | mails avec liens morts |
 ```
+
+Ce manifeste decrit ce qui EST branche. Une cle sans consommateur reel n'y figure pas
+sous forme de note ou de « facade a trancher » : c'est un bug, il se corrige.
 
 Provenance : audit qualite 08/2026 — APP_HOST absent (mails pointant sur app.5000.dev
 chez Tastellers ET educxa), superadmin en dur en prod chez Gespilot, cle Postmark
@@ -318,7 +338,7 @@ Etat: ANALYSIS COMPLETE
 - [x] objectif.md (signe le {date})
 - [x] jeu_de_donnees.md
 - [x] data_models.md
-- [x] decisions.md
+- [x] decisions.md (matrice CRUD complete)
 - [x] config.md (amorce)
 - [x] routes.md
 - [x] acceptance_criteria.md
@@ -334,8 +354,9 @@ Avant de passer a MOCKUPS, verifier :
 - [ ] `objectif.md` existe, 5-15 lignes de QUOI metier, signe par le client
 - [ ] Jeu de donnees : quotas respectes (au moins un cas par categorie, chaque cas
       etiquete), genere par le protocole (partitions, repetition, premortem, examen)
-- [ ] `decisions.md` : regles recopiees ; chaque entite a sa ligne suppression + etats
-      degrades ; responsive et fuseau decides ; aucune case vide ; aucune decision
+- [ ] `decisions.md` : regles recopiees ; **matrice CRUD complete** (creer / modifier /
+      supprimer / archiver x qui + conditions, chaque case renseignee) ; etats degrades
+      par entite ; responsive et fuseau decides ; aucune case vide ; aucune decision
       laissee sous forme de question ouverte
 - [ ] `config.md` amorce (au minimum APP_HOST et le fuseau, avec consommateur nomme)
 - [ ] Tous les modeles ont des relations coherentes
