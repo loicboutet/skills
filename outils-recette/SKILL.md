@@ -177,6 +177,7 @@ Si la demande ne porte que sur un morceau, ne fais que ce morceau et dis-le.
 | « la parité », « l'écart aux maquettes » | 0, 2, 3, 4, 5 | `pairs_gen` puis `style_diff` |
 | « une page » | idem + `--only "<nom de la paire>"` | |
 | « les routes sans geste » | 0, 5 | `facade_scan reachability` |
+| « la qualité des maquettes », « c'est transcrit comment ? » | 0, 5 | `mockup_scan` |
 
 ---
 
@@ -374,6 +375,89 @@ passe par un attribut virtuel autre que `<colonne>_input` échappe au scan ; en
 mode maquettes le rapprochement se fait sur les noms, un champ nommé autrement
 dans la maquette que dans `data_models.md` remonte comme absent.
 
+### mockup_scan.rb — qualité de transcription des maquettes
+
+```bash
+ruby $SK/mockup_scan.rb <rails_app_dir> [--json] [--tokens config/tailwind.config.js]
+                                        [--source <dir>] [--top N] [--max-lines 400]
+```
+
+Ne demande ni serveur ni navigateur, ne touche à rien, tourne en 2 s sur
+52 000 lignes. Il lit `app/views/mockups/**` (partials compris) et rend un
+rapport par écran, trié du plus problématique au moins, plus un **score de
+dérive sur 100** et son détail par axe.
+
+Il sert à deux choses : dire à un dev ce qu'il lui reste à reprendre sur des
+maquettes en cours, et donner un chiffre comparable d'un projet à l'autre.
+
+**Six axes, six poids.**
+
+| Axe | Poids | Ce qu'il compte |
+|---|---|---|
+| palette | 25 | couleurs distinctes (hex, `rgb()`, `hsl()` normalisés), celles qui ne correspondent à aucun token de la charte, les **quasi-doublons** (ΔE < 4 en CIELAB), les custom properties définies dans la vue elle-même |
+| typo | 10 | familles de police distinctes, tailles hors échelle Tailwind |
+| arbitraire | 20 | `style="..."` en dur, classes Tailwind `[...]`, blocs `<style>` inline et leur volume en lignes |
+| duplication | 15 | blocs identiques **et quasi identiques** partagés entre écrans, lignes récupérables en partials |
+| hygiène | 20 | emoji/glyphe à la place d'un asset, jargon interne visible, tiret cadratin dans une phrase affichée, `<a>` imbriqué, responsive absent, z-index par-dessus la navbar |
+| volume | 10 | lignes par fichier, part des lignes dans les fichiers au-dessus du seuil (400, la convention de l'atelier) |
+
+Verdicts : `< 12` PROPRE, `12-28` À SURVEILLER, `28-50` DÉRIVE NETTE,
+`≥ 50` TRANSCRIPTION À REPRENDRE. Chaque total affiché est recalculé depuis la
+liste qu'il résume ; rien n'est tenu à part.
+
+**Ce qui rend les remontées lisibles.** Le fichier est découpé en zones (code
+ERB, commentaire ERB, commentaire HTML, `<style>`, `<script>`, balise, texte).
+Une couleur citée dans un commentaire ne compte pas comme une couleur employée,
+un tiret cadratin dans une note de dev n'est pas un tiret montré au client. Le
+texte affiché inclut les littéraux Ruby (les maquettes de l'atelier posent leurs
+données fictives en tête de vue), moins les chemins de partials, les helpers de
+route, les listes de classes et les données de path SVG.
+
+**Les quasi-doublons de couleur se regroupent par graine.** La couleur la plus
+employée sert de référence, et on lui rattache celles qui sont à moins de ΔE
+d'**elle**. Une union-find sur les paires proches enchaîne de fil en aiguille et
+finit par mettre le blanc et l'or dans le même paquet ; ici le groupe se lit
+« voici la couleur, voici ses sosies ».
+
+**`--source <dir>`** confronte les valeurs numériques (`NNpx`) et les couleurs
+d'une source externe (CSS, TSX, HTML d'un export Lovable/Figma) à celles
+produites. Il sort les valeurs présentes d'un côté et pas de l'autre, et surtout
+les **valeurs proches sans être égales** (écart de 2 px à 15 %) : c'est le
+détecteur de « valeur estimée au lieu de mesurée ». Le rapport annonce lui-même
+cette comparaison comme indicative.
+
+**Ce qu'il ne détecte pas.**
+
+- La fidélité à la maquette source. Sans `--source` il ne voit que le rendu ; un
+  écran entièrement réinventé mais bien rangé sort propre.
+- Une section de la source purement et simplement oubliée : il compte ce qui est
+  là, pas ce qui manque.
+- Ce que donne le navigateur : chevauchements réels, débordements, contraste.
+  C'est le travail de `style_diff.js`, pas le sien.
+- La cohérence des données fictives entre écrans (un même client avec deux
+  chiffres d'affaires).
+- Les classes construites dynamiquement en Ruby, qu'il ne sait pas résoudre.
+
+**Faux positifs connus, à écarter à la lecture.**
+
+- Couleurs de marque tierces (le bouton Google et ses `#4285f4 #34a853 #fbbc05
+  #ea4335`) remontent en « hors charte ».
+- Sans `tailwind.config.js` ni feuille de style exploitable, « hors charte »
+  veut dire « en dur, sans référence » : le rapport le dit en tête.
+- Les `style="..."` interpolés en ERB (`style="background: <%= c %>"`) sont
+  comptés à part et tolérés : une couleur calculée ne peut pas être une classe.
+- Le z-index d'une modale : les sélecteurs nommés `overlay`, `modal`, `dialog`,
+  `drawer`, `popover`, `toast`… sont écartés, les autres remontent.
+- Le tiret cadratin n'est signalé qu'au milieu d'une phrase d'au moins huit mots.
+  Le tiret « valeur vide » d'un tableau et le séparateur d'un titre court sont
+  des conventions typographiques, pas la signature d'une IA.
+
+**La mise en garde qui compte.** Un score propre prouve l'HYGIÈNE, pas la
+fidélité. Il dit que les couleurs sont dans la charte, que les fichiers sont
+courts, que rien n'est recopié six fois. Il ne dit pas que l'écran ressemble à
+ce que le client a validé. Ne jamais écrire « conforme aux maquettes » parce que
+mockup_scan est vert : pour ça il y a `--source`, `style_diff.js`, et l'œil.
+
 ---
 
 ## Quand s'en servir
@@ -382,8 +466,9 @@ dans la maquette que dans `data_models.md` remonte comme absent.
   `/brick-code-review`, ou sur un projet déjà livré qu'on reprend.
 - En fin de lot pendant `/brick-code-build` : les modes courts, sur les pages du
   lot (`--only`).
-- En phase maquettes : `facade_scan --mockups` seul, il n'y a pas encore de
-  parité à mesurer.
+- En phase maquettes : `facade_scan --mockups` et `mockup_scan`, il n'y a pas
+  encore de parité à mesurer. `mockup_scan` sur des maquettes issues d'un export
+  externe, avec `--source` pointé sur cet export.
 - Après un `/brick-code-fix` qui touche une vue : `style_diff --only <page>`.
 
 Le rapport de parité produit ici est celui qu'attend `/brick-code-review` et que
@@ -401,3 +486,19 @@ Sur gespilot (brique 1 livrée, 47 maquettes), le balayage complet a pris huit
 minutes : 41 paires générées sans une ligne écrite à la main, 6 maquettes sans
 écran réel, une colonne imprimée sur les factures que personne ne peut saisir, et
 un débordement mobile sur 39 pages sur 41 côté maquettes.
+
+`mockup_scan` a été calibré sur deux extrêmes réels. Des maquettes inventées
+puis rangées (80 fichiers, 4 607 lignes, 6 couleurs, aucun `<style>` inline)
+sortent à **6,5 / 100, PROPRE**. La transcription d'un export Lovable vers des
+vues Rails (137 fichiers, 52 729 lignes, 1 091 couleurs distinctes dont 438 hors
+charte, 983 `style="..."`, 20 107 lignes de CSS dans 61 vues, 6 familles de
+police, 49 fichiers au-dessus de 400 lignes) sort à **78,1 / 100, TRANSCRIPTION
+À REPRENDRE**. Un facteur douze entre les deux : le score sépare, il ne coupe pas
+les cheveux en quatre.
+
+Sur ce même projet il a retrouvé, sans qu'on lui dise où chercher, les deux
+défauts que l'enquête humaine avait mis des jours à isoler : les cinq verts
+quasi identiques employés pour un seul vert de charte (`#1B7A4E` 107 fois,
+`#2D7A4E`, `#2D7A4F`, `#2D7B4A`, `rgba(29,122,70)`), et la colonne de droite
+transcrite à `302px` là où la source Lovable écrit `grid-template-columns: 1fr
+300px`. Le premier vient de l'axe palette, le second de `--source`.
