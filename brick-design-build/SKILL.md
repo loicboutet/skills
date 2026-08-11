@@ -51,6 +51,28 @@ avec une session nommée, fermée à la fin). Regarde les captures et corrige AV
 - section vide ou effondrée = bloquant ; CHAQUE visuel rend réellement quelque chose (un
   cadre vide là où un visuel est attendu = bloquant, zoome sur les grilles) ;
 - chevauchements, débordements, scroll horizontal mobile = bloquant ;
+- **comment on répare un débordement, et comment on ne le répare JAMAIS.** Un mot coupé en
+  plein milieu (« CHANTIE / RS DE DÉ- / POLLUTI / ON ») est un défaut plus visible et plus
+  grave que le débordement qu'il prétend réparer : le lecteur le voit en une seconde, sur le
+  titre, à l'endroit le plus exposé de la page. Donc **jamais** `break-words`, `break-all`,
+  `word-break`, `hyphens: auto` (ni la classe `hyphens-auto`), jamais un `&shy;` posé à la
+  main dans un titre, jamais une troncature qui tombe au milieu d'un mot. Les trois
+  corrections autorisées, dans cet ordre, en s'arrêtant à la première qui suffit :
+  1. **raccourcir le texte** (un titre de 4 mots au lieu de 7, le mot court du métier à la
+     place du mot long, un surtitre qui reprend ce qu'on enlève) ;
+  2. **descendre d'un cran** dans l'échelle typographique (le cran mobile du titre, jamais
+     une taille inventée : l'échelle reste fermée) ;
+  3. **changer la mise en page** (empiler les colonnes, replier la ligne, passer le titre sur
+     deux lignes à une césure choisie entre deux mots, réduire la largeur de la colonne,
+     laisser un tableau large défiler dans son propre conteneur).
+  Restent permis, ce ne sont pas des coupures de mot : `text-wrap: balance` / `text-pretty` ;
+  `overflow-wrap: anywhere` appliqué UNIQUEMENT à une chaîne sans espace qu'aucune mise en
+  page ne sauve (URL, e-mail, référence, numéro), jamais à un bloc de titres ; l'ellipse en
+  bout de ligne quand elle tombe ENTRE deux mots.
+  Provenance : mesure 08/2026. Un candidat a cassé six titres pour tuer un débordement, et
+  deux juges sur trois l'ont sanctionné ; le réflexe a été retrouvé dans la version alors en
+  production, sur six titres de section — il n'était visible nulle part, faute de mot assez
+  long ce jour-là.
 - rythme : 3 sections consécutives de même structure → varie ; jamais plus de 2 bandes pleine
   largeur de même fond à la suite ; page > ~5500px desktop → fusionne ou coupe ;
 - TENUE SUR LA LONGUEUR : le niveau de design du hero est le contrat pour toute la page ;
