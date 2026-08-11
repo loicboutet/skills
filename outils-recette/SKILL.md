@@ -612,6 +612,73 @@ sont pas le produit : `mockups`, `lovable`, `figma`…), `per_pair` (détail par
   écrans qui portent la moitié des constats, c'est quatre écrans à revoir, pas
   600 corrections.
 
+### normaliser.rb — les valeurs en dur deviennent une charte, APRÈS validation client
+
+```bash
+ruby $SK/normaliser.rb --charte doc/memory/charte_normalisee.css \
+     --sortie app/views/mockups --rapport /tmp/normalisation.md --json /tmp/normalisation.json \
+     --seuil 3 app/views/mockups/<lot>/
+```
+
+L'étape qui manquait entre une transcription fidèle (`/brick-mockup-transcription`,
+qui porte les valeurs littérales de la source) et la discipline de charte que
+l'atelier tient partout ailleurs. Elle prend un **lot** de vues, calcule la
+charte, réécrit les vues et rend un rapport. Elle ne se lance **jamais avant la
+validation client** : ce que le client valide, c'est le rendu littéral.
+
+**Pourquoi une passe séparée, et pas une règle de plus dans le prompt.** Mesure
+08/2026 : avec la charte déjà remplie sous les yeux et l'interdiction écrite
+d'arrondir, l'agent qui transcrit arrondit quand même, 4 couleurs sur 18 et
+7 longueurs sur 20, et l'écran perd 15 points de fidélité. Un menu de tokens
+invite à substituer, même interdit. Cette passe-ci est un **calcul**, pas une
+consigne.
+
+**Ce qu'elle garantit.**
+
+- **Une valeur est remplacée par elle-même, nommée.** Une substitution ne peut
+  pas arrondir : c'est ce qui la rend sûre là où la consigne échoue. Mesuré sur
+  un lot de 7 écrans : la fidélité ne bouge **d'aucun dixième de point**, sur
+  aucun des trois volets (visuel, interaction, contenu).
+- **Une valeur employée dans plusieurs vues devient un token, une valeur
+  employée dans une seule reste littérale.** La longue traîne propre à un écran
+  n'a rien à faire dans la charte.
+- **Idempotente** : relancée sur sa propre sortie elle rend des vues identiques
+  au byte près, la même charte, les mêmes comptes, et zéro substitution.
+- **Bruyante** : elle se relit (chaque token redéveloppé doit rendre l'original)
+  et se contrôle en complétude (plus aucune valeur tokenisée écrite en dur).
+  Toute incohérence l'arrête au lieu de rendre un résultat à moitié juste.
+- Gain mesuré sur les mêmes 7 écrans : couleurs en dur **988 → 365** (−63 %),
+  longueurs en dur **2 252 → 114** (−95 %), tailles de police distinctes 43 → 14.
+
+**Ce qu'elle signale sans le décider.** Trois choses remontent au rapport et
+attendent un arbitrage humain, parce que ce sont des décisions de design :
+
+- les **quasi-doublons** de couleur (l'or `#c4a559`, 49 emplois sur 5 écrans,
+  contre `#bfa15c`, 3 emplois sur 1 écran, à 3,75 ΔE). Jamais fusionnés en
+  silence ;
+- l'**accroche à ±1 px** d'une longueur vers l'échelle de la charte : elle
+  change le rendu, donc elle est listée, pas appliquée ;
+- les **niveaux d'élévation** proposés pour les ombres (groupés sur la géométrie
+  seule), jamais imposés.
+
+**Le seuil monte avec la taille du lot.** `--seuil N` = nombre de vues à partir
+duquel une valeur est systémique. Mesuré sur 7 écrans : à seuil 2 la charte fait
+124 tokens et **ne se stabilise pas** (elle gagne encore 16 tokens au septième
+écran) ; **à seuil 3 elle tient en 68 tokens** et retire encore la moitié des
+couleurs en dur et 90 % des longueurs. Sur un lot de 7 écrans, seuil 3. Sur une
+trentaine d'écrans, monter encore et vérifier que la charte se stabilise, sinon
+elle dépasse les 60 tokens que la doctrine design autorise.
+
+**Ce qu'elle ne touche pas** : le JavaScript, les attributs de présentation SVG,
+le bloc de données fictives. `var()` n'y est pas résolu ou pas valide. Deux
+autres cas sont non substituables par nature, et c'est normal de les voir dans
+le résidu : les longueurs d'un prélude `@media` (où `var()` est interdit) et les
+valeurs négatives (`-var()` n'est pas du CSS).
+
+**À lire avec, pas à la place.** Sur un lot, le score d'hygiène de `mockup_scan`
+ne voit presque rien du gain (70,7 → 69,2) : son volet palette sature bien avant.
+Lis les comptes bruts du rapport de normalisation, pas le score.
+
 ---
 
 ## Quand s'en servir
@@ -624,6 +691,9 @@ sont pas le produit : `mockups`, `lovable`, `figma`…), `per_pair` (détail par
   encore de parité à mesurer. `mockup_scan` sur des maquettes issues d'un export
   externe, avec `--source` pointé sur cet export.
 - Après un `/brick-code-fix` qui touche une vue : `style_diff --only <page>`.
+- **Après la validation client** d'un lot de maquettes transcrites :
+  `normaliser.rb`, appelé par `/brick-mockup-transcription`. Jamais avant, et
+  jamais sur des maquettes créées de zéro (elles sortent déjà avec la charte).
 
 Le rapport de parité produit ici est celui qu'attend `/brick-code-review` et que
 `~/.nexrai/bin/nexrai-parite` publie dans l'espace client.
