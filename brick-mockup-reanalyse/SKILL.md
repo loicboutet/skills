@@ -1,6 +1,6 @@
 ---
 name: brick-mockup-reanalyse
-description: "Controle BLOQUANT apres la validation client des maquettes, avant le code : mobile mesure a 390 px, matrice AC-maquette, data model champ par champ (affiche ET saisi), matrice CRUD, chasse aux donnees fabriquees, parcours navigues au playwright, jeu de donnees canonique, conformite SEO des pages publiques, squelette du cahier de recette, kanban et matrice AC-tache, tag git de reference, verdict PRET / A CORRIGER. Utilise /brick-mockup-reanalyse quand le client a valide les maquettes, avant /brick-code-build."
+description: "Controle BLOQUANT apres la validation client des maquettes, avant le code : mobile mesure a 390 px, matrice AC-maquette, data model champ par champ (affiche ET saisi), matrice CRUD, chasse aux donnees fabriquees, parcours navigues au playwright, jeu de donnees canonique, conformite SEO des pages publiques, squelette du cahier de recette, kanban et matrice AC-tache, dimensionnement de la brique, tag git de reference, verdict PRET / A CORRIGER. Utilise /brick-mockup-reanalyse quand le client a valide les maquettes, avant /brick-code-build."
 ---
 
 # Brick Mockup Reanalyse
@@ -285,6 +285,32 @@ la decoupe jusqu'a ce qu'on sache.
 Provenance : audit qualite 08/2026 — aucune matrice de tracabilite complete AC ↔
 maquette ↔ tache ↔ test, brique entiere codee en un jour sans plan verifiable.
 
+#### Dimensionnement : est-ce que la brique tient en une passe ?
+
+Le kanban en main, c'est le seul moment ou le dimensionnement est CALCULABLE, avant que le
+budget ne tranche a notre place en cours de route. Compter, et ecrire les deux chiffres
+dans reanalyse.md : **N criteres d'acceptance, M taches.**
+
+Ordre de grandeur, a prendre comme tel et pas comme un seuil : les briques menees a terme
+en une passe faisaient 18 a 24 taches. A 33 taches, la passe s'est arretee a 4 taches
+livrees. Le plan etait complet et honnete ; c'est le budget qui a tranche en cours de
+route, sans que personne l'ait decide.
+
+Quand le compte depasse manifestement ce format, **remonter au chef de projet AVANT
+d'ouvrir le code**, avec les chiffres et deux issues :
+
+1. **Decouper en deux briques** : ou passe la coupe, quels AC de chaque cote, ce que la
+   premiere livre d'utilisable toute seule.
+2. **Assumer une livraison partielle** : quels lots sont tenus, lesquels sortent, et le
+   perimetre annonce au client AVANT de commencer, pas constate a la fin.
+
+Ce n'est pas un blocage automatique, c'est un signalement chiffre : la decision appartient
+au chef de projet. Elle s'ecrit dans reanalyse.md (option retenue, par qui, date) ; si
+c'est un decoupage, le kanban et la matrice AC ↔ tache sont refaits dessus.
+
+Provenance : mesure 08/2026 — brique de 38 AC et 33 taches, plan complet et honnete,
+4 taches sur 33 livrees, personne n'ayant signale le format avant le code.
+
 ### 11. Tag git de reference
 
 Quand tout est corrige et coherent (mesures 390 comprises) :
@@ -313,6 +339,7 @@ Ecrire `doc/memory/brick-{N}/reanalyse.md` :
 ## Pages publiques : SEO maquette OK/KO (ou : aucune page publique)
 ## Cahier de recette : X criteres derives (AC x role : A, jeu canonique : B, decisions : C)
 ## Kanban : X taches en Y lots — matrice AC ↔ tache complete OUI/NON
+## Dimensionnement : N AC / M taches, tient en une passe OUI/NON (si NON : decoupage ou livraison partielle, tranche par qui, le {date})
 ## Corrections de maquette a signaler au client : [liste]
 ## Tag : mockups-valides-brique-{N} pose sur {sha}
 
@@ -339,6 +366,9 @@ re-rendre le verdict. PRET est la seule porte d'entree de `brick-code-build`.
 - [ ] Pages publiques : head, H1, contenu citable et NAP conformes a `/brick-seo`
 - [ ] `decisions.md` complet et coherent avec les maquettes, defauts tranches
 - [ ] Kanban ecrit, matrice AC ↔ tache complete dans les deux sens
+- [ ] AC et taches COMPTES ; si la brique deborde du format d'une passe, signalement
+      chiffre remonte au chef de projet et decision (decoupage / livraison partielle)
+      ecrite avant d'ouvrir le code
 - [ ] Tag `mockups-valides-brique-{N}` pose ; verdict PRET ecrit
 
 ## Ensuite
