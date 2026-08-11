@@ -26,13 +26,22 @@ remplit un slot que s'il sert (pas de video de design, video d'analyse seulement
 
 **Boucle mockup** (repetee jusqu'a validation client)
 
+La boucle a **deux entrees**, et le choix se fait ecran par ecran : creation quand il n'y
+a rien a porter, transcription quand le client fournit une source (export Lovable, HTML
+depose, Figma).
+
 | # | Commande | Quand l'utiliser |
 |---|----------|-----------------|
-| 3 | `/brick-mockup-build` | Creer les vues mockees (layouts, navigation, widget de feedback) |
+| 3 | `/brick-mockup-build` | CREATION : le client ne fournit aucune source. Vues mockees (layouts, navigation, widget de feedback), charte appliquee |
+| 3t | `/brick-mockup-transcription` | PORTAGE : le client fournit une source. On la transcrit en valeurs LITTERALES (la source fait autorite), et la charte se calcule APRES la validation client |
 | 3r | `/brick-mockup-review` | Controle avant client : scope brique, sync specs, outil de capture |
 | 3v | `/brick-mockup-video` | Une seule video chapitree des mockups (un chapitre par parcours), pour la validation a distance |
 | 3f | `/brick-mockup-feedback` | Rassembler les retours (tracker + emails + WhatsApp + Drive), corriger, tenir specs & tracker a jour |
 | 3x | `/brick-mockup-reanalyse` | APRES validation client, AVANT le code : matrice AC↔maquette, champ a champ affiche/saisi, parcours navigues, tag git, verdict bloquant PRET |
+
+Sur un lot transcrit, la normalisation (etape 6 de `/brick-mockup-transcription`,
+`normaliser.rb`) passe entre la validation client et la reanalyse : le tag
+`mockups-valides-brique-{N}` doit porter les vues telles qu'elles partent au code.
 
 **Boucle code** (repetee jusqu'a validation client)
 
@@ -75,8 +84,8 @@ invente, chaque ligne porte sa source, l'objectif sort en BROUILLON a valider).
 
 ```
 ANALYSIS → [DESIGN] → MOCKUP ↻ → CODE ↻ → Brick suivante
-              ↑          (build→review→video→feedback, repete jusqu'a validation client)
-        (si pas de charte)
+              ↑          (build OU transcription → review → video → feedback,
+        (si pas de charte)  repete jusqu'a validation client)
 ```
 
 - **L'utilisateur valide TOUJOURS le passage d'une etape a l'autre**

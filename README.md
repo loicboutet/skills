@@ -19,7 +19,8 @@ c'est utile. Chaque skill finit par un pointeur `Ensuite →` : le workflow se n
 
 ```
 Fondations : analysis-build → analysis-review → [design-brief → design-build → design-review]
-Boucle mockup : mockup-build → mockup-review → mockup-video ↻ mockup-feedback → mockup-reanalyse (gate)
+Boucle mockup : mockup-build OU mockup-transcription → mockup-review → mockup-video
+                  ↻ mockup-feedback → [normalisation] → mockup-reanalyse (gate)
 Boucle code   : code-build → code-review → code-video (→ code-guide, code-walkthrough) ↻ code-feedback
                                                                           code-fix = methode bug
 ```
@@ -28,11 +29,24 @@ Boucle code   : code-build → code-review → code-video (→ code-guide, code-
 |-------|------------------|-----------------|----------------|---------------------------|
 | **analysis** | `/brick-analysis-build` | `/brick-analysis-review` | `/brick-analysis-video` *(interne, option)* | — |
 | **design** *(option)* | `/brick-design-brief` puis `/brick-design-build` | `/brick-design-review` | — | — |
-| **mockup** | `/brick-mockup-build` | `/brick-mockup-review` | `/brick-mockup-video` | `/brick-mockup-feedback` |
+| **mockup** | `/brick-mockup-build` (creation) ou `/brick-mockup-transcription` (portage) | `/brick-mockup-review` | `/brick-mockup-video` | `/brick-mockup-feedback` |
+
+**La boucle mockup a deux entrees, et le choix se fait ecran par ecran.** Le client
+fournit une source (export Lovable, HTML depose, Figma) : c'est
+`/brick-mockup-transcription`, un portage ou la source fait autorite. Il ne fournit
+rien : c'est `/brick-mockup-build`, une creation qui applique la charte. Mesure
+08/2026 : le brief de transcription sort a 94,5 / 88,3 / 80,1 (ecran simple, moyen,
+dense) et a 82,4 et 84,4 sur deux ecrans jamais utilises pour le regler, contre 48,3
+pour les consignes de maquettage seules. La transcription porte les valeurs
+LITTERALES de la source ; la charte se calcule apres la validation client
+(`normaliser.rb` de `/outils-recette`, zero point de fidelite perdu, 63 % des
+couleurs en dur et 95 % des longueurs en moins).
 
 Sortie de la boucle mockup : `/brick-mockup-reanalyse`, gate bloquante entre la validation
 client des maquettes et `/brick-code-build` (matrice AC↔maquette, champ a champ affiche/saisi,
-parcours navigues, tag `mockups-valides-brique-{N}`, verdict PRET / A CORRIGER).
+parcours navigues, tag `mockups-valides-brique-{N}`, verdict PRET / A CORRIGER). Sur un lot
+transcrit, la normalisation (etape 6 de `/brick-mockup-transcription`) passe AVANT la
+reanalyse : le tag doit porter les vues telles qu'elles partent au code.
 | **code** | `/brick-code-build` | `/brick-code-review` | `/brick-code-video` | `/brick-code-feedback` |
 
 Livrables en plus de l'etape code : `/brick-code-guide`, `/brick-code-walkthrough` (video longue),
