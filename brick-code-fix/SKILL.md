@@ -154,9 +154,13 @@ Le test cible DOIT passer, et la suite complete rester verte.
 
 **Re-check navigateur si le bug touche l'UI** (vue, Turbo, Stimulus, CSS, PDF affiche,
 mail rendu) : ouvrir la page corrigee avec `playwright-cli`, rejouer le parcours impacte
-avec les donnees canoniques, screenshot a l'appui, et **mesurer a 390 px** — document a
-`scrollWidth == 390`, aucun conteneur non defilant en debordement, aucun champ de saisie
-sous 120 px. Un fix UI valide uniquement par un test d'integration n'est PAS valide.
+avec les donnees canoniques, screenshot a l'appui, et **mesurer a 390 px** — bord droit
+de l'element le plus a droite <= 390 (hors conteneur a defilement horizontal declare,
+hors `position: fixed`, hors element anime), aucun conteneur non defilant en
+debordement, aucun champ de saisie sous 120 px. Jamais un verdict sur le seul
+`document.documentElement.scrollWidth` : un `overflow-x: clip|hidden` sur `body` le rend
+toujours egal a la largeur du viewport. Un fix UI valide uniquement par un test
+d'integration n'est PAS valide.
 
 Si le fix touche une migration ou les seeds : rejouer une base fraiche en TROIS
 invocations separees (`db:drop`, puis `db:prepare`, puis `db:seed`), verifier la taille

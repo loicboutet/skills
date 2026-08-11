@@ -145,13 +145,25 @@ qui double-clique").
 ## T10 — Mobile 390 px
 
 Verifier (si responsive DANS le scope, cf. `decisions_comportement.md`) : ecrans
-cles a 390 px sans scroll horizontal (`scrollWidth` <= 390), formulaires
-utilisables, tableaux geres (scroll interne ou reflow prevu par la maquette).
-Methode : `playwright-cli resize 390 844` + `eval "document.documentElement.scrollWidth"`
-sur chaque ecran cle + captures dans le rapport de parite.
+cles a 390 px sans debordement horizontal, formulaires utilisables, tableaux geres
+(scroll interne ou reflow prevu par la maquette).
+Methode : `playwright-cli resize 390 844`, puis
+`node ~/.claude/skills/outils-recette/style_diff.js --pairs pairs.json --viewport mobile`
+et LIRE ses
+categories (`clip-implicite` / `clip-declare` = contenu coupe, bloquants ;
+`scroll-voulu` = defilement declare, information ; controles ecrases) + captures
+dans le rapport de parite. A la main : bord droit de l'element le plus a droite
+(hors conteneur a defilement horizontal declare, hors `position: fixed`, hors
+element anime) <= 390, plus les conteneurs non defilants dont
+`scrollWidth > clientWidth`, plus la largeur reelle des champs de saisie.
+**Jamais de verdict sur le seul `document.documentElement.scrollWidth`** : un
+`overflow-x: clip|hidden` sur `body` clippe le debordement au lieu de le rendre
+defilable, la valeur reste donc egale a la largeur du viewport meme quand le
+contenu sort de l'ecran de 380 px.
 Si "hors scope assume (ecrit)" : verifier que c'est ecrit, capturer pour trace.
 Provenance : gesproj E1 (contacts a 1264 px dans 390) ; Gespilot ET educxa ("personne
-n'avait jamais ouvert l'app en 390 px").
+n'avait jamais ouvert l'app en 390 px") ; mesure 08/2026 (bouton « Envoyer » d'une
+messagerie hors ecran et 20 maquettes debordantes, toutes vertes au `scrollWidth`).
 
 ## T11 — Dev / prod
 

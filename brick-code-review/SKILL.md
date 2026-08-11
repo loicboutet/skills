@@ -241,12 +241,32 @@ Protocole (playwright-cli, serveur dev lance, DB seedee avec le jeu canonique) :
    = paire d'images (mockup | impl), viewport, statut (CONFORME / ECART JUSTIFIE : {raison}
    / A CORRIGER). Le rapport propre sert de PREUVE DE LIVRAISON au client.
 
-**Mobile : mesure, pas impression.** Sur CHAQUE ecran livre, a 390 px, TROIS mesures — un
-`scrollWidth` de document au vert ne prouve rien a lui seul :
+**Mobile : mesure, pas impression.** Sur CHAQUE ecran livre, a 390 px, TROIS mesures.
+**Ne conclus JAMAIS « conforme » sur le seul `document.documentElement.scrollWidth`** :
+cette valeur ne prouve rien a elle seule, parce qu'un `overflow-x: clip|hidden` pose sur
+`body` (ou sur un conteneur du gabarit) CLIPPE le debordement au lieu de le rendre
+defilable, et la fait donc toujours egale a la largeur du viewport. Mesure 08/2026 : une
+messagerie dont le bouton « Envoyer » etait hors ecran, et 20 maquettes dont plusieurs
+debordaient franchement, passaient toutes au vert sur cette seule mesure.
+
+Le chemin le plus court est l'outil : `style_diff` detecte deja les conteneurs qui
+rognent et les controles ecrases, et rend ses resultats CLASSES par cause. On le lance et
+on lit ses categories (`clip-implicite` et `clip-declare` = contenu coupe, bloquants ;
+`scroll-voulu` = defilement declare, information), on ne compare pas deux nombres a la
+main :
 
 ```bash
-# 1. le document
-playwright-cli -s=mob eval "document.documentElement.scrollWidth"        # doit rendre 390
+node ~/.claude/skills/outils-recette/style_diff.js --pairs pairs.json --viewport mobile \
+  --out doc/memory/brick-{N}/parite/
+```
+
+A la main, ecran par ecran :
+
+```bash
+# 1. le bord droit REEL : l'element le plus a droite de la page, en excluant ce qui vit
+#    dans un conteneur a defilement horizontal DECLARE, ce qui est en position: fixed,
+#    et ce qui est en cours d'animation. Doit rendre <= 390.
+playwright-cli -s=mob eval "(()=>{const ok=e=>{const s0=getComputedStyle(e);if(s0.position==='fixed'||s0.animationName!=='none')return false;for(let p=e.parentElement;p&&p!==document.body;p=p.parentElement){const s=getComputedStyle(p);if(['auto','scroll'].includes(s.overflowX)||s.position==='fixed'||s.animationName!=='none')return false}return true};let m=null;for(const e of document.querySelectorAll('body *')){const r=e.getBoundingClientRect();if(r.width<=0||!ok(e))continue;if(!m||r.right>m.right)m={right:r.right,lbl:e.tagName+'.'+(e.className||'')}}return m?Math.round(m.right)+' '+m.lbl:'rien'})()"
 # 2. les conteneurs NON defilants (un overflow-y-auto fait calculer un overflow-x: auto
 #    implicite qui absorbe le debordement et coupe le contenu en silence)
 playwright-cli -s=mob eval "[...document.querySelectorAll('*')].filter(e => e.scrollWidth > e.clientWidth + 1 && !['auto','scroll'].includes(getComputedStyle(e).overflowX)).map(e => e.tagName + '.' + (e.className || '') + ' ' + e.scrollWidth + '/' + e.clientWidth)"

@@ -42,23 +42,49 @@ lot etaient argumentes par la maquette, et livres tous les deux.)
 ### 1. Mobile : chaque maquette mesuree a 390 px (PREMIER controle, BLOQUANT)
 
 En tete parce qu'il ne coute presque rien ici et une section entiere de la qualite quand
-il est decouvert apres. Pour CHAQUE maquette de la brique, sans echantillonnage :
+il est decouvert apres. Pour CHAQUE maquette de la brique, sans echantillonnage.
+
+**Ne conclus JAMAIS « conforme » sur le seul `document.documentElement.scrollWidth`.**
+Cette valeur ne prouve rien a elle seule : des que `body` (ou un conteneur du gabarit)
+porte `overflow-x: clip` ou `hidden`, le debordement est CLIPPE au lieu d'etre defilable,
+et le chiffre rend la largeur du viewport quoi qu'il arrive. Mesure 08/2026 : une
+messagerie dont le bouton « Envoyer » etait hors ecran, et 20 maquettes dont plusieurs
+debordaient franchement, passaient toutes au vert sur cette seule mesure.
+
+Le chemin le plus court est l'outil, qui fait les trois mesures et rend ses resultats
+CLASSES par cause. On lance l'outil et on lit ses categories, on ne compare pas deux
+nombres a la main :
+
+```bash
+node ~/.claude/skills/outils-recette/style_diff.js --pairs pairs.json --viewport mobile \
+  --out doc/memory/brick-{N}/parite/
+```
+
+`clip-implicite` et `clip-declare` = du contenu coupe que rien ne permet d'atteindre,
+A CORRIGER avant le tag ; `scroll-voulu` = defilement horizontal declare, information ;
+plus les controles de saisie ecrases. A la main, sur une maquette isolee (pas encore de
+paires applicatives), TROIS sondes, jamais une :
 
 ```bash
 playwright-cli -s=mob goto <url>/mockups/<page>
 playwright-cli -s=mob resize 390 844
-playwright-cli -s=mob eval "document.documentElement.scrollWidth"
 ```
 
-- Attendu : **`scrollWidth == 390` exactement** sur le document. Toute valeur superieure
-  est un debordement, donc un defaut de la maquette : on la CORRIGE (coupables habituels :
-  groupe d'actions de topbar en `shrink-0`, tableau sans conteneur `overflow-x-auto`,
-  largeur fixe en px), on re-mesure, et on ne pose pas le tag avant que tout soit a 390.
+- **Le bord droit REEL : l'element le plus a droite de la page.** On exclut ce qui vit
+  dans un conteneur a defilement horizontal DECLARE (`overflow-x: auto|scroll` voulu), ce
+  qui est en `position: fixed`, et ce qui est en cours d'animation (une largeur mesuree
+  pendant une animation ne veut rien dire).
+  ```bash
+  playwright-cli -s=mob eval "(()=>{const ok=e=>{const s0=getComputedStyle(e);if(s0.position==='fixed'||s0.animationName!=='none')return false;for(let p=e.parentElement;p&&p!==document.body;p=p.parentElement){const s=getComputedStyle(p);if(['auto','scroll'].includes(s.overflowX)||s.position==='fixed'||s.animationName!=='none')return false}return true};let m=null;for(const e of document.querySelectorAll('body *')){const r=e.getBoundingClientRect();if(r.width<=0||!ok(e))continue;if(!m||r.right>m.right)m={right:r.right,lbl:e.tagName+'.'+(e.className||'')}}return m?Math.round(m.right)+' '+m.lbl:'rien'})()"
+  ```
+  Attendu : **bord droit <= 390**. Au-dela c'est un debordement reel, meme si le document
+  mesure 390 : defaut de la maquette, on la CORRIGE (coupables habituels : groupe
+  d'actions de topbar en `shrink-0`, tableau sans conteneur `overflow-x-auto`, largeur
+  fixe en px), on re-mesure, et on ne pose pas le tag avant que tout soit a 390.
 
-- **Le document seul ne suffit pas : mesurer aussi les conteneurs NON defilants.** Un
-  bloc en `overflow-y-auto` fait calculer au navigateur un `overflow-x: auto` implicite :
-  il avale le debordement, le document reste sagement a 390 et le tableau se coupe en
-  silence.
+- **Les conteneurs NON defilants.** Un bloc en `overflow-y-auto` fait calculer au
+  navigateur un `overflow-x: auto` implicite : il avale le debordement, le document reste
+  sagement a 390 et le tableau se coupe en silence.
   ```bash
   playwright-cli -s=mob eval "[...document.querySelectorAll('*')].filter(e => e.scrollWidth > e.clientWidth + 1 && !['auto','scroll'].includes(getComputedStyle(e).overflowX)).map(e => e.tagName + '.' + (e.className || '') + ' ' + e.scrollWidth + '/' + e.clientWidth)"
   ```
@@ -75,7 +101,7 @@ playwright-cli -s=mob eval "document.documentElement.scrollWidth"
   a 18 px sur un ecran declare conforme.)
 
 - Tableau tenu dans reanalyse.md : une ligne par maquette, mesure AVANT / APRES, pour les
-  trois mesures (document, conteneurs, champs).
+  trois mesures (bord droit reel, conteneurs, champs).
 - Si `decisions.md` dit « responsive hors scope assume (ecrit) », les mesures sont faites
   et ecrites quand meme : on livre en connaissance de cause, jamais par omission.
 
@@ -278,7 +304,7 @@ Ecrire `doc/memory/brick-{N}/reanalyse.md` :
 ```markdown
 # Reanalyse — Brick #{N} — {date}
 
-## Mobile 390 px : X/X maquettes conformes (document, conteneurs non defilants, champs)
+## Mobile 390 px : X/X maquettes conformes (bord droit reel, conteneurs non defilants, champs)
 ## Matrice AC ↔ maquette : X/Y AC couverts
 ## Data model : X champs, Y decisions ecrites, Z corrections (dont selecteurs a option vide)
 ## Matrice CRUD ↔ maquettes : X cases « offert », toutes avec leur geste OUI/NON
@@ -298,9 +324,10 @@ re-rendre le verdict. PRET est la seule porte d'entree de `brick-code-build`.
 
 ## Validation gate
 
-- [ ] **Chaque maquette mesuree a 390 px** : `scrollWidth == 390` sur le document,
-      aucun conteneur non defilant en debordement, aucun champ de saisie sous 120 px
-      (mesures avant/apres ecrites)
+- [ ] **Chaque maquette mesuree a 390 px** : bord droit de l'element le plus a droite
+      <= 390, aucun conteneur non defilant en debordement, aucun champ de saisie sous
+      120 px (mesures avant/apres ecrites ; jamais un verdict sur le seul `scrollWidth`
+      du document)
 - [ ] Chaque AC a sa maquette nommee (ou sa sortie de scope journalisee)
 - [ ] Chaque champ du data model a sa ligne affiche/saisi/decision, aucune vide
 - [ ] Chaque selecteur portant argent ou droit a une option vide, sans presselection
