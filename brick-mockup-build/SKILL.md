@@ -7,6 +7,11 @@ description: "Phase 2 : creation des vues mockees avec donnees fictives. Index, 
 
 Cree les vues mockees du projet. L'objectif : un prototype navigable complet que le client peut parcourir, et dont la structure (layouts, partials, navigation) sera reutilisee a l'identique en implementation.
 
+**Si le client fournit une source pour un ecran** (export Lovable, page HTML deposee,
+Figma), cet ecran ne se cree pas, il se PORTE : `/brick-mockup-transcription`, ou la
+source fait autorite et les valeurs se transcrivent en litteral. Le choix se fait ecran
+par ecran ; les ecrans sans source restent ici.
+
 ## Pre-requis
 
 - `doc/memory/data_models.md` existe
