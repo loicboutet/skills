@@ -189,6 +189,7 @@ Si la demande ne porte que sur un morceau, ne fais que ce morceau et dis-le.
 | « une page » | idem + `--only "<nom de la paire>"` | |
 | « les routes sans geste » | 0, 5 | `facade_scan reachability` |
 | « la qualité des maquettes », « c'est transcrit comment ? » | 0, 5 | `mockup_scan` |
+| « la charte est propre ? », avant les maquettes | 0, 5 | `charte_scan` |
 | « qu'est-ce qu'on a inventé ? », « ce bloc était dans la maquette ? » | 0, 1, 5 | `mockup_scan inventory` |
 | « ce champ est vrai ou c'est du seed ? » | 0, 1, 5 | `facade_scan readwrite` (catégorie `column_seed_only`) |
 
@@ -436,6 +437,37 @@ bloquant, à raison) ; une colonne remplie par un `*_tag` de formulaire portant 
 nom d'une colonne d'une AUTRE table (le contrôle n'a pas de modèle, l'écriture
 compte alors pour toutes les tables et éteint le constat) ; et un projet sans
 `db/schema.rb` (structure.sql) où le mode ne démarre pas.
+
+### charte_scan.rb — hygiène de la charte
+
+```bash
+ruby $SK/charte_scan.rb <dossier_charte | style_guide.html> [--json]
+                        [--tokens tailwind.config.js] [--delta-e 4.0] [--sans-couverture]
+```
+
+Ni serveur ni navigateur. Audite la charte elle-même, pas les écrans : classes
+arbitraires `[...]` **avec leur ligne**, `style=` en dur, couleurs appliquées
+absentes des tokens, grappes de quasi-doublons (ΔE < 4 en CIELAB) et trous de
+couverture. Il partage `Color` et `ErbDoc` avec `mockup_scan.rb` et s'arrête si
+son propre compte diverge du sien.
+
+Pourquoi il existe : la charte est le seul artefact que reçoit l'agent qui
+construira les écrans, et **il n'applique pas les règles qu'on lui écrit, il
+imite le code qu'on lui donne**. Mesuré en août 2026 sur neuf chartes appariées :
+une relecture qui écrit les bonnes pratiques dans le guide laisse 89 classes
+arbitraires dans les écrans produits, une relecture qui nettoie le code du guide
+en laisse 0. Pire, nommer une classe fautive pour l'interdire la fait recopier
+telle quelle. Une charte sale est donc un budget de correction déjà engagé sur
+tous les écrans à venir.
+
+Le rapport rend une **liste actionnable, pas un compteur** : un compteur ne se
+corrige pas, une ligne si. C'est `brick-design-review` qui le déroule.
+
+Les grappes de quasi-doublons se **signalent** et ne se fusionnent jamais toutes
+seules. Deux couleurs indiscernables à l'œil qui portent des rôles différents (un
+fond de page et une teinte d'état de succès) doivent s'écarter, pas fusionner :
+sinon l'écart sémantique disparaît de l'écran. Même mise en garde que
+`normaliser.rb`, payée en vrai sur le banc.
 
 ### mockup_scan.rb — qualité de transcription des maquettes
 
