@@ -190,6 +190,7 @@ Si la demande ne porte que sur un morceau, ne fais que ce morceau et dis-le.
 | « les routes sans geste » | 0, 5 | `facade_scan reachability` |
 | « la qualité des maquettes », « c'est transcrit comment ? » | 0, 5 | `mockup_scan` |
 | « la charte est propre ? », avant les maquettes | 0, 5 | `charte_scan` |
+| « on peut y arriver en cliquant ? », maquettes | 0, 5 | `mockup_inventory` |
 | « qu'est-ce qu'on a inventé ? », « ce bloc était dans la maquette ? » | 0, 1, 5 | `mockup_scan inventory` |
 | « ce champ est vrai ou c'est du seed ? » | 0, 1, 5 | `facade_scan readwrite` (catégorie `column_seed_only`) |
 
@@ -468,6 +469,31 @@ seules. Deux couleurs indiscernables à l'œil qui portent des rôles différent
 fond de page et une teinte d'état de succès) doivent s'écarter, pas fusionner :
 sinon l'écart sémantique disparaît de l'écran. Même mise en garde que
 `normaliser.rb`, payée en vrai sur le banc.
+
+### mockup_inventory.py — liens ENTRANTS d'un lot de maquettes
+
+```bash
+bin/rails routes | grep mockups | awk '{print $2, $3}' | grep GET | sort -u > /tmp/routes.txt
+python3 $SK/mockup_inventory.py http://localhost:{port} /tmp/routes.txt /mockups \
+  doc/memory/mockups/inventaire.md
+```
+
+Rend, pour chaque écran routé du namespace : URL, titre, liens sortants **avec leur
+libellé**, boutons, et **liens entrants hub exclu**. Tout écran marqué « AUCUN » est un
+candidat orphelin.
+
+Pourquoi les liens ENTRANTS : la question qui compte n'est pas « cette page a-t-elle des
+liens morts » mais « depuis l'écran d'accueil de son rôle, l'utilisateur peut-il atteindre
+cet écran en cliquant ». Le contrôle qu'il remplace mesurait les liens *sortants*
+(`grep href="#"`) et laissait passer un lot où l'écran de modification d'un devis n'avait
+aucun lien entrant.
+
+**Le hub `/mockups` ne compte pas** : index de revue interne, absent du produit, il rend
+tout écran atteignable en un clic. Sans cette exclusion le contrôle ne mesure rien.
+
+Un « AUCUN » n'est **jamais un verdict** : un chemin porté par un `<button>` Stimulus est
+invisible à un collecteur de `href`. Chaque candidat se tranche au navigateur. Ordre de
+grandeur observé : 5 orphelins sur 52 écrans, 11 sur 51.
 
 ### mockup_scan.rb — qualité de transcription des maquettes
 

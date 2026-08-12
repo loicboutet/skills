@@ -123,6 +123,11 @@ atteignable, et ou exactement (ecran, bouton, champ) :
   si visible), soit l'AC est hors brique (journal de scope).
 - Maquette sans AC → feature orpheline : rattacher ou retirer (regle du rattachement
   de l'analyse).
+- **La matrice se satisfait d'un ecran de la bonne FAMILLE si on la laisse faire.** Elle
+  doit nommer l'ecran ET l'element concret ; une route de detail specifiee dans
+  `routes.md` sans maquette de detail est un manque, pas un OK sur l'index. (Mesure
+  08/2026 : `routes.md` specifiait `GET /admin/ai_decisions/:id` avec son contenu ligne a
+  ligne, aucune maquette ne le dessinait, l'AC etait classe OK sur la page d'index.)
 
 ### 3. Data model champ par champ : affiche ET saisi (anti-facade)
 
@@ -178,6 +183,12 @@ Pour CHAQUE parcours de user_journeys.md : le DEROULER dans les maquettes avec
 - Lire le code des maquettes NE remplace PAS la navigation (constat d'audit :
   "parcours verifies en lisant" = bugs invisibles).
 - Captures conservees dans `doc/memory/brick-{N}/reanalyse-shots/` (trace du verdict).
+- **Verifier que l'ecran d'ARRIVEE est celui du parcours, pas seulement qu'il repond.**
+  Un formulaire d'ecriture passe pour un ecran de lecture : il repond 200, il a des liens
+  entrants, il passe tous les controles mecaniques. (Mesure 08/2026 : un parcours cochait
+  OK sur « clic sur le nom de l'affaire -> /mockups/opportunities/1/edit, l'etape est
+  changeable au formulaire » ; trois utilisateurs sur trois ont bute dessus, dont un qui a
+  ecrase la note d'une collegue.)
 
 ### 6. Jeu de donnees canonique dans les maquettes
 
@@ -322,6 +333,14 @@ git tag mockups-valides-brique-{N}
 Ce tag est LA reference visuelle de la brique : le rapport de parite de
 `brick-code-review` et les briques suivantes comparent contre lui, pas contre l'etat
 courant de `/mockups`. On ne le deplace JAMAIS.
+
+### 11b. Sortie de la review mockup : ce qui doit etre ferme (BLOQUANT)
+
+- [ ] Inventaire des liens entrants REJOUE apres les corrections de la boucle mockup :
+      aucun candidat orphelin non tranche (une correction de maquette cree des orphelins)
+- [ ] Chaque defaut de navigabilite et chaque trou de perimetre de la review est FERME,
+      ou porte une decision ecrite dans decisions.md. Un trou de perimetre encore ouvert
+      = A CORRIGER : l'ecran manquant sera invente pendant le code.
 
 ### 12. Verdict
 
