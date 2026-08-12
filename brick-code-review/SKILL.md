@@ -372,122 +372,29 @@ Ouvrir `doc/memory/config.md` et verifier, ligne par ligne, sur l'environnement 
 ### 7b. Recette naive : le premier jour d'un vrai utilisateur (BLOQUANT si un defaut reel sort)
 
 La section 7 deroule `user_journeys.md`. Le cahier de recette porte l'URL, le compte, le geste et
-l'observation attendue de chaque ligne. Consequence : **rien dans la chaine ne peut etre surpris.** On
-verifie « le critere est-il satisfait », jamais « quelqu'un qui ne sait rien y arrive-t-il ». Cette
-section est le seul endroit du process ou l'on mesure la seconde question.
+l'observation attendue de chaque ligne. Consequence : **rien dans la chaine ne peut etre
+surpris.** On verifie « le critere est-il satisfait », jamais « quelqu'un qui ne sait rien y
+arrive-t-il ». Cette section est le seul endroit du process ou l'on mesure la seconde question.
 
-Ce qu'elle attrape, et que rien d'autre n'attrape (mesure, banc livraison p5) : un lien qui remplace la
-page par `Content missing` parce que la recette avait rejoue l'URL et jamais le clic ; une fonction
-livree et complete qu'aucun lien n'appelle ; un onglet « Acceptees » qu'aucune transition ne peut
-atteindre, seule fonction differee du produit **sans** badge « a venir » ; un menu deroulant dont 8
-options sur 9 sont physiquement inatteignables sous les cartes ; « Le candidat sera notifie. » alors
-qu'aucune notification n'est creee ; un bandeau « 2 etablissements souhaitent vous contacter » qui mene
-a « Aucune proposition en attente ».
+**Derouler `~/.claude/skills/recette-naive/SKILL.md`, en MODE APPLICATION.** La methode y est
+entiere. Ce qui est propre a ce stade :
 
-#### La discipline est SOUSTRACTIVE
+- **Un compte par run, ou des runs serialises.** Deux agents sur le meme compte produisent des
+  devis en double et des compteurs qui bougent : 12 faux signalements sur un seul projet.
+- **L'URL de depart est l'ecran de connexion**, avec les identifiants de la persona.
+- **Chaque defaut reel rejoint le cahier de recette au statut KO** et commande le verdict (regle
+  du defaut connu). Il ne se consigne pas, il se corrige.
 
-Ce qui decide de ce qu'un agent voit n'est pas la consigne, c'est **ce qu'on lui met sous les yeux**. Un
-testeur qui a lu `routes.md` ne peut pas ne pas trouver la page. On lance donc des sous-agents a qui
-l'on donne **exactement quatre choses** :
+Ce qu'elle attrape et que rien d'autre n'attrape (mesure, banc livraison p5, 33 defauts reels
+dont 33 sur 34 absents des rapports de recette) : un lien qui remplace la page par `Content
+missing` parce que la recette avait rejoue l'URL et jamais le clic ; une fonction livree et
+complete qu'aucun lien n'appelle ; un onglet inatteignable a vie, seule fonction differee sans
+badge « a venir » ; un menu dont 8 options sur 9 sont physiquement enfermees sous les cartes ;
+« Le candidat sera notifie. » alors qu'aucune notification n'est creee.
 
-1. une **persona** (qui il est, son metier, qu'il n'est pas informaticien, que personne ne l'a forme) ;
-2. un **objectif metier formule comme une personne le dirait** (« tu viens de recevoir tes identifiants,
-   tu veux encaisser la seance d'hier ») ;
-3. des **identifiants** ;
-4. l'**URL de depart**.
-
-**Et rien d'autre.** Ni criteres d'acceptance, ni routes, ni parcours, ni data model, ni maquettes, ni
-acces au depot.
-
-Les objectifs se derivent du **QUOI** (`doc/memory/objectif.md`), **jamais de la liste des AC** : des
-objectifs tires des AC rediffuseraient la conception qu'on cherche justement a retirer. 3 objectifs
-minimum par brique, sur 3 personas differentes, dont au moins un parcours en deux etapes (creer puis
-retrouver, envoyer puis suivre, publier puis repondre).
-
-Regles ecrites dans le brief de chaque agent :
-- aucun outil de lecture de fichier (Read / Grep / Glob), aucune commande shell hors `playwright-cli` ;
-- **aucune URL tapee en dehors de celle de depart.** Tout se trouve en cliquant. Ne pas trouver un ecran
-  est un **constat a rapporter**, pas un obstacle a contourner ;
-- aucune adresse « logique » devinee (`/admin`, `/settings`, `/quotes/new`), meme bloque ;
-- budget ~70 commandes de navigateur ; trois tours en rond au meme endroit = abandon a consigner.
-
-**Faire respecter la soustraction, pas seulement l'ecrire.** Apres chaque run, relire le transcript du
-sous-agent et verifier qu'il n'a lu aucun fichier du depot et n'a tape aucune autre URL que celle de
-depart. Un run qui a triche est **jete, pas rattrape**. (Sur 16 runs mesures : 0 triche, mais c'est le
-controle qui rend la mesure defendable, pas la declaration de l'agent sur lui-meme.)
-
-#### Ce que l'agent rend
-
-Pas un tableau de conformite. **Un recit :**
-
-1. objectif atteint OUI / PARTIELLEMENT / NON, en une phrase ;
-2. le chemin reellement suivi, ecran par ecran (titre + URL affichee), avec le nombre de clics ;
-3. **les points de friction**, numerotes : ou il etait, ce qu'il cherchait, ce qu'il **s'attendait** a
-   trouver, ce qu'il a trouve a la place, ce qu'il a essaye, les clics perdus ;
-4. **les abandons** : ce qu'il n'a pas pu faire du tout, et l'ecran exact ou il a renonce ;
-5. ce qui lui a paru clair et bien fait (ce n'est pas une chasse aux sorcieres) ;
-6. les libelles et messages mal compris, cites mot pour mot.
-
-Consigne finale : « ne fais aucune hypothese sur la cause technique ; decris ce que tu vois, pas ce que
-tu supposes. »
-
-#### Le verificateur : indissociable, jamais optionnel
-
-**Un agent qui se perd n'est pas la preuve qu'un humain se perd.** 28 % a 31 % des signalements ne
-tiennent pas l'examen du depot, et l'agent naif est **incapable de savoir lesquels** : ses erreurs les
-plus confiantes viennent de deux tirages independants avec preuves chiffrees a l'appui.
-
-Chaque friction et chaque abandon passe donc devant un **sous-agent verificateur distinct**, celui-la
-avec le depot ET l'app lancee sous les yeux, qui repond a deux questions structurelles :
-
-1. **Existe-t-il un chemin ?** Depuis une page que l'utilisateur pouvait atteindre au moment ou il etait
-   bloque, y a-t-il un lien, un bouton, un controle qui mene a ce qu'il cherchait ? (Un chemin qui
-   n'existe qu'en connaissant l'URL ne compte pas.)
-2. **Ce chemin est-il annonce ?** Le libelle dit-il ce qu'il fait, dans les mots du metier ?
-
-Cinq verdicts, et cinq seulement :
-- **DEFAUT REEL** : aucun chemin, ou chemin non annonce. → il rejoint le cahier de recette au statut KO
-  et **commande le verdict** (regle du defaut connu).
-- **INCOMPETENCE DE L'AGENT** : le chemin existait et etait annonce, a un endroit ou quelqu'un qui
-  cherche cette chose regarderait. Le verificateur cite le fichier de vue et le libelle exact.
-- **INDECIDABLE** : jugement de gout, ou decision produit non documentee. → remonte comme question, pas
-  comme bug.
-- **ARTEFACT DE MESURE** : deux runs ont ecrit sur le meme compte, une donnee est apparue sans que
-  l'agent l'ait creee.
-- **HORS PERIMETRE LIVRE** : fonction explicitement reportee. **Attention** : si la fonction est
-  reellement implementee dans le code et pourtant grisee ou annoncee « a venir », c'est un DEFAUT REEL
-  (une fonction livree doit etre atteignable et ne pas s'annoncer indisponible).
-
-Le verificateur rend un tableau : `Ref | ce que l'utilisateur cherchait | chemin existant (fichier de
-vue + libelle) | annonce ? | verdict | classe | preuve en une ligne | vu par N agents`, plus le
-**rendement** (defauts reels / signalements arbitrables) et une **note de severite** honnete (« j'ai
-classe large ou serre, voici les items limites »). Un rendement sous 20 % veut dire que les objectifs
-etaient mal calibres : on les refait, on ne publie pas la liste.
-
-#### Trois pieges de mise en œuvre, tous payes en mesure
-
-- **Un compte par run, ou des runs serialises.** Deux agents sur le meme compte produisent des devis en
-  double, des compteurs qui bougent et des relances deja datees du jour : 12 faux signalements sur un
-  seul projet.
-- **Deux tirages par objectif au minimum.** La variance est forte et asymetrique : les parcours
-  contraints rejouent 5 a 7 constats sur 8, les parcours ouverts seulement 2 a 3. Un seul tirage rate la
-  moitie de ce que la methode peut trouver (12 des 34 defauts n'ont ete vus que par un agent sur deux).
-- **Ne pas inventer de premisse.** Un objectif qui suppose un etat absent du jeu canonique (« une
-  annonce est hors ligne, un compte est bloque ») fait echouer l'agent pour une raison qui n'est pas le
-  produit. Les objectifs se calent sur le jeu de donnees canonique.
-
-#### Ce que cette section ne remplace pas
-
-Elle est **complementaire**, pas substituable : sur tout le corpus mesure, les deux bras ne se
-recouvrent qu'en **un seul point**. L'agent naif ne voit **rien** de ce qui exige :
-- une spec (fuite de montants, patronyme revele sans double accord, perimetre d'un agregat) — il a lu un
-  tableau de bord faux de 3 000 € et l'a trouve excellent ;
-- un second role ou un champ forge (fuites cross-tenant, jeton en clair dans les logs) — deux agents
-  etaient sur le compte sans droit facturation, ont vu le bouton interdit, et ne l'ont pas clique ;
-- un instrument (mobile 390 px, parite maquette, PDF relu, e-mail expedie) ;
-- le code (cle stockee jamais lue, colonne morte, 500 latent).
-
-Les lignes du cahier restent. Celle-ci s'ajoute.
+**Elle ne remplace aucune ligne du cahier** : sur tout le corpus mesure les deux bras ne se
+recouvrent qu'en un seul point. Dose : ~500 k jetons par brique, et elle suit le nombre de types
+d'utilisateurs enumeres.
 
 ### 8. Review code, deviations et simplicite
 

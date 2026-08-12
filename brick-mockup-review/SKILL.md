@@ -88,158 +88,32 @@ Ordre de grandeur observe : 5 candidats orphelins sur 52 ecrans, 11 sur 51.
 - [ ] Ces pages figurent dans l'index `/mockups` et respectent le layout adapte
       (login = layout minimal, pas la sidebar admin)
 
-### 1b. Traversee naive du lot : quelqu'un qui ne sait rien peut-il finir son travail ?
+### 1b. Traversee naive du lot (BLOQUANT si un trou de perimetre sort)
 
-Toute la suite de cette review verifie **ce qui est la**. Elle ne peut pas voir ce qui **manque** :
-un relecteur deroule la liste des maquettes, la matrice AC ↔ maquette part des AC, les parcours
-navigues partent de `user_journeys.md`. Ces trois documents ont ete ecrits par la meme chaine que
-les maquettes. Un parcours qu'on ne peut pas terminer dans le lot est un parcours dont les ecrans
-manquants seront **inventes pendant le code**, hors validation client.
+Tout le reste de cette review verifie **ce qui est la**. Elle ne peut pas voir ce qui **manque** :
+le relecteur deroule la liste des maquettes, la matrice AC part des AC, les parcours partent de
+`user_journeys.md` — trois documents ecrits par la meme chaine que les maquettes. Un parcours
+qu'on ne peut pas terminer dans le lot est un parcours dont les ecrans manquants seront
+**inventes pendant le code**, hors validation client.
 
-Cette section est le seul endroit du process ou quelqu'un traverse le lot **sans le connaitre**.
+**Derouler `~/.claude/skills/recette-naive/SKILL.md`, en MODE MAQUETTE.** La methode y est
+entiere : enumeration des types d'utilisateurs, discipline soustractive et son controle de trace,
+verificateur distinct obligatoire, verdicts, pieges. Ce qui est propre a ce stade :
 
-#### La discipline est SOUSTRACTIVE
+- **Le cadre est dit a l'agent** : rien n'est branche, un bouton inerte est normal et ne se
+  signale pas. Sans ca, chaque bouton mort remonte comme un bug et le rapport devient illisible.
+- **Le hub `/mockups` est interdit** a l'agent ET au verificateur. Il n'existera pas dans le
+  produit et rend tout ecran atteignable en un clic : l'oublier fait disparaitre la classe
+  « navigabilite » par construction.
+- **Le verificateur tranche contre l'inventaire du bloc precedent**, pas contre un comportement.
+- **Deux classes en sortie.** Defaut de navigabilite (l'ecran existe, rien n'y mene) : correction
+  de maquette. **Trou de perimetre** (l'ecran que le parcours exige n'existe nulle part) :
+  **c'est la classe qui commande**, l'ecran doit entrer dans le lot AVANT la validation client,
+  sinon il sera dessine pendant le code. C'est pour cette asymetrie de cout que la traversee est
+  ici et pas a la reanalyse : un `link_to` se repare a tout moment, un ecran nouveau se revalide.
 
-On lance des sous-agents a qui l'on donne **exactement quatre choses** :
-
-1. une **persona** (qui il est, son metier, qu'il n'est pas informaticien, que personne ne l'a
-   forme) ;
-2. un **objectif metier formule comme une personne le dirait**, derive du **QUOI**
-   (`doc/memory/objectif.md`), **jamais des AC ni de la liste des maquettes** ;
-3. le **cadre du stade maquette**, mot pour mot : « ce sont des ecrans dessines, **rien n'est
-   branche** — un formulaire ne s'enregistre pas, une recherche ne cherche pas, un bouton
-   d'action ne produit rien. C'est normal, ne le signale pas. » ;
-4. l'**URL de depart** : **l'ecran d'accueil de son role**, pas l'ecran de connexion. (Un lot de
-   maquettes a le droit d'avoir un formulaire de connexion inerte : le hub y remplace
-   l'authentification. Partir de la connexion bloque tous les runs au premier clic.)
-
-**Et rien d'autre.** Ni criteres d'acceptance, ni routes, ni parcours, ni data model, ni acces au
-depot.
-
-Regles ecrites dans le brief de chaque agent :
-- aucun outil de lecture de fichier (Read / Grep / Glob), aucune commande shell hors
-  `playwright-cli` ;
-- **aucune URL tapee en dehors de celle de depart.** Ne pas trouver un ecran est un **constat a
-  rapporter**, pas un obstacle a contourner ;
-- **le hub des maquettes et le lien « Hub mockups » sont interdits d'usage** : ils n'existeront
-  pas dans le produit. « Si tu y atterris, reviens en arriere. » Sans cette regle, la classe
-  « navigabilite » disparait par construction ;
-- budget ~50 commandes de navigateur ; trois tours en rond au meme endroit = abandon a consigner.
-
-**Ce qui est normal et ce qui est a signaler**, a ecrire dans le brief, sinon chaque bouton mort
-remonte comme un bug :
-- un bouton qui ne reagit pas **alors qu'un autre chemin visible mene a l'ecran suivant** →
-  normal, ne pas signaler ;
-- un ecran necessaire, **qui existe**, que **rien ne permet d'atteindre en cliquant** depuis la ou
-  il etait → a signaler ;
-- un libelle sur lequel il n'aurait pas clique parce qu'il ne dit pas ce qu'il fait → a signaler ;
-- un ecran dont son travail a besoin et qu'il **ne voit nulle part** → a signaler, en disant ce
-  qu'il devrait contenir et a quel moment il manque ;
-- une promesse ecrite (compteur, bandeau, « vous recevrez… ») sans aucune suite visible → a
-  signaler.
-
-**Faire respecter la soustraction, pas seulement l'ecrire.** Apres chaque run, relire le
-transcript et verifier 0 lecture du depot, 0 commande hors `playwright-cli`, 0 URL tapee. Un run
-qui a triche est **jete, pas rattrape**. (Sur 17 runs mesures : 0 violation.)
-
-**Ce que le stade maquette economise, et c'est verifie** : les lots n'exposent que des routes GET,
-les donnees sont en dur dans les controleurs de maquette, rien ne s'ecrit. **Pas de comptes a
-provisionner, pas de runs a serialiser, aucun artefact de labo a ecarter.** 16 agents ont
-travaille en parallele sur les memes ecrans sans se voir.
-
-#### Ce que l'agent rend
-
-Pas un tableau de conformite. **Un recit** : objectif atteint OUI / PARTIELLEMENT / NON ; le
-chemin reellement suivi ecran par ecran (titre + adresse) avec le nombre de clics ; les **points
-de friction** numerotes (ou il etait, ce qu'il cherchait, ce qu'il **s'attendait** a trouver, ce
-qu'il a trouve, les clics perdus) ; les **abandons**, et pour chacun **s'il a vu l'ecran manquant
-ailleurs ou nulle part** ; ce qui lui a paru clair ; les libelles mal compris, cites mot pour mot.
-
-Consigne finale : « ne fais aucune hypothese sur la cause technique ; decris ce que tu vois. »
-
-#### Le verificateur : indissociable, et il tranche contre l'INVENTAIRE
-
-**Un agent qui se perd n'est pas la preuve qu'un humain se perd.** 9 % a 14 % des signalements
-arbitrables ne tiennent pas l'examen — et surtout, l'agent est **incapable de savoir lesquels** :
-deux agents ont declare « la comparaison n'existe nulle part » sur un ecran qui existe et qu'un
-troisieme a atteint.
-
-Chaque friction et chaque abandon passe donc devant un **sous-agent verificateur distinct**, avec
-le depot, l'inventaire du bloc A et le lot navigable sous les yeux. Deux questions, dans cet
-ordre :
-
-1. **L'ecran vise existe-t-il dans le lot ?**
-2. Si oui : **un chemin cliquable y mene-t-il, depuis un ecran que l'utilisateur pouvait
-   atteindre au moment ou il etait bloque, et ce chemin est-il annonce** (le libelle dit ce qu'il
-   fait, dans les mots du metier) ? Un chemin qui n'existe que par le hub ou en connaissant l'URL
-   ne compte pas.
-
-**Six verdicts, et six seulement :**
-
-- **DEFAUT DE NAVIGABILITE** — l'ecran **existe** dans le lot, aucun chemin cliquable n'y mene de
-  la ou l'utilisateur etait, ou le chemin existe et son libelle ne l'annonce pas. → correction de
-  maquette, a faire avant le client.
-- **TROU DE PERIMETRE** — l'ecran que le parcours exige **n'existe nulle part dans le lot**. Dire
-  en une phrase ce qu'il devrait contenir. → **c'est la classe qui commande** : un ecran nouveau
-  doit entrer dans le lot **avant** la validation client, sinon il sera dessine pendant le code.
-- **NORMAL — MAQUETTE MOCKEE** — controle inerte, formulaire qui n'enregistre pas, recherche qui
-  ne cherche pas, alors qu'un autre chemin visible mene au meme endroit. Ne compte pas.
-- **INCOMPETENCE DE L'AGENT** — le chemin existait, annonce, la ou quelqu'un qui cherche cette
-  chose regarderait. Citer le fichier de vue et le libelle exact.
-- **INDECIDABLE** — jugement de gout, incoherence du jeu de donnees, libelle mal compris, champ
-  manquant sur un ecran existant, decision produit non documentee. → remonte comme question.
-- **HORS PERIMETRE ANNONCE** — element grise ou badge « Brique N ». **Attention** : si l'ecran
-  est dans le lot courant et pourtant inatteignable, ce n'est pas hors perimetre, c'est un defaut
-  de navigabilite.
-
-Le verificateur rend un tableau — `Ref | ce que l'utilisateur cherchait | ecran present dans le
-lot ? (fichier) | chemin (source + libelle) | annonce ? | verdict | preuve en une ligne | vu par
-N agents` — plus **deux rendements separes** (navigabilite / arbitrables et perimetre /
-arbitrables) et une note de severite honnete. Un rendement cumule sous 20 % veut dire que les
-objectifs etaient mal calibres : on les refait, on ne publie pas la liste.
-
-**Il fusionne les doublons entre objectifs.** Ce n'est pas cosmetique : sans fusion, le
-denominateur double et le rendement se divise par deux.
-
-#### Quatre pieges de mise en œuvre, tous payes en mesure
-
-- **Deux tirages par objectif au minimum.** 5 des 12 defauts d'un lot n'ont ete vus que par un
-  agent sur deux. Et le doublage sert une seconde fois : il demasque un **rapport entier de faux
-  positifs** (les trois incompetences d'un lot venaient toutes du meme agent, sur un bandeau
-  d'actions qu'il n'avait jamais regarde). Un troisieme tirage, mesure, n'apporte plus que du
-  confirmatoire.
-- **Objectifs cales sur ce que le lot represente.** Un objectif qui suppose un ecran absent du lot
-  fait echouer l'agent pour une raison qui n'est pas le produit.
-- **Le hub interdit des deux cotes.** A l'agent (« ne l'utilise jamais ») et au verificateur (« un
-  chemin qui n'existe que par le hub ne compte pas »). Oublier le second annule la mesure.
-- **Faire ecrire le livrable tot.** Un verificateur qui lit tout avant d'ecrire ne rend rien :
-  qu'il pose le squelette du fichier des son deuxieme appel d'outil et le remplisse au fil de
-  l'eau, avec un budget d'appels explicite.
-
-#### Ce que cette section ne remplace pas
-
-Elle est **complementaire**, pas substituable. Le bras naif ne voit **rien** de ce qui exige :
-
-- un **instrument** — les 41 pages d'un lot qui debordaient a 390 px, dont des tableaux coupes en
-  silence : les 17 recits travaillent a un seul viewport et **aucun** ne mentionne le mobile ;
-- une **specification** — archivage d'un contact absent, documents joints sans ecran de saisie :
-  un agent naif ne sait pas ce qui **devrait** etre la, il ne bute que sur ce que son objectif
-  exige ;
-- de la **vraisemblance** — les 38 chiffres fabriques d'un lot, dont une adresse client produite
-  par une table de rues ecrite dans la vue, et une timeline generique que les agents ont
-  **louee** ;
-- le **code** — les 35 promesses d'interaction sans mecanique nommee, indiscernables d'un bouton
-  en attente d'implementation ;
-- l'**argent et le droit** — les 12 selecteurs preselectionnes qui feraient partir un devis au nom
-  du mauvais client. Un selecteur preselectionne **facilite** la vie de l'utilisateur naif : il ne
-  le gene jamais.
-
-Et une limite qu'il faut annoncer sans la maquiller : **le bras ne predit pas les ecrans que le
-code inventera.** Mesure contre deux applications livrees, sur 30 ecrans construits sans maquette,
-**0 PREDIT, 3 APPROCHE, 22 hors de portee du protocole**. La raison est structurelle : 21 de ces
-30 ecrans sont le back-office d'administration, qui n'est dans aucun QUOI, donc dans aucun
-objectif derive du QUOI. Si le lot a une surface d'administration, il faut **jouer une persona
-d'administrateur en plus** (+2 runs), et savoir que meme la, le gain est estime et non mesure.
+Rendements mesures (08/2026, deux lots) : navigabilite 24 % et 34 %, perimetre 12 % et 14 %.
+Dose : ~950 k jetons par lot, et elle suit le nombre de types d'utilisateurs enumeres.
 
 ### 2. Scope par brique (marquage)
 

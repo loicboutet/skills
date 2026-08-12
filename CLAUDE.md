@@ -55,6 +55,13 @@ Sur un lot transcrit, la normalisation (etape 6 de `/brick-mockup-transcription`
 | 4f | `/brick-code-feedback` | Rassembler les retours (tracker + emails + WhatsApp + Drive), corriger, specs & tracker |
 | 4x | `/brick-code-fix` | Methode bug rigoureuse : comprendre → test qui reproduit → fix → verifier |
 
+**Transverse (verification)** : `/recette-naive` = la traversee par des agents qui ne
+savent RIEN du produit. On enumere les types d'utilisateurs, chacun recoit une persona, un
+objectif metier et rien d'autre, et un verificateur distinct tranche ses abandons. Appelee
+par `/brick-mockup-review` (mode maquette, avant le client) et `/brick-code-review`
+(mode application, section 7b). Attrape « la fonction marche et personne ne la trouve »,
+que ni le cahier de recette ni les parcours connus ne peuvent voir.
+
 **Transverse (connaissance)** : `/brain` = le second cerveau cross-projet. On
 CHERCHE (`brain_tool` search) une connaissance metier reutilisable avant de
 creuser un sujet (cable dans `/brick-analysis-build`), et on DISTILLE (create)
