@@ -22,7 +22,7 @@ remplit un slot que s'il sert (pas de video de design, video d'analyse seulement
 | 1v | `/brick-analysis-video` | (option, interne) Expliquer les concepts d'une brique complexe a l'equipe |
 | 2 | `/brick-design-brief` | Envoyer le formulaire Drive au client pour recuperer la source de marque |
 | 2b | `/brick-design-build` | Recuperer la source et construire la charte |
-| 2r | `/brick-design-review` | Relire la charte (fidelite au brief, contraste, coherence) |
+| 2r | `/brick-design-review` | Relire la charte : audit mecanique (charte_scan), nettoyage, puis fidelite au brief, contraste, coherence |
 
 **Boucle mockup** (repetee jusqu'a validation client)
 
