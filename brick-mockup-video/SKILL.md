@@ -126,6 +126,11 @@ avec `node_modules` symlinke :
 CHAP="$WORK/chap-NN"   # copie du pipeline comme dans /brick-code-video
 ```
 
+Reprendre le bloc de `/brick-code-video` TEL QUEL : `node_modules` symlinke
+(racine ET `remotion/`), `remotion/out` cree vide, jamais `cp -a` du dossier
+`remotion` en bloc. Un chapitre monte correctement pese ~35 Mo ; en copie
+integrale, 1,1 Go, et il traine les rendus des autres clients.
+
 Le sous-agent livre `$CHAP/out/output.mp4`, l'orchestrateur le collecte. Deux
 sous-agents dans le meme repertoire = ecrasement croise garanti. Plafonner a
 **3-4 sous-agents simultanes** (chaque tournage porte un chromium ~300-500 Mo).
@@ -182,6 +187,16 @@ chemin `$CHAP` + consigne de NE PAS toucher aux autres repertoires.
 8. `GET /api/v1/bricks/{brick_id}/videos` pour verifier, et transmettre le lien
    de visionnage public COURT (`video_url`, `/v/xxxxxxx` ; jamais le fichier brut
    ni le `legacy_video_url` long), avec la table des chapitres.
+9. **Purger le repertoire de travail** — la video est publiee et le lien
+   transmis :
+   ```bash
+   mkdir -p "$APP_DIR/doc/demo_videos"
+   cp "$WORK/out/mockups.mp4" "$APP_DIR/doc/demo_videos/mockups-$(date +%Y%m%d).mp4"
+   rm -rf "$WORK"
+   ```
+   Les `chap-NN/` ne resservent pas : a la vague de retours suivante les
+   maquettes ont change, on refilme. Garde le narrative si tu y tiens (quelques
+   Ko), jamais le pipeline.
 
 ## Validation gate
 
@@ -196,6 +211,7 @@ chemin `$CHAP` + consigne de NE PAS toucher aux autres repertoires.
 - [ ] Elements hors brique explicitement annonces comme tels
 - [ ] Narration dans la langue de l'espace client, meme voix sur toute la video
 - [ ] Metadonnees `chapters=[...]` + table des timecodes fournie avec le lien
+- [ ] Video archivee dans `doc/demo_videos/`, puis `rm -rf "$WORK"` execute
 
 ## Ensuite
 

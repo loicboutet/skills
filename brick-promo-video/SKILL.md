@@ -151,13 +151,25 @@ Une seule composition responsive, trois `<Composition>` dans Root :
 ```bash
 # JAMAIS dans ~/demo-video directement : repertoire PARTAGE entre agents
 # (deux rendus concurrents s'ecrasent). Copie de travail par app, comme
-# brick-code-video :
+# brick-code-video : on copie la SOURCE, jamais node_modules ni out/
 WORK="$(pwd)/tmp/brick-promo-video"
-mkdir -p "$WORK" && cp -a ~/demo-video/remotion "$WORK/remotion"
-ln -sfn ~/demo-video/node_modules "$WORK/remotion/node_modules" 2>/dev/null || true
+mkdir -p "$WORK/remotion/out"
+cp -a ~/demo-video/remotion/src ~/demo-video/remotion/public \
+      ~/demo-video/remotion/package.json ~/demo-video/remotion/package-lock.json \
+      "$WORK/remotion/" 2>/dev/null
+ln -sfn ~/demo-video/remotion/node_modules "$WORK/remotion/node_modules"
 cd "$WORK/remotion" && npx remotion render src/index.js <CompoId> out/<slug>-vN.mp4
 ```
 (~3 min pour 50 s en 1080p. Iterer = re-render, c'est pas cher.)
+
+Deux pieges que l'ancienne version du bloc cumulait, corriges le 13/08/2026 :
+`cp -a ~/demo-video/remotion` en bloc embarquait `node_modules` (590 Mo) et
+`out/` (465 Mo de rendus d'autres clients) dans le `tmp/` de chaque app ; et le
+`ln -sfn` qui suivait visait le `node_modules` RACINE (celui du pipeline, pas
+celui de Remotion) sur un dossier deja cree par la copie, donc il fabriquait un
+`remotion/node_modules/node_modules` au lieu de remplacer quoi que ce soit. Le
+symlink n'a jamais pris, les 590 Mo sont restes. Verifie apres coup :
+`ls -l "$WORK/remotion/node_modules"` doit afficher un lien, pas un dossier.
 
 Revue OBLIGATOIRE avant de livrer : extraire des frames aux moments cles et
 les REGARDER (`ffmpeg -ss T -i out.mp4 -frames:v 1 f.jpg`) — en particulier :
@@ -173,6 +185,26 @@ ne se committent pas).
 Chaque retour est une petite edition : frontieres dans SCENES[], niveaux dans
 SFX[], une phrase = re-generer UN segment voix. Toujours re-extraire des
 frames apres correction. Documenter les lecons generales dans ce skill.
+
+### Phase 9 — Purge du repertoire de travail, OBLIGATOIRE
+
+Les 3 formats sont livres dans `doc/demo_videos/` et valides ? Alors `$WORK`
+n'a plus de raison d'exister :
+
+```bash
+rm -rf "$WORK"
+```
+
+Les mp4 livres sont deja dans `doc/demo_videos/`, le pipeline se remonte en une
+commande : il n'y a rien a garder. Un `tmp/brick-promo-video/` laisse en place
+pese ~1 Go et ne resservira pas. Purge aussi si tu abandonnes un rendu en cours
+de route.
+
+Attention au sens de la copie : ce qui atterrit dans `$WORK/remotion/public/`
+pendant un run (musique, voix, captures du client) ne doit JAMAIS etre reverse
+dans `~/demo-video/remotion/public/`. C'est comme ca que le template partage a
+fini par trimballer les assets monmentor, tastellers et supercara, recopies
+ensuite chez tous les autres clients.
 
 ## Troubleshooting
 
@@ -199,6 +231,8 @@ frames apres correction. Documenter les lecons generales dans ce skill.
 - [ ] Musique sous la voix, SFX en place, piste audio presente au ffprobe
 - [ ] Les 3 formats rendus et verifies par frames (16:9, 1:1, 9:16)
 - [ ] Videos livrees dans doc/demo_videos/ (gitignore)
+- [ ] `ls -l "$WORK/remotion/node_modules"` renvoie un lien, pas un dossier
+- [ ] `rm -rf "$WORK"` execute apres livraison
 
 ## Ensuite
 

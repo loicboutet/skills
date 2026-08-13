@@ -36,17 +36,36 @@ Avant toute chose, creer la copie de travail DANS le depot de l'app (sous
 APP_DIR=$(pwd)                      # la racine du depot de l'app
 WORK="$APP_DIR/tmp/brick-code-video"
 mkdir -p "$WORK/narratives" "$WORK/out"
-cp -a ~/demo-video/src ~/demo-video/remotion ~/demo-video/package.json \
+cp -a ~/demo-video/src ~/demo-video/package.json \
       ~/demo-video/run.sh ~/demo-video/before.js ~/demo-video/shot.js \
       ~/demo-video/measure.js "$WORK/" 2>/dev/null
 ln -sfn ~/demo-video/node_modules "$WORK/node_modules"
+
+# Remotion : on copie la SOURCE, jamais node_modules ni out/
+mkdir -p "$WORK/remotion/out"
+cp -a ~/demo-video/remotion/src ~/demo-video/remotion/public \
+      ~/demo-video/remotion/package.json ~/demo-video/remotion/package-lock.json \
+      "$WORK/remotion/" 2>/dev/null
+ln -sfn ~/demo-video/remotion/node_modules "$WORK/remotion/node_modules"
 ```
+
+**Jamais `cp -a ~/demo-video/remotion` en bloc.** Ce dossier porte ses propres
+`node_modules` (590 Mo) et son `out/` (465 Mo de rendus accumules). Copie en
+bloc, chaque chapitre pese 1,1 Go pour un livrable de 4 Mo, et le `out/` recopie
+trimballe les videos des AUTRES clients dans le `tmp/` de celui-ci. Constate le
+13/08/2026 : 76 copies de `node_modules` sous `tmp/`, 84 Go, disque a 97 %, avec
+des mp4 supercara / tasteseller / monmentor dans le `tmp/` de wage. On symlinke
+`node_modules` (partage, lecture seule) et on part d'un `out/` VIDE.
 
 Ensuite TOUT se fait dans `$WORK` : narrative, audio, alignment, rendu. Aucun
 chemin `~/demo-video/...` ne doit apparaitre dans tes commandes apres ce bloc
 (le `run.sh` copie travaille relativement a son propre dossier). Ces fichiers
 sont des artefacts intermediaires : ils ne se COMMITENT jamais (tmp/ est
 gitignore, ne pas les sortir de la).
+
+Meme regle pour CHAQUE chapitre (`$WORK/chap-NN`) : la sous-copie suit le meme
+bloc, `node_modules` symlinke et `out/` vide. Un chapitre correctement monte
+pese ~35 Mo, pas 1,1 Go.
 - La cle ElevenLabs est configuree dans les **tenant credentials** du serveur nexrai distant (cle: `elevenlabs_api_key`, categorie: `api_keys`)
 
 ## IMPORTANT — Gestion de la cle ElevenLabs
@@ -545,6 +564,32 @@ les `say`, poser 1-3 `shot` par parcours (les ecrans que le client
 reconnaitrait), committer. Premiere fois : lancer le workflow a la main avec
 `rebless=true` pour poser la baseline.
 
+## Purger le repertoire de travail : DERNIERE ETAPE, OBLIGATOIRE
+
+La video est uploadee et le lien verifie ? Alors `$WORK` n'a plus de raison
+d'exister. On archive le livrable, on jette le reste :
+
+```bash
+# 1. Archiver le(s) livrable(s) — c'est tout ce qui merite de survivre
+mkdir -p "$APP_DIR/doc/demo_videos"
+cp "$WORK/out/output.mp4" "$APP_DIR/doc/demo_videos/<slug>-$(date +%Y%m%d).mp4"
+
+# 2. Jeter le repertoire de travail en entier
+rm -rf "$WORK"
+```
+
+Si tu veux garder de quoi rejouer un chapitre, garde le narrative (quelques
+Ko), pas le pipeline : `cp "$WORK"/narratives/*.json "$APP_DIR/doc/memory/journeys/"`.
+
+Ne laisse JAMAIS un `tmp/brick-*-video/` derriere toi en te disant « au cas ou
+je repasse dessus ». C'est exactement ce raisonnement qui a rempli le disque du
+VPS a 97 % (84 Go d'artefacts video, dont 44 Go de `node_modules` recopies).
+Le pipeline se remonte en une commande, la video se retelecharge depuis la
+plateforme : il n'y a rien a sauver.
+
+Si tu interromps un run en cours de route (erreur, abandon, changement de
+scenario), purge aussi : `rm -rf "$WORK"`.
+
 ## Validation gate
 
 - [ ] Video generee sans erreurs de steps
@@ -556,6 +601,8 @@ reconnaitrait), committer. Premiere fois : lancer le workflow a la main avec
 - [ ] Video uploadee avec un `title` decrivant le changement
 - [ ] Page publique de visionnage ouverte et verifiee (lien a envoyer au client)
 - [ ] Voix = wufFsVwuYBePWKO6dMMN (Rudy, modele eleven_v3 — comme /brick-promo-video)
+- [ ] `node_modules` symlinke et non copie (`ls -l "$WORK/remotion/node_modules"` renvoie un lien)
+- [ ] Livrable archive dans `doc/demo_videos/`, puis `rm -rf "$WORK"` execute
 
 ## Troubleshooting
 

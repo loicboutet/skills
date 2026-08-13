@@ -86,7 +86,9 @@ voix par langue — Rudy FR / `3WqHLnw80rOZqJzW9YRB` EN, `eleven_v3`).
 
 **Emprunts a `/brick-promo-video`** pour le liant :
 - **Cartons de chapitre** rendus avec le template Remotion (copie de travail,
-  comme la promo : `~/demo-video/remotion` copie dans l'app). Un carton =
+  comme la promo : la SOURCE de `~/demo-video/remotion` copiee dans l'app,
+  `node_modules` symlinke et `out/` vide — jamais `cp -a` du dossier en
+  bloc, voir le bloc de `/brick-code-video`). Un carton =
   2-3 s, titre du chapitre, style charte du client. IMPORTANT : rendre les
   cartons a la MEME resolution/fps que le screencast (viewport pipeline :
   1536x900) pour un concat sans surprise.
@@ -121,6 +123,11 @@ Deux garde-fous OBLIGATOIRES, sans lesquels le parallele detruit le travail :
    Le sous-agent livre `$CHAP/out/output.mp4`, l'orchestrateur le collecte.
    Deux sous-agents dans le meme repertoire = ecrasement croise garanti
    (deja vu deux fois avec ~/demo-video partage).
+
+   Reprendre le bloc de `/brick-code-video` TEL QUEL. Sur une video de 8 a 10
+   chapitres, la difference entre une copie propre et un `cp -a` du dossier
+   `remotion` est de 350 Mo contre 11 Go. Preciser dans le brief de chaque
+   sous-agent : `node_modules` symlinke, `remotion/out` vide au depart.
 
 2. **Discipline d'etat : classer chaque chapitre lecture/ecriture.** L'app
    filmee est UNE instance partagee. Un chapitre qui CREE ou modifie des
@@ -197,6 +204,17 @@ consigne de NE PAS toucher aux autres repertoires.
    La reponse renvoie un lien COURT `video_url` (`/v/xxxxxxx`) — c'est celui
    a transmettre, avec la table des chapitres. `legacy_video_url` (lien long
    signe) reste fourni pour compat, ne pas l'envoyer au client.
+8. **Purger le repertoire de travail** — la presentation est publiee et le lien
+   transmis :
+   ```bash
+   mkdir -p "$APP_DIR/doc/demo_videos"
+   cp "$WORK/out/presentation.mp4" "$APP_DIR/doc/demo_videos/walkthrough-$(date +%Y%m%d).mp4"
+   rm -rf "$WORK"
+   ```
+   C'est le skill qui produit le plus gros `$WORK` (8 a 10 chapitres). Le
+   laisser en place, c'est plusieurs Go immobilises pour un fichier final de
+   quelques centaines de Mo deja archive et deja sur la plateforme. Purge aussi
+   les `$CHAP` des sous-agents qui ont echoue en cours de route.
 
 ## Validation gate
 
@@ -210,6 +228,7 @@ consigne de NE PAS toucher aux autres repertoires.
 - [ ] `freezedetect` passe sur le fichier FINAL (aucun gel > 8 s inexplique)
 - [ ] Table des timecodes fournie avec le lien
 - [ ] Duree totale 10-30 min — au-dela de 30, scinder en deux videos
+- [ ] Presentation archivee dans `doc/demo_videos/`, puis `rm -rf "$WORK"` execute
 
 ## Ensuite
 

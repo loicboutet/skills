@@ -117,6 +117,20 @@ la liste des changements (avant), cartons + assemblage + envoi (apres).
    - **Rédiger puis CONFIRMER avec l'utilisateur avant d'envoyer** — c'est un
      message sortant vers le client. Canal = celui du projet (email via
      `gmail_*`, WhatsApp), selon les contacts du profil.
+8. **Purger le repertoire de travail** — le bilan est publie et le message
+   envoye, `$WORK` n'a plus de raison d'exister :
+   ```bash
+   mkdir -p "$APP_DIR/doc/demo_videos"
+   cp "$WORK/out/bilan.mp4" "$APP_DIR/doc/demo_videos/bilan-$(date +%Y%m%d).mp4"
+   rm -rf "$WORK"
+   ```
+   Les `chap-NN/` sont des intermediaires : ils ne servent qu'a reutiliser un
+   chapitre DANS LA JOURNEE (etape 2). Le lendemain, le bilan est different et
+   l'app a bouge : ils ne resservent pas. Un `$WORK` monte correctement (voir
+   `/brick-code-video`, `node_modules` symlinke, `out/` vide) pese ~35 Mo par
+   chapitre ; monte a la truelle, 1,1 Go. C'est ce qui a rempli le disque du VPS
+   a 97 % le 13/08/2026, avec des dossiers `brick-daily-video` de 7,5 Go
+   (160foals) et 6,5 Go (educxa) restes en place des semaines.
 
 ## Validation gate
 
@@ -129,6 +143,7 @@ la liste des changements (avant), cartons + assemblage + envoi (apres).
 - [ ] Metadonnees `chapters=[...]` + lien court transmis
 - [ ] Message recap relu contre la checklist anti-IA, CONFIRME avant envoi
 - [ ] Tracker a jour (les issues du bilan pointees vers la video si utile)
+- [ ] Bilan archive dans `doc/demo_videos/`, puis `rm -rf "$WORK"` execute
 
 ## Ensuite
 
