@@ -8,13 +8,15 @@ description: "Correction de bug client : regle du defaut connu, comprendre, repr
 Le client a toujours raison. Chaque bug suit le meme process : comprendre → reproduire
 → corriger → verifier → generaliser.
 
+> **Modeles et discipline de tour** : ce skill delegue a des sous-agents. Doctrine mesuree,
+> commune a toute la chaine, dans `/brick-code-build` (« Repartition des modeles » et
+> « Discipline de tour ») : tous les sous-agents en `model: "opus"`, et l'orchestrateur
+> n'attend jamais un sous-agent en rendant son tour.
+
 ## Regle d'or
 
 **Ne jamais dire "ca marche chez moi"**. Si le client dit que c'est casse, c'est casse.
 Notre job c'est de comprendre POURQUOI il voit ce qu'il voit.
-
-**Modele** : la recherche de cause racine tourne sur le modele fort (Opus). L'ecriture
-du fix, une fois la cause etablie et le test qui reproduit ecrit, peut redescendre.
 
 ## LA REGLE DU DEFAUT CONNU
 
@@ -210,13 +212,18 @@ Un fix deploye en prod **rearme la surveillance** : relever GlitchTip a +1 h et 
 au navigateur le parcours corrige sur l'URL reelle. Une erreur nouvelle = un nouveau
 passage par ce skill.
 
-### 10. Confirmation client
+### 10. Statut, et qui ferme
 
-- Informer l'utilisateur que le fix est pret
-- Attendre que le client confirme que le bug est resolu
-- Ne JAMAIS fermer un bug sans confirmation
 - Mettre l'issue tracker a jour (`tracker_issue_tool`, action `move`) : `in_progress`
-  au demarrage, `fixed` apres confirmation
+  au demarrage, **`fixed` des que le correctif est deploye et re-verifie sur l'URL
+  reelle** (etape 9). `fixed` = « corrige et en ligne », c'est le bout du travail
+  de l'agent, il le pose lui-meme, sans attendre personne.
+- Informer l'utilisateur, en une ligne, que le fix est en ligne (quoi, ou, comment
+  re-verifier).
+- La FERMETURE de l'issue (le client a constate que c'est resolu) est le geste de
+  l'utilisateur, apres validation du client. L'agent ne la demande pas, ne la fait
+  pas, ne la relance pas. Si le client revient dessus, c'est un nouveau passage par
+  ce skill, pas une reouverture a negocier.
 
 ## Organisation des tests de bug
 
@@ -236,7 +243,10 @@ On ne les supprime JAMAIS : ce sont des tests de regression.
 - Ecran repare avec une donnee inventee → faute grave, jamais un fix
 - Question renvoyee au client la ou un defaut motive suffisait
 - Bug corrige sans classe de taxonomie ni ligne de recette → la lecon est perdue
-- Fermer le bug sans que le client confirme → toujours demander confirmation
+- Fermer le bug soi-meme → NON. Le statut `fixed` dit « corrige et deploye », c'est le
+  bout du travail de l'agent. La FERMETURE (client satisfait) est le geste de
+  l'utilisateur, apres validation du client ; l'agent ne la demande pas, ne la fait
+  pas, ne la relance pas
 
 ## Ensuite
 

@@ -18,6 +18,12 @@ rendement 30 % et 55 %, **33 defauts reels dont 33 sur 34 absents des rapports d
 projets**, et les deux bras ne se recouvrent qu'en **UN point** sur tout le corpus. Sur maquettes :
 navigabilite 24 % et 34 %, trous de perimetre 12 % et 14 %.
 
+
+> **Modeles et discipline de tour** : ce skill delegue a des sous-agents. Doctrine mesuree,
+> commune a toute la chaine, dans `/brick-code-build` (« Repartition des modeles » et
+> « Discipline de tour ») : tous les sous-agents en `model: "opus"`, et l'orchestrateur
+> n'attend jamais un sous-agent en rendant son tour.
+
 ## Deux modes
 
 | | **Mode maquette** (`/brick-mockup-review`, avant le client) | **Mode application** (`/brick-code-review`, section 7b) |

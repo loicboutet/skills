@@ -14,19 +14,36 @@ plan multi-etapes explicite avant de coder, verification a chaque etape (tests v
 couverts) avant d'avancer, auto-critique avant de committer, 1 sous-agent par tache
 independante.
 
-## Repartition des modeles (parametre du process)
+## Repartition des modeles (parametre du process, MESURE)
 
-- **Opus** (jugement, irreversibilite, contradiction) : analyse (jeu de donnees, matrice
-  CRUD, decisions), reanalyse et cahier de recette, review et recetteur separe (c'est lui
-  qui doit REFUSER de livrer), recherche de cause racine d'un bug, et l'orchestrateur.
-- **Sonnet** (execution d'une tache entierement specifiee) : les sous-agents de tache
-  pendant le build. Une tache arrive avec ses AC, ses pages de maquette, son jeu de
-  donnees, son perimetre de fichiers, sa preuve de fin et les criteres de recette qui la
-  jugeront : il reste du Rails conventionnel a ecrire.
-- **Escalade** : une tache dont la preuve de fin echoue DEUX fois repasse sur Opus, et le
-  fait est consigne dans le fichier de tache (`Escalade: Opus apres 2 echecs de preuve`).
-- Par defaut, sous-agents de tache sur Sonnet ; l'orchestrateur peut decider autrement
-  pour une tache visiblement delicate, en le justifiant en une ligne dans la tache.
+Banc modeles des 16-17/08/2026, chaine complete gesproj, meme verite terrain, audit
+adversarial : orchestrateur Fable + executants Opus 5 = **95/100** ; tout Opus 5 = 80 ;
+tout Fable = 91 ; baseline tout Opus 4.8 = 91. A executants identiques, le seul
+changement de pilote vaut +15 points. La doctrine qui en sort, valable pour TOUS les
+skills brick-* qui deleguent (analyse, reanalyse, build, review, fix, recette naive) :
+
+- **L'orchestrateur = la session qui lit ce skill.** Elle tourne sur le modele du poste
+  (Fable par defaut sur les VPS nexrai). Il porte le plan, les briefs, les arbitrages,
+  et surtout ce qu'il FAIT de ce que la review trouve : c'est ca qui a fait l'ecart.
+- **Tous les sous-agents = `model: "opus"`**, executants de tache comme juges (recetteur
+  separe, relecteur du defaut connu, auditeur, sous-agent de jeu de donnees). Le
+  detecteur mesure le meilleur en review est aussi Opus 5 (serie 1 du meme banc :
+  ~5x plus de findings, verifies reels, a taux de faux positifs egal).
+- Plus de Sonnet par defaut ni d'escalade : la seule tentative hybride (p3b) a ete
+  stoppee sans mesure ; si on veut le tester, le banc `lab/modeles/` est fait pour ca,
+  pas une brique client.
+
+## Discipline de tour de l'orchestrateur (sans elle, la chaine s'arrete la nuit)
+
+Quand tu delegues, **attends le resultat DANS ton tour et enchaine**. Ne termine jamais
+ton tour en ecrivant « j'attends le retour de X » : le harnais te considere fini,
+personne ne te reveille quand le sous-agent rend, et la chaine reste a l'arret jusqu'a
+ce qu'un humain te relance. Mesure sur le banc : les deux orchestrateurs sans cette
+consigne ont eu besoin de 2 et 5 relances ; celui qui l'avait dans son brief, d'une
+seule en 14 h. Un compte rendu ne se redige qu'au verdict final (review), jamais a
+mi-parcours : a 11 taches sur 26, un orchestrateur a « conclu » et rendu des reserves
+comme si la brique etait close. Mets cette consigne dans le brief de tout sous-agent
+qui delegue a son tour.
 
 ## LA REGLE DU DEFAUT CONNU (elle prime sur tout le reste de ce skill)
 
@@ -345,7 +362,8 @@ Decouper en taches independantes, 1 sous-agent par tache, 1 sous-agent par appel
 Toi = orchestrateur qui delegue, verifie la preuve executee, et passe a la suivante.
 Transmettre au sous-agent : le fichier de tache (perimetre + DoD), **les lignes de
 `recette.md` qui le jugeront**, la regle du defaut connu, et les regles de decision.
-Modele : Sonnet par defaut, Opus si la tache est delicate ou apres deux echecs de preuve.
+Modele : `model: "opus"` pour chaque sous-agent, sans exception (voir « Repartition des
+modeles »). Et l'orchestrateur attend le retour DANS son tour, puis enchaine.
 
 ## Passage a la brick suivante
 
@@ -355,7 +373,8 @@ Modele : Sonnet par defaut, Opus si la tache est delicate ou apres deux echecs d
    defaut d'argent, de permission, de donnee fausse ou de fuite**
 3. `recette.md` : chaque critere porte sa preuve rejouable ou la mention « non couvert
    par le build » ; CI verte sur le dernier commit
-4. Lancer `/brick-code-review`, puis l'utilisateur valide la review
+4. Lancer `/brick-code-review` ; c'est son verdict READY / NEEDS FIXES qui decide, pas
+   une validation humaine de la review
 5. Creer `doc/memory/brick-{N+1}/tasks/`, mettre a jour le README
 
 ## Ensuite

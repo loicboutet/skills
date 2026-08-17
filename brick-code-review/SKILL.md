@@ -11,8 +11,10 @@ review l'EXECUTE, l'etend si la taxonomie ou une regression l'exige, puis deroul
 checks complementaires. Le cochage final est fait par un recetteur qui n'a pas ecrit le
 code. La brique n'est livree qu'apres le smoke test et 24 h d'error tracker propres.
 
-**Modele** : review et recetteur separe tournent sur le modele fort (Opus). C'est le
-recetteur qui doit etre capable de REFUSER de livrer.
+> **Modeles et discipline de tour** : ce skill delegue a des sous-agents. Doctrine mesuree,
+> commune a toute la chaine, dans `/brick-code-build` (« Repartition des modeles » et
+> « Discipline de tour ») : tous les sous-agents en `model: "opus"`, et l'orchestrateur
+> n'attend jamais un sous-agent en rendant son tour.
 
 ## LA REGLE DU DEFAUT CONNU (elle commande le verdict)
 
@@ -293,6 +295,28 @@ Verifier :
 
 **Toute ligne A CORRIGER non justifiee bloque la livraison** (verdict NEEDS FIXES).
 
+**Le verrou mobile, mecanique (OBLIGATOIRE avant d'ecrire le verdict).** Les trois
+mesures ci-dessus sont ecrites depuis aout 2026 ; le 16-17/08 deux livraisons sur trois
+ont quand meme ete rendues avec des champs de prix a 18 px sur mobile, l'une avec 26
+`control-crushed` bloquants dans son propre rapport style_diff au moment du READY. La
+regle etait lue, le rapport ne l'etait pas. Donc on ne lit plus, on verrouille :
+
+```bash
+ruby ~/.claude/skills/outils-recette/mobile_gate.rb doc/memory/brick-{N}/parite/
+```
+
+Il lit le `resume.json` et les `paires/*.json` de style_diff et ne regarde QUE les
+classes de saisie mobile (`control-crushed`, `control-shrunk`, `clip-*`, `overflow-*`) :
+la parite de style, bruyante, reste a ton jugement. Sa derniere ligne de sortie EST la
+ligne « Mobile (gate) » du rapport (section 12) : on la colle, on ne la reformule pas.
+- exit 0 → la gate passe, tu peux ecrire le verdict.
+- exit 1 → REFUS : un verdict READY est interdit. Corriger, relancer style_diff,
+  relancer la gate.
+- exit 2 → NON MESURE (rapport absent, sans viewport mobile, ou vide) : meme interdit.
+  Un `style_diff` dont on n'a garde que le HTML n'a pas eu lieu.
+Ne pas contourner en relancant style_diff sur moins d'ecrans : `pairs.json` doit couvrir
+chaque page livree (controle [ ] ci-dessus).
+
 ### 4b. Chasse aux facades a l'outil (BLOQUANT)
 
 `style_diff` compare ce qui se voit. Ces deux scans trouvent ce qui ne se voit
@@ -473,6 +497,7 @@ du rapport (section Issues), pas un souvenir.
 ## Defauts connus (argent / permissions / donnees fausses / fuite) : X trouves, X corriges
    — si un seul reste ouvert, le verdict est NEEDS FIXES
 ## Criteres de recette au statut KO : X — un seul KO restant = NEEDS FIXES
+   — et mobile_gate.rb en REFUS ou NON MESURE = NEEDS FIXES, sans discussion
 ## Lignes sorties des fichiers de consignation parce qu'elles decrivaient un bug : X
 ## Recette: X/Y criteres passes (✅ automatises: A, 🖐 manuels: M)
 ## Recetteur: sous-agent distinct OUI/NON — 10 preuves rejouees, Z ecarts
@@ -485,6 +510,7 @@ du rapport (section Issues), pas un souvenir.
 ## Choix a expliquer au client: [« a signaler » + corrections de maquette assumees]
 ## Config: X/Y cles verifiees sur l'env livre (consommateur + valeur)
 ## Parite: X/Y paires conformes (1440 + 390) — style_diff: N ecarts, rapport: parite/index.html
+## Mobile (gate) : [derniere ligne de mobile_gate.rb, collee telle quelle — PASSE ou REFUS/NON MESURE]
 ## Mobile: X/X ecrans — document 390, conteneurs non defilants OK, champs >= 120 px
 ## Permissions: matrice X roles x Y donnees, fuites: [liste] — toutes corrigees OUI/NON
 ## Deviations de perimetre relues: X (dont Y ayant motive une verification)

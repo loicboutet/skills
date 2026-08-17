@@ -336,6 +336,50 @@ tolérantes (un décalage isolé de 3 px passe). La précision monte quand les d
 côtés affichent les MÊMES données : c'est la raison d'être du jeu de données
 canonique (`doc/memory/jeu_de_donnees.md`).
 
+### mobile_gate.rb — le verrou mobile avant le verdict
+
+`style_diff` mesure les champs écrasés et le contenu coupé, et il les classe
+bloquants. Ça n'a pas suffi : banc modèles des 16-17/08/2026, deux livraisons
+sur trois rendues avec des champs de prix à 18 px sur mobile, l'une avec 26
+`control-crushed` dans son propre rapport au moment du verdict READY. La règle
+était écrite dans le skill, le rapport n'était pas lu. Ce script LIT le
+rapport à la place du reviewer et rend un verdict binaire.
+
+```bash
+ruby $SK/mobile_gate.rb doc/memory/brick-{N}/parite/     # mode RAPPORT : le dossier --out de style_diff
+ruby $SK/mobile_gate.rb --urls ecrans.txt                # mode DIRECT : une URL par ligne, mesure via playwright-cli
+```
+
+Mode direct (réanalyse des maquettes, ou n'importe quel lot d'écrans servis) :
+il ouvre chaque URL à 390 px dans une session playwright-cli dédiée (fermée à
+la fin) et applique les trois mesures que les skills prescrivent à la main :
+bord droit réel hors `position: fixed` et hors conteneur à défilement déclaré,
+conteneurs de LAYOUT qui coupent (div/section/table/form… dont le contenu
+dépasse sans `overflow-x: auto|scroll`, contrôles et texte en ellipse exclus),
+champs de saisie visibles sous 24 px. `documentElement.scrollWidth` est relevé
+mais ne décide rien. Vérifié : une page piège avec `body{overflow-x:hidden}`,
+un tableau à 800 px et trois inputs à 14 px est refusée sur les trois axes ;
+trois maquettes saines passent.
+
+En mode rapport, il ne regarde QUE les classes de saisie mobile : `control-crushed`,
+`control-shrunk`, `clip-implicite`, `clip-declare`, `clip-reste`,
+`overflow-el`, `overflow-doc`, sur le viewport mobile. La parité de style
+(`missing`, `style`, `box`, `added`…), bruyante et pleine de mis-appariements,
+reste au jugement humain et n'entre pas dans la gate : personne ne peut donc
+la contourner en disant « trop de bruit ».
+
+- exit 0 : PASSE. Dernière ligne = la ligne « Mobile (gate) » à coller telle
+  quelle dans review.md.
+- exit 1 : REFUS, constats listés par classe avec écran et élément. Verdict
+  READY interdit tant que ce n'est pas corrigé ET re-mesuré.
+- exit 2 : NON MESURÉ (pas de `resume.json`, pas de viewport mobile, aucune
+  paire). Même interdiction : un style_diff dont on n'a gardé que le HTML
+  n'a pas eu lieu.
+
+Vérifié sur les deux livraisons du banc : la première est refusée en exit 2
+(rapport machine non conservé, exactement le trou), la seconde en exit 1 (deux
+débordements réels que l'audit avait vus). Sur un dépôt propre il passe.
+
 ### facade_scan.rb — contrôles non branchés
 
 Chasse la façade : l'élément qui a l'air de marcher et n'est relié à rien. C'est

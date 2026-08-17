@@ -20,9 +20,10 @@ de question : on tranche avec un defaut motive, on consigne dans `decisions.md`,
 signale a la livraison les rares decisions qui touchent au QUOI. Une seule interdiction
 absolue : fabriquer une DONNEE (voir plus bas).
 
-**Modele** : toute cette phase tourne sur le modele fort (Opus, effort de raisonnement
-maximal) — jeu de donnees, matrice CRUD et decisions conditionnent tout l'aval. Voir la
-repartition complete dans `brick-code-build`.
+> **Modeles et discipline de tour** : ce skill delegue a des sous-agents (jeu de donnees,
+> notamment). Doctrine mesuree, commune a toute la chaine, dans `/brick-code-build`
+> (« Repartition des modeles » et « Discipline de tour ») : tous les sous-agents en
+> `model: "opus"`, et l'orchestrateur n'attend jamais un sous-agent en rendant son tour.
 
 ## Process
 
@@ -94,8 +95,9 @@ C'est lui qui porte les cas limites, pas du code speculatif.
 #### Protocole de generation (exercices)
 
 Le jeu de donnees est un livrable d'analyse critique : **delegue sa generation a un
-sous-agent configure sur le modele le plus capable disponible avec effort de
+sous-agent configure sur le modele `opus` avec effort de
 raisonnement maximal ; ne le genere jamais en passant, ni avec un modele economique.**
+
 Le sous-agent suit ces exercices, dans l'ordre :
 
 1. **Composition de lieu** appliquee aux donnees : avant de generer une entite, se
@@ -138,6 +140,29 @@ Le sous-agent suit ces exercices, dans l'ordre :
   states, un badge suspendu/archive, une troncature).
 - Les **seeds/fixtures** les implementent TOUS.
 - La **recette** les exerce TOUS.
+
+#### Regle de fabrication : une donnee de seed doit ressembler a ce que l'application PRODUIT
+
+Une donnee ecrite « a la main » dans les seeds (statut pose directement, dates
+finalisees a la creation, numero attribue sans passer par la sequence) peut etre dans
+un etat que l'application ne fabrique JAMAIS. La recette qui rejoue tout sur cette
+donnee passe, et le chemin reel n'est pas exerce. Mesure sur le banc modeles
+(16-17/08/2026) : l'avoir du seed etait ecrit `sent` ; ceux que l'application creait
+naissaient `draft` avec une date de finalisation, et le calcul du CA ne comptait que
+les `sent`. Recette verte, chiffre d'affaires faux sur tout avoir reel, invisible.
+
+Donc, dans le jeu canonique et dans les seeds qui l'implementent :
+- **Chaque entite a cycle de vie est produite par le meme chemin que l'application**
+  (le service, la transition, le job) ou, si c'est trop lourd, dans l'etat EXACT que ce
+  chemin produit (memes statuts, memes horodatages, memes champs derives). Interdit de
+  poser un statut « final » directement si l'app passe par un etat intermediaire.
+- **Le jeu prevoit un exemplaire « ne du produit »** par entite d'argent ou de droit
+  (une facture, un avoir, un reglement, une invitation crees a la recette PAR
+  L'INTERFACE, pas par les seeds), et le cahier de recette porte au moins un critere
+  qui compare les agregats AVANT/APRES cette creation. C'est ce critere qui aurait vu
+  le trou de CA.
+- Un ecart entre « donnee de seed » et « donnee produite » est un defaut connu de la
+  famille donnees fausses : il se corrige, il ne se consigne pas.
 
 #### Format
 

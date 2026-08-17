@@ -10,8 +10,10 @@ l'analyse doivent dire EXACTEMENT la meme chose, chaque promesse visuelle doit a
 sa mecanique (saisie, route, decision ecrite), et le plan de travail doit couvrir tous
 les AC. On n'ouvre pas le code sur un verdict A CORRIGER.
 
-**Modele** : porte bloquante = modele fort (Opus). Ni la reanalyse ni le cahier de
-recette derive ici ne se delegue a un modele economique.
+> **Modeles et discipline de tour** : ce skill delegue a des sous-agents. Doctrine mesuree,
+> commune a toute la chaine, dans `/brick-code-build` (« Repartition des modeles » et
+> « Discipline de tour ») : tous les sous-agents en `model: "opus"`, et l'orchestrateur
+> n'attend jamais un sous-agent en rendant son tour.
 
 ## Quand utiliser
 
@@ -100,6 +102,20 @@ playwright-cli -s=mob resize 390 844
   Tout champ sous 120 px de large est A CORRIGER. (Audit qualite 08/2026 : des `input`
   a 18 px sur un ecran declare conforme.)
 
+- **Le verrou, mecanique, avant le verdict PRET.** Les trois mesures a la main sont le
+  diagnostic ; le verdict, lui, passe par l'outil, parce que la regle en gras ci-dessus a
+  ete lue et quand meme contournee deux fois sur trois au banc du 16-17/08/2026 (champs
+  de prix a 18 px derriere un document a 390) :
+  ```bash
+  # une URL de maquette par ligne (toutes celles du lot, hub /mockups exclu)
+  ruby ~/.claude/skills/outils-recette/mobile_gate.rb --urls doc/memory/brick-{N}/mockup-urls.txt
+  ```
+  Mode direct : il ouvre chaque ecran a 390 px dans sa propre session playwright-cli et
+  applique les trois mesures ci-dessus (bord droit reel hors conteneur defilant,
+  conteneurs de layout qui coupent, champs de saisie sous 24 px), puis rend un verdict
+  binaire. exit 1 ou 2 = pas de PRET, pas de tag. Sa derniere ligne se colle telle quelle
+  dans reanalyse.md. Il exclut a raison ce qui defile par choix (`overflow-x: auto`) et
+  le texte tronque en ellipse : ce qu'il refuse est un vrai defaut. Voir `/outils-recette`.
 - Tableau tenu dans reanalyse.md : une ligne par maquette, mesure AVANT / APRES, pour les
   trois mesures (bord droit reel, conteneurs, champs).
 - Si `decisions.md` dit « responsive hors scope assume (ecrit) », les mesures sont faites
@@ -201,6 +217,13 @@ statuts). Puis :
       suspendu/archive, une troncature
 - Donnee inventee dans une maquette → remplacer par le canonique, OU enrichir le
   canonique si le cas est bon (mise a jour bidirectionnelle, journalisee)
+- **Le jeu porte-t-il un exemplaire « ne du produit » par entite d'argent ou de droit ?**
+  (regle de fabrication de `/brick-analysis-build`) : pour chaque facture, avoir,
+  reglement, invitation… le cahier de recette derive ici (section 8) doit contenir un
+  critere « creer par l'interface, puis comparer les agregats avant/apres ». Si le jeu ne
+  le prevoit pas, l'ajouter au jeu ET au cahier maintenant : c'est le critere qui attrape
+  une donnee de seed dans un etat que l'application ne produit jamais (banc 16-17/08 :
+  avoir de seed `sent`, avoirs de l'app `draft`, CA faux et recette verte).
 
 ### 6b. Pages publiques : conformite SEO des maquettes
 

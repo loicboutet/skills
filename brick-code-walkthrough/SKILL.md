@@ -75,8 +75,8 @@ Si la recette n'existe pas encore (brique pas passee par `/brick-code-review`),
 la faire d'abord — la video de presentation sans recette redevient une
 balade dont on ne peut pas prouver la couverture.
 
-Confirmer le plan de chapitres AVEC le tableau de couverture avec
-l'utilisateur avant de tourner.
+Ecrire le plan de chapitres AVEC le tableau de couverture avant de tourner ; c'est
+le tableau qui prouve la couverture, pas une validation humaine.
 
 ## Execution technique
 
@@ -148,7 +148,8 @@ consigne de NE PAS toucher aux autres repertoires.
 ## Process
 
 1. **Plan de chapitres** : parcours + ecrans restants -> 4 a 10 chapitres
-   nommes. Le faire VALIDER par l'utilisateur (c'est le sommaire de la video).
+   nommes. L'ecrire en tete du rapport (c'est le sommaire de la video) ; on ne le
+   fait pas valider.
 2. **Tourner les chapitres** — en parallele par sous-agents (section
    ci-dessus), ou en sequence si peu de chapitres (le pipeline ecrit
    `out/output.mp4` : archiver `mv "$WORK/out/output.mp4" "$WORK/out/chap-NN.mp4"`
@@ -218,7 +219,7 @@ consigne de NE PAS toucher aux autres repertoires.
 
 ## Validation gate
 
-- [ ] Plan de chapitres valide par l'utilisateur AVANT tournage
+- [ ] Plan de chapitres + tableau de couverture ecrits AVANT tournage
 - [ ] Matrice de couverture complete : CHAQUE ligne de recette classee
       (montrer / mentionner / hors-video), toutes les « montrer » visibles
       dans un chapitre, les « mentionner » couvertes par la narration

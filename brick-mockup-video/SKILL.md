@@ -31,9 +31,9 @@ Source des parcours : **`doc/memory/user_journeys.md`** (artefact de la phase
 ANALYSIS). Prendre les parcours principaux (typiquement 3 a 6, un par profil x
 objectif majeur) ; ils deviennent l'ordre des chapitres, logique metier d'abord
 (le client final, puis l'admin). Si le fichier manque, les deduire de l'index
-`/mockups` et **confirmer le plan de chapitres avec l'utilisateur avant de
-filmer** — c'est le sommaire de la video, et c'est lui qui sait ce que le client
-doit valider en priorite.
+`/mockups`. Le plan de chapitres s'ecrit dans le rapport, il ne se fait pas valider :
+c'est un artefact d'analyse deja valide (les parcours), l'utilisateur le corrige
+apres coup s'il veut un autre ordre.
 
 ## Perimetre : le tour complet UNE fois, ensuite seulement le nouveau
 
@@ -50,8 +50,10 @@ sur la boucle `/brick-mockup-feedback` (on filme les changements du jour) :
 
 Pour savoir ce qui est nouveau : le tracker (issues traitees depuis la derniere
 video) et `doc/memory/acceptance_criteria.md` (AC ajoutes par la brique
-courante). En cas de doute sur ce qui a deja ete valide, demander a
-l'utilisateur — c'est lui qui tient l'historique client.
+courante). En cas de doute sur ce qui a deja ete valide : le tracker et les
+videos deja publiees (`GET /api/v1/bricks/{brick_id}/videos`) tiennent
+l'historique ; dans le doute residuel, filmer le parcours (un chapitre en trop
+coute moins qu'une question).
 
 ## Architecture : des chapitres assembles, jamais une prise unique
 
@@ -140,8 +142,8 @@ chemin `$CHAP` + consigne de NE PAS toucher aux autres repertoires.
 ## Process
 
 1. **Plan de chapitres** : lire `doc/memory/user_journeys.md`, etablir la liste
-   ordonnee des parcours (nom court + pages traversees). La **faire valider par
-   l'utilisateur** — c'est le sommaire de la video.
+   ordonnee des parcours (nom court + pages traversees). L'ecrire en tete du
+   rapport — c'est le sommaire de la video ; on ne le fait pas valider.
 2. **Tourner les chapitres** — en parallele par sous-agents (section ci-dessus),
    chacun dans son `$WORK/chap-NN/` :
    a. Explorer le chemin au clic via `playwright-cli` (selecteurs, pages, fold)
@@ -200,7 +202,7 @@ chemin `$CHAP` + consigne de NE PAS toucher aux autres repertoires.
 
 ## Validation gate
 
-- [ ] Plan de chapitres (parcours) valide par l'utilisateur AVANT tournage
+- [ ] Plan de chapitres (parcours) ecrit AVANT tournage, derive de user_journeys.md
 - [ ] Perimetre correct : tour complet en brique 1, seulement les parcours
       nouveaux/modifies en briques 2+ et en iterations de retours
 - [ ] UNE seule video, un chapitre par parcours retenu

@@ -27,7 +27,7 @@ c'est possible : un seul travail de scenarisation, deux artefacts.
 ## Production
 
 1. **Plan de chapitres** : le meme que la video si elle existe (reutiliser sa
-   matrice de couverture). Sinon le construire pareil et le faire valider.
+   matrice de couverture). Sinon le construire pareil ; on ne le fait pas valider.
 
 2. **Repertoire de travail** : `tmp/brick-code-guide/` dans le depot de l'app
    (gitignore par /tmp/*). JAMAIS de repertoire partage entre apps.
@@ -81,7 +81,7 @@ c'est possible : un seul travail de scenarisation, deux artefacts.
 
    La reponse contient l'URL du guide. **VERIFIER le rendu** : ouvrir
    /external/guide avec playwright-cli (connecte en compte client de test si
-   dispo, sinon demander a l'utilisateur de verifier), controler qu'un
+   dispo, sinon en creer un via les seeds), controler qu'un
    chapitre s'affiche avec ses images. Ne jamais afficher MCP_TOKEN.
 
 ## Mise a jour a chaque livraison

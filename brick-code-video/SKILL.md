@@ -86,11 +86,14 @@ Si le tool retourne une erreur "cle non configuree", demander a l'utilisateur de
 
 1. Utiliser le MCP tool `app_tool(action: "list")` pour lister les apps
 2. Utiliser `brick_tool(action: "list", app_id: X)` pour lister les bricks
-3. Confirmer avec l'utilisateur quelle brick on filme
-4. Identifier :
-   - L'URL du dev server de l'app (demander a l'utilisateur)
-   - Les credentials de demo (user externe, password)
-   - Les fonctionnalites a montrer dans la video
+3. La brick filmee est celle en cours : celle du kanban `doc/memory/brick-{N}/tasks/`
+   et du dernier tag `mockups-valides-brique-{N}`. On ne demande pas, on la nomme dans
+   le compte rendu ; l'utilisateur corrige s'il veut une autre.
+4. Identifier, sans demander :
+   - L'URL du dev server : c'est TOI qui le lances (`vps_dev_server_start`, voir
+     CLAUDE.md), l'URL publique est dans sa reponse
+   - Les credentials de demo : dans `db/seeds.rb` / `doc/memory/jeu_de_donnees.md`
+   - Les fonctionnalites a montrer : les AC de la brick et `user_journeys.md`
 
 ### Phase 2 — Exploration et scenarisation
 

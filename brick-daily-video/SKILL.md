@@ -29,10 +29,20 @@ video + un message au client »).
    et la liste des changements. Rédigé, relu contre la checklist anti-IA, et
    **confirme par l'utilisateur avant envoi** (message sortant vers le client).
 
+**L'ordre est la video D'ABORD, le message ENSUITE, et il ne se negocie pas.** Le
+message porte le lien court de la video : sans video publiee, il n'y a rien a
+confirmer. On ne presente jamais un brouillon de message a l'utilisateur avant que
+la video soit rendue, verifiee (freezedetect) et publiee. Constat repete (aout
+2026) : l'agent redigeait le message et attendait le go, et l'utilisateur devait lui
+rappeler de faire la video. Le SEUL point ou l'utilisateur intervient dans ce skill
+est la confirmation du message, video deja en ligne.
+
 ## Rassembler les changements du jour
 
-Croiser trois sources, puis **faire valider la liste par l'utilisateur** (c'est
-lui qui sait ce qui est presentable et ce qui attend encore) :
+Croiser trois sources. La liste est un CALCUL (tracker + git + videos du jour), pas
+une opinion : on ne la fait pas valider, on l'ecrit en tete du bilan et
+l'utilisateur la corrige au moment de confirmer le message s'il veut retirer un
+item :
 
 - **Tracker** : issues passees a `fixed` aujourd'hui (`get_destination_tracker_issues`),
   chacune est un changement candidat, taguee mockup ou code selon la phase.
@@ -86,8 +96,9 @@ la liste des changements (avant), cartons + assemblage + envoi (apres).
 ## Process
 
 1. **Liste du jour** : croiser tracker (`fixed` aujourd'hui) + git + videos deja
-   produites. Tagger chaque changement mockup/code. **La faire valider par
-   l'utilisateur** — c'est le sommaire du bilan.
+   produites. Tagger chaque changement mockup/code. C'est le sommaire du bilan : on
+   l'ecrit, on ne le fait pas valider (l'utilisateur le corrige a l'etape 7 s'il
+   veut retirer un item du message).
 2. **Chapitres** : reutiliser les mp4 deja archives du jour ; filmer les autres
    par sous-agents (section ci-dessus), regles code-video ou mockup-video selon
    le tag. Chacun livre `$WORK/chap-NN/out/output.mp4`.
@@ -134,7 +145,8 @@ la liste des changements (avant), cartons + assemblage + envoi (apres).
 
 ## Validation gate
 
-- [ ] Liste des changements du jour validee par l'utilisateur (mockup + code)
+- [ ] Liste des changements du jour ecrite en tete du bilan (mockup + code), calculee tracker + git
+- [ ] Video rendue, verifiee et PUBLIEE AVANT toute redaction du message
 - [ ] Chapitres reutilises quand deja filmes, refilmes seulement si absents
 - [ ] UNE video « Bilan du [date] », intro + un chapitre par changement + outro
 - [ ] Cartons a la resolution du screencast, transition (whoosh SFX) sur chacun
