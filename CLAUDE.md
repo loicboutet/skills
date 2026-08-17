@@ -243,6 +243,42 @@ parentheses, deux-points, ou refaire la phrase en deux.
 - **Specs = source de verite** : le code derive des specs, pas l'inverse
 - **Tracabilite** : chaque ligne de code reference un critere d'acceptance
 
+## Rendre compte a l'humain : le format, toujours le meme
+
+L'humain qui te lit suit dix projets en parallele et a quelques secondes par message
+pour savoir s'il a quelque chose a faire. Un retour qui l'oblige a lire pour trouver la
+question est un retour rate. Donc TOUT compte rendu, point d'etape, fin de skill ou fin
+de tache commence par la meme grille, dans cet ordre, sans preambule :
+
+```
+ETAT : <un libelle net> — EN ATTENTE DE TA DECISION / <ETAPE> TERMINEE / EN COURS (<ou>) / BLOQUE (<par quoi>)
+
+Situation : 2 a 3 phrases, l'essentiel, pas l'historique.
+
+[Pour CHAQUE decision attendue, un bloc :]
+A decider : <la question, en une ligne>
+  Choix :
+    1. <option> — avantages / inconvenients
+    2. <option> — avantages / inconvenients
+  Recommandation : <ton choix, et pourquoi en une phrase>
+
+Prochaines etapes : <ce que tu suggeres de faire ensuite, si une etape est finie>
+```
+
+Regles :
+- **L'ETAT en premiere ligne, toujours.** S'il n'y a rien a decider, il le dit
+  (« TERMINEE », « EN COURS »), et le message peut s'arreter apres la Situation et
+  les Prochaines etapes. Un point d'etape sans decision tient en 3 lignes.
+- **Une decision = un bloc Situation-libre / Choix / Recommandation.** Plusieurs
+  decisions = plusieurs blocs, dans l'ordre d'urgence. Jamais une question noyee dans
+  un paragraphe. Jamais de choix sans recommandation : c'est toi l'expert, l'humain
+  tranche a partir de ton avis, il ne le fabrique pas.
+- **Le detail vient APRES la grille**, et seulement s'il sert une decision (preuve,
+  chiffre, chemin de fichier). Ce qui n'aide pas a decider ne se dit pas ; c'est dans
+  le journal ou l'artefact, avec le chemin.
+- Ce format vaut pour ce que tu dis a l'HUMAIN de l'atelier. Les textes destines au
+  client suivent la section « Ecriture client », pas celle-ci.
+
 ## Sous-agents
 
 Si tu geres le process global (pas une tache unique) :
@@ -271,6 +307,16 @@ outil existe et fait le travail a ta place : lance-le toi-meme, sans demander.
 - Ne bloque la main a l'utilisateur que si, logs a l'appui, la panne depend de
   lui (secret manquant, decision produit), pas pour une erreur que tu peux
   corriger.
+
+## GitHub : `gh`, pas les tools MCP `github_*`
+
+`gh` (GitHub CLI) est installe et authentifie sur tous les VPS agents (`GH_TOKEN` du
+developpeur, pose par la plateforme dans `/etc/profile.d`). Pour tout ce qui touche
+GitHub (repos, PR, issues, workflows, secrets, releases), utilise `gh` : `gh repo
+create`, `gh pr create`, `gh run list`, `gh secret set`… Les tools MCP `github_*`
+(`github_create_repository`, `github_add_secrets`, `github_workflow_status`) sont
+deprecies : ils restent en place le temps de la transition, ne les utilise plus dans
+un nouveau flux. Decision Loic 17/08/2026.
 
 ## Commandes autorisees
 

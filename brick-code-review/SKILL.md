@@ -188,7 +188,8 @@ bin/rails test:system 2>&1 | tail -20
 - [ ] Tous les tests passent, aucun skip sans raison
 - [ ] Si un test revele un bug → le corriger fait partie de la review
 - [ ] **CI** : un workflow joue les deux suites sur push/PR, a REELLEMENT tourne sur le
-      dernier commit (`github_workflow_status`) et gate le deploiement. Absente → la
+      dernier commit (`gh run list --limit 3` puis `gh run view <id>` ; `gh` est
+      installe et authentifie sur les VPS) et gate le deploiement. Absente → la
       creer ici, pas a la brique suivante.
 
 Ne JAMAIS affaiblir un critere pour faire passer un test : soit c'est un bug (fix),
