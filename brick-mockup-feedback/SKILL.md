@@ -45,6 +45,15 @@ filmant les changements du jour avec `brick-mockup-video`.
 
 4. **Ne jamais toucher au vrai code ici** : on est en phase mockup, on corrige des vues mockees.
 
+## Todos : les suites humaines partent dans `todo_tool`
+
+Ce qui reste a faire PAR L'HUMAIN a la fin du traitement (repondre au client
+sur un point de scope, trancher un hors-spec, envoyer une facture ou un
+acces) devient une todo via l'outil MCP `todo_tool` (action `create`, titre
+« <Client> : <quoi> », note = contexte + source). Rattachee d'office a l'app de
+la session. `todo_tool list` avant, pour ne pas doublonner. Jamais de todo pour
+ce que tu as traite toi-meme.
+
 ## Validation gate
 
 - [ ] Retours rassembles depuis tracker + emails + WhatsApp + Drive partage

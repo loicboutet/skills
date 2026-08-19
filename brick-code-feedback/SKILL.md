@@ -45,6 +45,15 @@ changements du jour.
 4. **Commiter apres chaque tache**, ne pas push sans demande explicite. Tests verts avant de
    marquer `fixed`.
 
+## Todos : les suites humaines partent dans `todo_tool`
+
+Ce qui reste a faire PAR L'HUMAIN a la fin du traitement (repondre au client
+sur un point de scope, trancher un hors-spec, envoyer une facture ou un
+acces) devient une todo via l'outil MCP `todo_tool` (action `create`, titre
+« <Client> : <quoi> », note = contexte + source). Rattachee d'office a l'app de
+la session. `todo_tool list` avant, pour ne pas doublonner. Jamais de todo pour
+ce que tu as traite toi-meme.
+
 ## Validation gate
 
 - [ ] Retours rassembles depuis tracker + emails + WhatsApp + Drive partage

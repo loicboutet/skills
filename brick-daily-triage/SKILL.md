@@ -94,6 +94,17 @@ des brouillons confirmes avant envoi** (message sortant vers le client).
   chapitre + message recap au client).
 - **Rien a faire** → le dire (journee calme), pas de video.
 
+## Todos : ce qui reste a l'humain part dans `todo_tool`
+
+Chaque point a trancher, chaque reponse client a valider, chaque envoi (facture,
+contrat, acces) que tu ne peux pas faire toi-meme devient une todo via l'outil
+MCP `todo_tool` (action `create`) : titre « <Client> : <quoi> », notes = le
+contexte en une phrase + la source (ID du mail, canal). La todo est rattachee
+d'office a l'app/assistant de la session ; pour une autre app, `target:
+"app:<id>"` (ids via `app_tool list`). `todo_tool list` AVANT de creer : pas de
+doublon, on complete la note existante (`update`). Jamais de todo pour ce que
+tu as fait ou peux faire toi-meme.
+
 ## Validation gate
 
 - [ ] Tous les canaux ramasses (tracker + emails + WhatsApp + Drive), canal
@@ -101,6 +112,7 @@ des brouillons confirmes avant envoi** (message sortant vers le client).
 - [ ] Retours hors-tracker traces en issues
 - [ ] Chaque item classe : actionnable in-scope / point a trancher, + type
 - [ ] Points a trancher jamais agis en silence, spec citee, remontes a l'humain
+- [ ] Chaque point a trancher / suite humaine posee dans `todo_tool` (sans doublon)
 - [ ] Actionnable traite via le bon skill, tracker a jour, tests verts, commit sans push
 - [ ] Reponse preparee sur le canal d'origine (brouillon email / message WhatsApp /
       commentaire tracker), relue anti-IA, confirmee avant envoi
