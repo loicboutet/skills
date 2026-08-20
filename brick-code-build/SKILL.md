@@ -45,6 +45,19 @@ mi-parcours : a 11 taches sur 26, un orchestrateur a « conclu » et rendu des r
 comme si la brique etait close. Mets cette consigne dans le brief de tout sous-agent
 qui delegue a son tour.
 
+**Tenir la nuit sans relance.** Retour terrain 08/2026 : un agent « qu'il faut relancer
+sans arret » ne peut pas travailler la nuit, et c'est la nuit que la chaine rapporte.
+Concretement :
+
+- Tant qu'il reste des taches `todo` dans le kanban de la brick, tu enchaines. La fin
+  d'un lot n'est PAS une fin de tour : mini-recette du lot, commit, tache suivante.
+- Tu ne t'arretes que sur l'un de ces trois cas : kanban vide (→ review), decision
+  qui appartient a l'humain (consigne-la et continue sur les taches qui n'en
+  dependent pas), ou blocage technique que trois tentatives documentees n'ont pas
+  leve. « J'ai fini le lot 2 » n'est aucun des trois.
+- Un point d'etape, si on t'en demande un, se donne SANS terminer le tour : tu le
+  poses et tu continues dans le meme tour.
+
 ## LA REGLE DU DEFAUT CONNU (elle prime sur tout le reste de ce skill)
 
 Un defaut de l'une de ces quatre familles, une fois CONSTATE par qui que ce soit et a

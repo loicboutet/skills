@@ -103,6 +103,36 @@ ecrit le code.** (Audit qualite 08/2026 : Gespilot 61/61 AC auto-coches dont un 
   rapport ; un ecart invalide toute la preuve du critere, qui est refaite. (Ce rejeu a
   trouve 3 ecarts sur 10 lors de l'audit qualite 08/2026.)
 
+## Convergence : pas de nouvelle passe de recette sans solde de la precedente
+
+Une recette qui tourne en boucle (8 passes sur un meme lot, du nouveau a chaque fois)
+n'est pas de la rigueur, c'est un process qui fuit. Provenance : retour terrain 08/2026,
+l'agent relançait des recettes alors que, interroge, il admettait que les trouvailles
+precedentes n'etaient ni toutes corrigees ni consignees.
+
+Avant TOUTE nouvelle passe de recette (recetteur, recette-naive, rejeu), reponds par
+ecrit, preuves a l'appui, a ces deux questions ; un seul « non » INTERDIT la passe :
+
+1. **« Tout ce que la passe precedente a trouve est-il corrige ? »** Chaque trouvaille
+   a un statut : CORRIGEE (avec la preuve rejouee, comme un AC) ou REPORTEE (avec le
+   motif ecrit et l'accord consigne). Pas de troisieme statut, pas de « en cours ».
+2. **« La memoire est-elle a jour ? »** Cahier de recette, fichiers de consignation,
+   doc/memory : les trouvailles corrigees y sont soldees, les reportees y sont
+   inscrites. Sinon la passe suivante re-decouvre les memes defauts et le compte
+   de « nouveautes » ment.
+
+Et deux regles de bouclage :
+
+- **Une trouvaille deja vue qui ressort = echec de process, pas une nouveaute.**
+  Elle ne regonfle pas le compteur ; elle declenche la question « pourquoi la
+  correction ou la consignation a-t-elle saute ? », et la reponse s'ecrit.
+- **Deux passes successives qui apportent chacune du nouveau → on ne relance pas
+  une troisieme a l'aveugle.** On s'arrete, on fait UN balayage outille complet
+  (cahier + outils + parcours), on solde tout, et la passe suivante doit sortir
+  quasi vide. Si elle ne l'est pas, on remonte a l'humain avec le journal des
+  passes : c'est le perimetre ou la methode qui est en cause, pas la quantite
+  de recettes.
+
 ## Process
 
 ### 1. Cahier de recette : l'executer, l'etendre, jamais le rabaisser
