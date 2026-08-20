@@ -248,6 +248,10 @@ On ne les supprime JAMAIS : ce sont des tests de regression.
   l'utilisateur, apres validation du client ; l'agent ne la demande pas, ne la fait
   pas, ne la relance pas
 
+**Accès prod** : toute lecture ou vérification en production passe par kamal
+depuis le dossier du projet — voir `/kamal` (règle d'or : `kamal app exec --reuse`,
+jamais de deploy manuel, jamais les seeds pour deviner les données prod).
+
 ## Ensuite
 
 → `brick-code-video` pour filmer le correctif, puis reboucler `brick-code-feedback`.

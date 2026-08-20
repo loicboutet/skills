@@ -554,6 +554,10 @@ de couverture et de conformite (le rapport de parite se publie avec
 Si NEEDS FIXES → lister les fixes. Pour chaque fix, `/brick-code-fix` (test qui reproduit
 → fix → meme bug ailleurs → re-check navigateur → taxonomie), puis re-derouler la recette.
 
+**Accès prod** : toute lecture ou vérification en production passe par kamal
+depuis le dossier du projet — voir `/kamal` (règle d'or : `kamal app exec --reuse`,
+jamais de deploy manuel, jamais les seeds pour deviner les données prod).
+
 ## Ensuite
 
 → `brick-code-video` (filmer la livraison), + `brick-code-guide` / `brick-code-walkthrough`.

@@ -105,6 +105,10 @@ d'office a l'app/assistant de la session ; pour une autre app, `target:
 doublon, on complete la note existante (`update`). Jamais de todo pour ce que
 tu as fait ou peux faire toi-meme.
 
+**Accès prod** : toute lecture ou vérification en production passe par kamal
+depuis le dossier du projet — voir `/kamal` (règle d'or : `kamal app exec --reuse`,
+jamais de deploy manuel, jamais les seeds pour deviner les données prod).
+
 ## Validation gate
 
 - [ ] Tous les canaux ramasses (tracker + emails + WhatsApp + Drive), canal
