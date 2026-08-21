@@ -544,6 +544,18 @@ curl -H "Authorization: Bearer $MCP_TOKEN" \
   $PLATFORM_API_URL/api/v1/bricks/{brick_id}/videos
 ```
 
+3b. Supprimer une video (mauvais export, doublon, mauvaise categorie) : recuperer
+son `id` via la liste ci-dessus, puis
+```bash
+curl -X DELETE -H "Authorization: Bearer $MCP_TOKEN" \
+  $PLATFORM_API_URL/api/v1/bricks/{brick_id}/videos/{video_id}
+```
+L'asset Mux est nettoye automatiquement ; si la video etait le lien de
+livraison de la brick, le lien retombe sur la video restante la plus recente.
+(Rappel : re-uploader avec le MEME titre REMPLACE l'ancienne — pour une
+correction, prefere ce remplacement, la suppression est pour ce qui n'aurait
+jamais du exister.)
+
 4. Optionnel : mettre a jour le statut de la brick :
 ```
 brick_tool(action: "update", id: BRICK_ID, status: "test")
