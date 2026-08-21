@@ -1,6 +1,6 @@
 ---
 name: brick-daily-triage
-description: "Point d'entree quotidien : va voir emails + WhatsApp + tracker (+ Drive), repere ce qu'il y a a faire, verifie le scope de chaque demande (comme les skills feedback), traite l'actionnable, prepare une reponse sur le canal d'origine, et escalade les points a trancher. Enchaine par defaut sur brick-daily-video, SAUF s'il reste des decisions pour l'humain. Utilise /brick-daily-triage en debut de journee ou pour faire le tour de ce qui est arrive."
+description: "Point d'entree quotidien : va voir emails + WhatsApp + Slack + tracker (+ Drive), repere ce qu'il y a a faire, verifie le scope de chaque demande (comme les skills feedback), traite l'actionnable, prepare une reponse sur le canal d'origine, et escalade les points a trancher. Enchaine par defaut sur brick-daily-video, SAUF s'il reste des decisions pour l'humain. Utilise /brick-daily-triage en debut de journee ou pour faire le tour de ce qui est arrive."
 ---
 
 # Brick Daily Triage — le tour de ce qu'il y a a faire, puis on execute
@@ -32,6 +32,9 @@ Meme collecte que `brick-mockup-feedback` / `brick-code-feedback`, mais on
   assignees, dont celles creees par le widget de feedback).
 - **Emails** : `gmail_list_emails` / `gmail_read_email` sur les contacts du projet.
 - **WhatsApp** : messages recents du client.
+- **Slack** : `slack_tool` (action accounts, puis history sur les canaux du
+  projet avec `oldest` = dernier passage ; search pour retrouver un fil).
+  Lecture seule pendant le triage : jamais d'action send ici.
 - **Drive partage** : docs de retours deposes (`google_drive_search`).
 
 Consolider et **dedupliquer** (meme demande sur deux canaux = une entree, mais on
@@ -77,6 +80,9 @@ trancher), preparer la reponse au client selon son origine :
   sinon `gmail_create_draft`). Ne PAS envoyer : brouillon a relire.
 - **Origine WhatsApp** → **message WhatsApp pret a envoyer** (texte prepare sur le
   WhatsApp du projet). Ne PAS envoyer sans validation.
+- **Origine Slack** → **message pret a envoyer** (texte prepare, canal + thread_ts
+  notes). Ne PAS envoyer sans validation : `slack_tool` action send ecrit SOUS LE
+  NOM de Loic.
 - **Origine tracker / widget** → commentaire sur l'issue (`tracker_comment_tool`)
   + statut a jour ; le detail visuel part dans le bilan `brick-daily-video`.
 
@@ -111,14 +117,14 @@ jamais de deploy manuel, jamais les seeds pour deviner les données prod).
 
 ## Validation gate
 
-- [ ] Tous les canaux ramasses (tracker + emails + WhatsApp + Drive), canal
+- [ ] Tous les canaux ramasses (tracker + emails + WhatsApp + Slack + Drive), canal
       d'origine garde pour chaque item
 - [ ] Retours hors-tracker traces en issues
 - [ ] Chaque item classe : actionnable in-scope / point a trancher, + type
 - [ ] Points a trancher jamais agis en silence, spec citee, remontes a l'humain
 - [ ] Chaque point a trancher / suite humaine posee dans `todo_tool` (sans doublon)
 - [ ] Actionnable traite via le bon skill, tracker a jour, tests verts, commit sans push
-- [ ] Reponse preparee sur le canal d'origine (brouillon email / message WhatsApp /
+- [ ] Reponse preparee sur le canal d'origine (brouillon email / message WhatsApp ou Slack /
       commentaire tracker), relue anti-IA, confirmee avant envoi
 - [ ] Enchainement `brick-daily-video` UNIQUEMENT si aucun point a trancher en attente
 
