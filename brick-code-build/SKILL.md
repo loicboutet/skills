@@ -165,6 +165,13 @@ par la maquette, et livres tous les deux.
    ```
 3. **Remplacer les donnees fictives** par les vraies (`user[:name]` → `user.name`)
 4. **Garder les memes noms de partials** pour faciliter la comparaison
+4b. **Le layout FAIT PARTIE de la maquette.** Sidebar, topbar, footer, navigation :
+   ces partials de layout se transcrivent et se verifient avec la meme rigueur que
+   les vues. Retour terrain 21/08/2026 (sharifunding B2) : « tout etait bon sauf
+   les sidebars » — l'agent les avait ignorees parce que ce sont des partials de
+   layout et pas des vues standard. Une page n'est iso-maquette que si son cadre
+   l'est aussi : memes entrees de menu, memes libelles, memes etats actifs, memes
+   styles.
 5. **Ne JAMAIS supprimer `/mockups/` ni ses routes, et les laisser ACCESSIBLES
    EN PRODUCTION.** C'est voulu : le client suit les briques a venir sur l'app
    livree. Le namespace reste dans le repo pour toute la vie du projet, cumulatif

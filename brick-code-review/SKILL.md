@@ -249,6 +249,12 @@ node ~/.claude/skills/outils-recette/style_diff.js --pairs pairs.json \
   --out doc/memory/brick-{N}/parite/
 ```
 
+**Le perimetre de chaque paire est la PAGE ENTIERE, layout compris** : sidebar,
+topbar, footer, navigation. Pas seulement le contenu central. (Retour terrain
+21/08/2026, sharifunding B2 : « tout etait bon sauf les sidebars » — jamais
+comparees parce que rendues par des partials de layout. Une paire qui exclut le
+cadre valide une page qui n'existe pas.)
+
 Tu ne juges ensuite a l'oeil que le residu : les ecarts que l'outil signale et que
 tu dois trancher (corriger, ou justifier par ecrit avec la spec qui l'exige). Le
 rapport genere est celui qu'on publie au client
