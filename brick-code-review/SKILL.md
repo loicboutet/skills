@@ -66,6 +66,22 @@ regle « le cahier vient de la reanalyse »), et deroule quand meme la taxonomie
 parite, la matrice de permissions et la chasse aux facades — ce sont eux qui trouvent les
 defauts, pas les artefacts.
 
+## Apres le verdict READY : statut « finished » + acces de test
+
+Quand le verdict est READY, que le code est termine et que le walkthrough est
+cree et publie mais que la livraison n'est PAS encore partie au client :
+
+1. `brick_tool(action: "update", id: BRICK_ID, status: "finished")` — le
+   planning affiche « Terminé — à envoyer au client », l'humain sait qu'il ne
+   reste que l'envoi.
+2. Renseigner `test_access` sur la brick : l'URL et les comptes/mots de passe
+   de TEST que l'humain enverra au client (solution temporaire en attendant
+   une vraie gestion des logins). Sans ce champ rempli, l'envoi au client
+   bloque sur « c'est quoi les acces ? ».
+
+Le passage en `test` (livre) reste le geste de l'HUMAIN, au moment de l'envoi
+reel au client.
+
 ## Quand utiliser
 
 - Avant de livrer une brick au client
