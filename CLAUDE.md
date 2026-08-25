@@ -70,8 +70,10 @@ une conclusion en fin de tache. Range par domaine, partage entre tous les projet
 **Transverse (rythme quotidien)** : `/brick-daily-triage` le matin (va voir emails + WhatsApp +
 tracker, trie par scope, traite l'actionnable, prepare une reponse sur le canal d'origine, escalade
 les points a trancher) ; `/brick-daily-video` le soir (assemble TOUS les changements du jour,
-mockup + code, en un bilan video chapitre + message recap). Triage enchaine sur video par defaut,
-sauf s'il reste des decisions pour l'humain. C'est la sortie commune des deux boucles feedback.
+mockup + code, en un bilan video chapitre + message recap). Triage enchaine sur video
+SYSTEMATIQUEMENT des qu'il y a des changements produits : les points a trancher partent en todos
+et dans le compte rendu APRES la video, ils ne suppriment jamais le bilan (decision Loic
+25/08/2026). C'est la sortie commune des deux boucles feedback.
 
 **Hors-cycle** : `/brick-promo-video` (video de vente en motion design, hors livraison d'une brick) ;
 `/brick-analysis-retrofit` (UNE fois par projet ANCIEN : reconstitue `objectif.md`, `decisions.md`
@@ -107,6 +109,9 @@ ANALYSIS → [DESIGN] → MOCKUP ↻ → CODE ↻ → Brick suivante
     (NEEDS FIXES → fixes → nouvelle passe sous la porte de convergence, sans relance
     humaine) → sur READY : `code-walkthrough` + `code-guide`, statut `finished` +
     `test_access` → **STOP : l'envoi de la livraison est humain**.
+  - Chaine QUOTIDIENNE : `daily-triage` → `daily-video` dans le meme tour des qu'il y
+    a des changements produits ; les points a trancher voyagent dans le compte rendu
+    apres la video, ils ne la suppriment pas.
   - Les trois seuls arrets legitimes en chemin : une decision qui appartient a
     l'humain ET dont le skill suivant depend (sinon on la consigne et on continue),
     un envoi client, un blocage technique que trois tentatives documentees n'ont pas

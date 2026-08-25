@@ -96,14 +96,20 @@ ton 5000.dev. **Relu contre la checklist anti-IA du prompt** (pas de tiret
 cadratin, pas de vocabulaire IA, pas de triades). **Tous les envois sortants sont
 des brouillons confirmes avant envoi** (message sortant vers le client).
 
-## 5. Enchainer (ou pas)
+## 5. Enchainer : la video se fait TOUJOURS quand il y a des changements
 
-- **Des points a trancher en attente** → presenter la synthese (quoi, quel canal,
-  quelle spec concernee, quelle decision attendue) + les brouillons de reponse
-  correspondants. **S'arreter la.** Pas de video.
-- **Rien a trancher, des changements produits** → `brick-daily-video` (bilan
-  chapitre + message recap au client).
-- **Rien a faire** → le dire (journee calme), pas de video.
+Regle Loic 25/08/2026 : la chaine du triage DONNE une daily-video. Un point a
+trancher ne supprime pas le bilan du jour, il voyage AVEC.
+
+- **Des changements produits** (par le triage, les feedbacks, ou les boucles
+  mockup/code du jour) → `brick-daily-video` DANS LE MEME TOUR, systematiquement.
+  La video filme ce qui est FAIT ; ce qui attend une decision n'y figure pas
+  comme fait.
+- **Les points a trancher** partent en todos (`todo_tool`) et dans le compte
+  rendu final, APRES la video : synthese (quoi, quel canal, quelle spec, quelle
+  decision attendue) + brouillons de reponse. Ils ne bloquent que ce qui depend
+  d'eux, jamais le bilan.
+- **Rien produit et rien a trancher** → le dire (journee calme), pas de video.
 
 ## Todos : ce qui reste a l'humain part dans `todo_tool`
 
@@ -131,10 +137,12 @@ jamais de deploy manuel, jamais les seeds pour deviner les données prod).
 - [ ] Actionnable traite via le bon skill, tracker a jour, tests verts, commit sans push
 - [ ] Reponse preparee sur le canal d'origine (brouillon email / message WhatsApp ou Slack /
       commentaire tracker), relue anti-IA, confirmee avant envoi
-- [ ] Enchainement `brick-daily-video` UNIQUEMENT si aucun point a trancher en attente
+- [ ] Enchainement `brick-daily-video` SYSTEMATIQUE des qu'il y a des changements
+      produits ; les points a trancher sont dans le compte rendu, ils n'ont pas
+      supprime le bilan
 
 ## Ensuite
 
-- Points a trancher → l'humain decide, puis relancer `brick-daily-triage` (ou le
-  skill cible) sur les items debloques.
-- Sinon → `brick-daily-video` a produit le bilan du jour. Fin de journee.
+→ `brick-daily-video` (dans le meme tour, des qu'il y a des changements), puis le
+compte rendu a l'humain : bilan du jour + points a trancher. L'humain decide, on
+relance le skill cible sur les items debloques. Fin de journee.
