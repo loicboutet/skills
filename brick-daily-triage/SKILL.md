@@ -96,19 +96,20 @@ ton 5000.dev. **Relu contre la checklist anti-IA du prompt** (pas de tiret
 cadratin, pas de vocabulaire IA, pas de triades). **Tous les envois sortants sont
 des brouillons confirmes avant envoi** (message sortant vers le client).
 
-## 5. Enchainer : la video se fait TOUJOURS quand il y a des changements
+## 5. Enchainer : la video part seule, jamais avec des decisions en suspens
 
-Regle Loic 25/08/2026 : la chaine du triage DONNE une daily-video. Un point a
-trancher ne supprime pas le bilan du jour, il voyage AVEC.
+Regle Loic 25/08/2026 : la chaine du triage DONNE une daily-video, mais jamais
+tant qu'une decision humaine est en attente — la video se DIFFERE, elle ne se
+supprime pas, et l'humain n'a jamais a la redemander.
 
-- **Des changements produits** (par le triage, les feedbacks, ou les boucles
-  mockup/code du jour) → `brick-daily-video` DANS LE MEME TOUR, systematiquement.
-  La video filme ce qui est FAIT ; ce qui attend une decision n'y figure pas
-  comme fait.
-- **Les points a trancher** partent en todos (`todo_tool`) et dans le compte
-  rendu final, APRES la video : synthese (quoi, quel canal, quelle spec, quelle
-  decision attendue) + brouillons de reponse. Ils ne bloquent que ce qui depend
-  d'eux, jamais le bilan.
+- **Aucun point a trancher, des changements produits** → `brick-daily-video`
+  DANS LE MEME TOUR.
+- **Des points a trancher** → presenter la synthese (quoi, quel canal, quelle
+  spec concernee, quelle decision attendue) + brouillons de reponse, todos via
+  `todo_tool`. **Pas de video a ce stade.** PUIS, des que l'humain a tranche :
+  traiter les items debloques ET enchainer `brick-daily-video` DANS CE MEME
+  TOUR-LA, sans nouvelle relance — la reponse de l'humain est le feu vert de
+  toute la fin de chaine, pas seulement des items.
 - **Rien produit et rien a trancher** → le dire (journee calme), pas de video.
 
 ## Todos : ce qui reste a l'humain part dans `todo_tool`
@@ -137,12 +138,12 @@ jamais de deploy manuel, jamais les seeds pour deviner les données prod).
 - [ ] Actionnable traite via le bon skill, tracker a jour, tests verts, commit sans push
 - [ ] Reponse preparee sur le canal d'origine (brouillon email / message WhatsApp ou Slack /
       commentaire tracker), relue anti-IA, confirmee avant envoi
-- [ ] Enchainement `brick-daily-video` SYSTEMATIQUE des qu'il y a des changements
-      produits ; les points a trancher sont dans le compte rendu, ils n'ont pas
-      supprime le bilan
+- [ ] `brick-daily-video` faite (dans le tour du triage si rien a trancher, sinon
+      dans le tour ou l'humain a tranche) — jamais sautee, jamais redemandee
 
 ## Ensuite
 
-→ `brick-daily-video` (dans le meme tour, des qu'il y a des changements), puis le
-compte rendu a l'humain : bilan du jour + points a trancher. L'humain decide, on
-relance le skill cible sur les items debloques. Fin de journee.
+- Rien a trancher → `brick-daily-video` dans le meme tour, puis compte rendu.
+- Des points a trancher → compte rendu SANS video ; quand l'humain repond, sa
+  reponse debloque la fin de chaine : items traites PUIS `brick-daily-video`,
+  dans ce meme tour, sans qu'il ait a la demander. Fin de journee.
