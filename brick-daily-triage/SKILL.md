@@ -36,6 +36,11 @@ Meme collecte que `brick-mockup-feedback` / `brick-code-feedback`, mais on
   projet avec `oldest` = dernier passage ; search pour retrouver un fil).
   Lecture seule pendant le triage : jamais d'action send ici.
 - **Drive partage** : docs de retours deposes (`google_drive_search`).
+- **Bricks terminées non envoyées** : `brick_tool` — toute brique en statut
+  `finished` depuis plus de 2 jours (le planning l'affiche en rouge « prête
+  depuis N j ») remonte comme DECISION pour l'humain : « prête depuis N jours,
+  toujours pas envoyée au client — j'envoie ? ». C'est le raté sharifunding
+  du 21-25/08 : 4 jours prête sans que personne n'envoie.
 
 Consolider et **dedupliquer** (meme demande sur deux canaux = une entree, mais on
 retient TOUS ses canaux d'origine). Pour tout retour venu hors tracker
