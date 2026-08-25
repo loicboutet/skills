@@ -284,8 +284,9 @@ Après validation client, avant de passer au code :
 
 ## Ensuite
 
-→ `/brick-mockup-review` puis `/brick-mockup-video` pour la validation client
-(boucle avec `/brick-mockup-feedback`).
+→ `/brick-mockup-review` puis `/brick-mockup-video`, **enchaines DANS LE MEME TOUR**
+(memes regles que `brick-mockup-build` : l'arret est a l'ENVOI client, pas entre les
+skills). Boucle avec `/brick-mockup-feedback` a chaque vague de retours.
 
 → Après validation : l'étape 6 de ce skill (normalisation), **puis**
 `/brick-mockup-reanalyse`. Dans cet ordre : la reanalyse pose le tag

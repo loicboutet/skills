@@ -426,8 +426,13 @@ Avant de passer a IMPLEMENTATION :
 - [ ] Le design est coherent entre les pages
 - [ ] Les parcours utilisateurs sont fluides
 - [ ] Les partials sont extraites pour la reutilisation
-- [ ] L'utilisateur a valide
+
+(La validation humaine ne se place pas ici : elle porte sur l'ENVOI au client, apres
+review et video. Gate verte = on enchaine.)
 
 ## Ensuite
 
-→ `brick-mockup-review` (contrôle avant client).
+→ `brick-mockup-review`, **invoquee DANS LE MEME TOUR, sans rendre la main** : le lot
+fini n'est pas un compte rendu, c'est l'entree du controle avant client. Le compte
+rendu a l'humain part quand la video est prete et que l'envoi (son geste) est le seul
+reste.

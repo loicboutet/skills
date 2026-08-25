@@ -234,10 +234,18 @@ Generer `doc/memory/mockups/review.md` :
 
 ## Sortie
 
-- **PRET POUR CLIENT** -> informer l'utilisateur, mockups presentables.
-- **A CORRIGER** -> lister les corrections. Les corrections de mockups passent par
-  `/brick-mockup-build` (jamais modifier les specs sans validation, cf. etape 3).
+L'enchainement est AUTOMATIQUE, dans le meme tour :
+
+- **A CORRIGER** -> corriger seance tenante (via `/brick-mockup-build`, jamais modifier
+  les specs sans validation, cf. etape 3), rejouer les controles impactes, reboucler
+  jusqu'a PRET POUR CLIENT. On ne rend pas la main pour annoncer les corrections.
+- **PRET POUR CLIENT** -> enchainer `brick-mockup-video` directement.
+
+Seule exception : une proposition d'ajout aux SPECS (etape 3) en attente de validation
+humaine bloque, elle, l'enchainement — on la remonte et on s'arrete la.
 
 ## Ensuite
 
-→ `brick-mockup-video` : filmer les parcours pour la validation client.
+→ `brick-mockup-video`, dans le meme tour sur PRET POUR CLIENT. **PUIS STOP : l'envoi
+au client est un geste humain** — le compte rendu (video prete, questions jointes au
+lot) part a ce moment-la.

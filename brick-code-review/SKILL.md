@@ -612,5 +612,14 @@ jamais de deploy manuel, jamais les seeds pour deviner les données prod).
 
 ## Ensuite
 
-→ `brick-code-video` (filmer la livraison), + `brick-code-guide` / `brick-code-walkthrough`.
+L'enchainement est AUTOMATIQUE, dans le meme tour :
+
+- **NEEDS FIXES** → corriger les constats, puis nouvelle passe sous la porte de
+  convergence (« pas de nouvelle passe sans solde »), sans relance humaine. On ne
+  remonte a l'humain que si un constat exige une decision de scope qui lui appartient.
+- **READY** → enchainer directement : `brick-code-walkthrough` puis `brick-code-guide`
+  (memes sources), statut `finished` + `test_access` remplis (cf. section dediee),
+  `brick-code-video` pour les changements du jour. **PUIS STOP : l'envoi de la
+  livraison au client est un geste humain**, le compte rendu final se fait la.
+
 Cloture seulement apres smoke test et 24 h d'error tracker propres.

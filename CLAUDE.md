@@ -95,7 +95,22 @@ ANALYSIS → [DESIGN] → MOCKUP ↻ → CODE ↻ → Brick suivante
         (si pas de charte)  repete jusqu'a validation client)
 ```
 
-- **L'utilisateur valide TOUJOURS le passage d'une etape a l'autre**
+- **Les skills S'ENCHAINENT SEULS a l'interieur d'une etape ; l'humain valide les
+  ENVOIS CLIENT et les decisions de scope**, pas les transitions internes. Regle
+  (decision Loic 25/08/2026) : quand la validation gate d'un skill est verte et
+  qu'aucune decision en attente n'appartient a l'humain, on INVOQUE le skill suivant
+  de la chaine dans le meme tour, sans rendre la main.
+  - Chaine MOCKUP : `mockup-build`/`transcription` → `mockup-review` (A CORRIGER →
+    corriger → rejouer, en boucle) → `mockup-video` → **STOP : l'envoi au client est
+    humain**.
+  - Chaine CODE : `mockup-reanalyse` (verdict PRET) → `code-build` → `code-review`
+    (NEEDS FIXES → fixes → nouvelle passe sous la porte de convergence, sans relance
+    humaine) → sur READY : `code-walkthrough` + `code-guide`, statut `finished` +
+    `test_access` → **STOP : l'envoi de la livraison est humain**.
+  - Les trois seuls arrets legitimes en chemin : une decision qui appartient a
+    l'humain ET dont le skill suivant depend (sinon on la consigne et on continue),
+    un envoi client, un blocage technique que trois tentatives documentees n'ont pas
+    leve. « J'ai fini le build » n'en est pas un : c'est le debut de la review.
 - Chaque skill a une **validation gate** (checklist) et se termine par un pointeur `Ensuite →`
   vers le suivant de son etape : le workflow se navigue tout seul
 - Les etapes MOCKUP et CODE sont des **boucles** : on presente au client, il renvoie ses retours

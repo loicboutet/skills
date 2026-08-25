@@ -440,4 +440,8 @@ modeles »). Et l'orchestrateur attend les retours DANS son tour, puis enchaine.
 
 ## Ensuite
 
-→ `brick-code-review` (pre-livraison).
+→ `brick-code-review`, **invoquee DANS LE MEME TOUR, sans rendre la main**. Kanban vide
++ gates vertes = la review commence, ce n'est pas un compte rendu. On ne s'arrete entre
+les deux que si une decision en attente de l'humain conditionne la review elle-meme
+(rarissime : un perimetre conteste, pas une question de COMMENT). Le compte rendu a
+l'humain se redige au verdict de la review, pas a la fin du build.

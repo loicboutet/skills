@@ -233,4 +233,6 @@ consigne de NE PAS toucher aux autres repertoires.
 
 ## Ensuite
 
-→ livrable. `brick-code-guide` partage les mêmes sources.
+→ `brick-code-guide` (memes sources), enchaine dans le meme tour si pas deja fait.
+La brique passe `finished` (+ `test_access`) et le compte rendu part a l'humain :
+**l'envoi au client reste son geste**.

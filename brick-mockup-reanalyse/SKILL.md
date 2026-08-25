@@ -423,4 +423,7 @@ re-rendre le verdict. PRET est la seule porte d'entree de `brick-code-build`.
 
 ## Ensuite
 
-→ `brick-code-build` (uniquement sur verdict PRET).
+→ `brick-code-build`, **invoque DANS LE MEME TOUR sur verdict PRET** (le client a deja
+valide : rien n'attend l'humain entre la reanalyse et le code, sauf le pre-vol
+anti-collision de `brick-code-build` s'il detecte un autre agent). Sur A CORRIGER, on
+corrige et on rejoue ici meme — cf. « Discipline » en tete de skill.
