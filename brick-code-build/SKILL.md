@@ -238,6 +238,26 @@ Guide complet : artefact nexrai `feedback_widget_install` (app 37).
 
 ## Process
 
+### 0. Pre-vol anti-collision : qui tient la brique ?
+
+Deux agents qui construisent la meme brique sans le savoir, ca coute un build complet
+jete (monmentor B2, 24-25/08/2026 : deux implementations paralleles des memes 59 taches,
+l'une abandonnee sur une branche). AVANT d'ouvrir la premiere tache :
+
+1. **Lire la brick** via `brick_tool` (action `get`) : si le champ « tenu par »
+   (`held_by`) porte quelqu'un d'autre que toi → STOP, remonter a l'humain, ne rien
+   coder.
+2. **Regarder le repo** : `git log --all --since=36.hours --format="%ae %ad %s"`.
+   Un AUTRE auteur a committe dans les 36 h → STOP, remonter a l'humain (« X est
+   actif sur ce repo depuis {date}, je ne demarre pas sans arbitrage »). Un
+   `git fetch` d'abord : l'autre agent peut etre sur un autre poste.
+3. Si la voie est libre : **poser `held_by`** via `brick_tool` (action `update`,
+   `held_by: "{ton user / ton poste}"`) avant la premiere ligne de code. Le champ se
+   vide au verdict de la review (ou quand l'humain reassigne).
+
+Ce pre-vol vaut aussi pour une REPRISE apres interruption : si le dernier commit du
+repo n'est pas de toi, on relit avant d'ecrire.
+
 ### 1. Ouvrir une tache
 
 Le kanban vient de la reanalyse. Nommage : `{NNN}-{titre}-{etat}.md` — etats
@@ -376,14 +396,35 @@ Avant d'implementer un retour client, TOUJOURS :
 - Pages publiques : appliquer `/brick-seo` (helpers SEO, friendly_id, 301, sitemap au
   build Kamal, staging noindex, CWV)
 
-## Sous-agents
+## Sous-agents : PARALLELISER en worktrees (parametre du process, MESURE)
 
-Decouper en taches independantes, 1 sous-agent par tache, 1 sous-agent par appel.
-Toi = orchestrateur qui delegue, verifie la preuve executee, et passe a la suivante.
+Decouper en taches independantes, 1 sous-agent par tache. Toi = orchestrateur qui
+delegue, verifie la preuve executee, et merge au fil de l'eau.
+
+**Les taches independantes d'un meme lot se lancent EN PARALLELE, chacune dans son
+worktree git** (`isolation: "worktree"` sur l'appel Agent) : chaque sous-agent code sur
+sa copie isolee du repo, l'orchestrateur merge chaque branche `worktree-agent-*` des
+qu'elle rend, puis joue la mini-recette de fin de lot sur l'etat merge. Mesure monmentor
+B2 (25/08/2026, meme base de depart, meme spec) : la run parallele (13 merges worktree,
+3-5 taches de front) a rendu build + review en **~25 h d'horloge et ~2 000 messages** ;
+la run sequentielle a mis **5 jours calendaires et ~7 900 messages** pour le meme
+parcours. Le sequentiel n'est pas une variante prudente, c'est un facteur 4 de perdu.
+
+Regles du parallele :
+- Front de 3-5 taches = un lot. On ne depasse pas : au-dela, les merges se marchent
+  dessus et la mini-recette arrive trop tard.
+- Deux taches qui touchent les memes fichiers (meme modele, meme layout, meme
+  controleur) ne se parallelisent PAS : elles se sequencent dans le lot.
+- Chaque merge se fait des que le sous-agent rend (pas de barriere « tout le lot »),
+  suite de tests apres chaque merge ; un conflit de merge se resout par l'orchestrateur,
+  jamais en re-demandant au sous-agent de « re-pousser ».
+- La mini-recette de fin de lot (section 4 du Process) se joue sur l'etat TOUT merge,
+  jamais dans un worktree.
+
 Transmettre au sous-agent : le fichier de tache (perimetre + DoD), **les lignes de
 `recette.md` qui le jugeront**, la regle du defaut connu, et les regles de decision.
 Modele : `model: "opus"` pour chaque sous-agent, sans exception (voir « Repartition des
-modeles »). Et l'orchestrateur attend le retour DANS son tour, puis enchaine.
+modeles »). Et l'orchestrateur attend les retours DANS son tour, puis enchaine.
 
 ## Passage a la brick suivante
 

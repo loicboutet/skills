@@ -18,7 +18,31 @@ les AC. On n'ouvre pas le code sur un verdict A CORRIGER.
 ## Quand utiliser
 
 - Les maquettes de la brique sont validees par le client (fin de la boucle MOCKUP)
-- JAMAIS pendant la boucle mockup : c'est une etape de sortie, pas une review intermediaire
+- JAMAIS pendant la boucle mockup : c'est une etape de sortie, pas une review
+  intermediaire. Les controles qui produisent des QUESTIONS client (affiche/saisi,
+  donnees fabriquees, regles d'argent ambigues) ont leur version courte dans
+  `/brick-mockup-review` (« Pre-vol reanalyse ») : les questions partent AVEC chaque
+  envoi de lot, pas apres la validation. Ici on VERIFIE et on TRANCHE, on ne demande
+  plus rien au client.
+
+## Discipline : la reanalyse se deroule d'un seul tenant
+
+Retour terrain 08/2026 : « il est top mais il s'arrete beaucoup ». Un arret entre deux
+sections = une relance humaine = une demi-journee perdue. Les 12 sections s'enchainent
+DANS LE MEME TOUR, y compris les boucles de correction :
+
+- **A CORRIGER n'est pas une fin de tour.** Un ecart constate se corrige seance
+  tenante (maquette ou spec, regle de l'etape 8), l'etape impactee se rejoue, et on
+  continue. On ne rend pas la main pour annoncer qu'on va corriger.
+- On ne s'arrete que sur deux cas : une decision qui appartient a l'humain (changement
+  visible de ce que le client a valide → signalement AVANT, cf. etape 8), ou un blocage
+  technique que trois tentatives documentees n'ont pas leve. « J'ai fini la section 5 »
+  n'est aucun des deux : section 6.
+- Les sous-agents (mesures, navigation, matrices) se lancent en parallele quand ils
+  sont independants, et on attend leurs retours DANS le tour (discipline de tour de
+  `/brick-code-build`).
+- Le compte rendu se redige UNE fois, au verdict (PRET ou A CORRIGER final), pas a
+  chaque section.
 
 ## Pre-requis
 

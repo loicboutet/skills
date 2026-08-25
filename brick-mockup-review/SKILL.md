@@ -180,6 +180,32 @@ Avec `doc/memory/style_guide.html` et `doc/memory/user_journeys.md` :
 - [ ] Etats d'erreur (formulaire invalide) visibles au moins une fois
 - [ ] Actions destructives avec confirmation
 
+### 6b. Pre-vol reanalyse : les bonnes questions partent AVEC le lot
+
+La reanalyse (post-validation) pose d'excellentes questions — mais elle arrive APRES que
+le client a valide, le pire moment pour lui en poser : il a tourne la page, et chaque
+question rouvre ce qu'il croyait clos. Le bon moment, c'est MAINTENANT : le client va de
+toute facon passer du temps sur ce lot, une question jointe a l'envoi lui coute une
+phrase de reponse.
+
+Donc, a CHAQUE envoi d'un lot au client, derouler en version courte les controles de
+`/brick-mockup-reanalyse` qui produisent des questions, sur les ecrans du lot :
+
+1. **Affiche / saisi** (anti-facade) : toute donnee affichee sans ecran de saisie ni
+   source ecrite → question (« le score client vient d'ou ? ») ou decision proposee.
+2. **Donnees fabriquees** : chaque chiffre/compteur/score visible → sa source reelle
+   prevue, sinon question ou etat vide propose.
+3. **Selecteurs et regles d'argent/droit** : rattachement par defaut, taux, arrondi,
+   droit ambigu → question fermee (« le devis part toujours en TVA 20 % ? »).
+4. **Ambiguites de parcours** relevees en naviguant (etape 1b) : qui recoit quoi, qui
+   valide, que voit tel role.
+
+Sortie : une liste **« Questions jointes au lot »**, formulee client (courtes, fermees,
+une par ligne, referant l'ecran), collee dans le message/la video d'envoi par
+`/brick-mockup-video`. Une question dont on connait la reponse ne se pose pas : on
+tranche et on journalise (`decisions.md`). Objectif chiffrable : au moment de la
+reanalyse, ZERO question nouvelle pour le client — elle verifie, elle ne demande plus.
+
 ### 7. Rapport
 
 Generer `doc/memory/mockups/review.md` :
@@ -197,6 +223,7 @@ Generer `doc/memory/mockups/review.md` :
 ## Scope brique: OK / marquages manquants [liste]
 ## Sync specs: N elements a ajouter aux specs [liste + proposition]
 ## Outil capture: OK / NON integre [details]
+## Questions jointes au lot: N questions [liste formulee client] / aucune
 ## Technique & style: OK / issues [liste]
 
 ## A CORRIGER avant client:
