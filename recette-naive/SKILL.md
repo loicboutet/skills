@@ -26,7 +26,7 @@ navigabilite 24 % et 34 %, trous de perimetre 12 % et 14 %.
 
 ## Deux modes
 
-| | **Mode maquette** (`/brick-mockup-review`, avant le client) | **Mode application** (`/brick-code-review`, section 7b) |
+| | **Mode maquette** (`/brick-mockup-review`, avant le client) | **Mode application** (`/brick-code-review`, passe 1, verificateur R2) |
 |---|---|---|
 | Ce qui est normal | tout est mocke : un bouton inerte ne se signale pas | rien n'est mocke : un bouton inerte est un defaut |
 | Le verificateur tranche contre | l'inventaire des maquettes | le depot et l'app lancee |

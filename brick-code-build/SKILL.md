@@ -434,7 +434,8 @@ modeles »). Et l'orchestrateur attend les retours DANS son tour, puis enchaine.
    defaut d'argent, de permission, de donnee fausse ou de fuite**
 3. `recette.md` : chaque critere porte sa preuve rejouable ou la mention « non couvert
    par le build » ; CI verte sur le dernier commit
-4. Lancer `/brick-code-review` ; c'est son verdict READY / NEEDS FIXES qui decide, pas
+4. Lancer `/brick-code-review` ; c'est son verdict (READY, READY SAUF DECISION HUMAINE,
+   ou NEEDS FIXES entre ses deux passes) qui decide, pas
    une validation humaine de la review
 5. Creer `doc/memory/brick-{N+1}/tasks/`, mettre a jour le README
 

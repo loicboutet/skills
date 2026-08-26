@@ -1,20 +1,50 @@
 ---
 name: brick-code-review
-description: "Pre-livraison : regle du defaut connu qui commande le verdict, execution du cahier de recette derive a la reanalyse, recetteur separe qui rejoue les preuves, rapport de parite maquette/appli (style_diff) et mobile mesure a 390 px, chasse aux facades a l'outil, matrice de permissions, journal de decisions deroule, manifeste de config confronte a l'environnement livre, security-review, smoke test et surveillance post-deploiement. Utilise /brick-code-review avant de livrer une brick au client."
+description: "Pre-livraison bornee a DEUX passes : verrou et gel du perimetre a l'ouverture, pre-vol des outils, puis quatre verificateurs independants EN PARALLELE (recetteur du cahier, recette naive, matrice de permissions, verrou mobile) pendant que l'orchestrateur joue tests, consignation, config et securite ; un lot de fixes ; une passe 2 differentielle limitee a ce que les fixes ont touche ; verdict a deux etages (READY / READY SAUF DECISION HUMAINE / NEEDS FIXES) et journal des passes opposable. Parite et facades en indicateurs a seuil, une seule campagne adossee au tag. Utilise /brick-code-review avant de livrer une brick au client."
 ---
 
 # Brick Review
 
-Validation pre-livraison d'une brick. La review n'ECRIT pas le cahier de recette : il a
-ete derive a la reanalyse, avant la premiere ligne de code, et rempli par le build. La
-review l'EXECUTE, l'etend si la taxonomie ou une regression l'exige, puis deroule les
-checks complementaires. Le cochage final est fait par un recetteur qui n'a pas ecrit le
-code. La brique n'est livree qu'apres le smoke test et 24 h d'error tracker propres.
+Validation pre-livraison d'une brick. La review n'ECRIT pas le cahier de recette (il vient
+de la reanalyse, rempli par le build) : elle le fait EXECUTER par des verificateurs qui
+n'ont pas ecrit le code, corrige ce qu'ils trouvent, rejoue ce qu'elle a corrige, et
+rend un verdict. **Elle tient en deux passes et une journee.** Au-dela, ce n'est plus de
+la rigueur, c'est un process qui fuit, et on remonte a l'humain avec le journal.
 
 > **Modeles et discipline de tour** : ce skill delegue a des sous-agents. Doctrine mesuree,
 > commune a toute la chaine, dans `/brick-code-build` (« Repartition des modeles » et
 > « Discipline de tour ») : tous les sous-agents en `model: "opus"`, et l'orchestrateur
-> n'attend jamais un sous-agent en rendant son tour.
+> n'attend jamais un sous-agent en rendant son tour. **Les verificateurs de la passe 1
+> tournent EN PARALLELE, chacun dans son worktree.**
+
+## Ce que les six dernieres boucles ont mesure (pourquoi ce skill a cette forme)
+
+Autopsie du 26/08/2026 sur yseis, vegetalents, gespilot, arcadesdata, tasteseller et
+monmentor, logs de session a l'appui :
+
+- **Le temps ne part pas dans la review, il part autour.** Occupation machine de 5 a
+  18 % de l'empan calendaire (yseis : 23 h de travail sur 418 h). Une passe dure 2 a
+  7 h quand elle tourne. Les jours viennent des arrets sans verdict (arcadesdata : 22 des
+  23 trous d'une heure ou plus se terminent par une relance humaine, 25 relances
+  vides), des nuits et week-ends, d'un verdict en attente d'un mot humain sur un point
+  deja corrige (yseis : NEEDS FIXES tenu 10 jours), de l'agent reoriente ailleurs, et
+  d'une collision entre deux VPS (monmentor : 26 h jetees).
+- **Le rendement est inverse.** Parite `style_diff` : 558 constats pour 7 ecarts reels
+  (yseis), 654 000 lignes de rapport pour 3 (vegetalents), 831 pour 0 (gespilot),
+  4 079 pour ~17 (monmentor). Cahier : 92 % des criteres n'ont jamais porte un KO,
+  rejoues integralement a chaque passe. Vingt-cinq pour cent des sous-agents filmaient
+  le walkthrough a chaque lot de fixes. A l'inverse : recetteur independant (gespilot,
+  2 h → 11 defauts dont le plus grave, arrive au 11e jour), recette naive (44 % de
+  defauts reels), permissions (requete forgee, cross-tenant, 13 fuites), `mobile_gate`
+  (101 → 0), et le tournage lui-meme (54 defauts APRES un cahier « 0 a remplir »).
+- **La boucle n'avait pas de porte de sortie.** Porte de convergence jamais executee,
+  code neuf et retours client absorbes par la review, fixes qui fabriquent la passe
+  suivante (« six passes, six defauts deplaces »), perimetre qui grossit pendant la
+  mesure (paires 21 → 87, bloquants 427 → 1 123 pendant que le produit s'ameliore),
+  cahiers auto-attestes par le build a 48 % (« 0 critere a remplir », 54 defauts le
+  lendemain).
+- **La contre-preuve** : arcadesdata 25/08, quatre recetteurs en parallele dans des
+  worktrees, boucle en 2,7 h fixes compris.
 
 ## LA REGLE DU DEFAUT CONNU (elle commande le verdict)
 
@@ -31,594 +61,461 @@ n'importe quel moment de la brique, **ne se consigne pas : il se corrige**.
 
 Deux issues, pas trois : **corrige avant de livrer**, ou **verdict NEEDS FIXES et la
 livraison ne part pas**. Aucune troisieme voie appelee « consigne », « argumente »,
-« laisse ouvert », « a trancher » ou « connu ». Un rapport de review qui DECRIT un tel
-defaut sans le fermer n'est pas une review : c'est un aveu.
+« laisse ouvert », « a trancher » ou « connu ». Et la regle ne s'arrete pas aux quatre
+familles : **un critere de recette note KO ne part pas en livraison**, quelle qu'en soit
+la famille (audit qualite 08/2026 : un controle mort, note KO par le recetteur, livre).
 
-**Et la regle ne s'arrete pas aux quatre familles : un critere de recette note KO ne part
-pas en livraison, quelle qu'en soit la famille.** Soit il est corrige et re-prouve, soit
-le verdict est NEEDS FIXES. Un cahier qui porte un KO et un verdict READY se contredit
-lui-meme. (Audit qualite 08/2026 : un controle mort, explicitement note KO par le
-recetteur, est parti en livraison.)
+**Interdit** : ranger un tel defaut dans `decisions.md`, `config.md`, le cahier ou le
+rapport. Une ligne qui decrit un defaut d'argent ou de permission n'est pas une
+decision, c'est un bug ouvert. Provenance : audit qualite 08/2026, devis emis pour le
+mauvais client avec la mauvaise remise, « trouve par la review, laisse ouvert et
+argumente », et cle d'API morte nommee « facade a trancher ».
 
-**Interdit** : ranger un tel defaut dans `decisions.md`, `config.md`, le cahier de
-recette ou ce rapport. **Une ligne qui decrit un defaut d'argent ou de permission n'est
-pas une decision, c'est un bug ouvert.**
+## 0. Ouverture de la review : verrou, gel, pre-vol, budget
 
-PREMIERE ACTION DE LA REVIEW, avant tout le reste : relire `decisions.md`, `config.md`
-et tout fichier de consignation du projet en se demandant, ligne par ligne, « est-ce que
-cette ligne DECRIT un bug ? ». Chaque oui sort du fichier et part en `/brick-code-fix`
-avant le verdict. Le rapport final compte ces lignes.
+Rien de ce qui suit ne commence avant que cette section soit ecrite dans
+`doc/memory/brick-{N}/passes.md` (cree ici, en append-only ; c'est le journal opposable
+de la review).
 
-Provenance : audit qualite 08/2026. Une livraison a emis un devis qui retombait sur le
-mauvais client avec la mauvaise remise (defaut trouve par la review, laisse ouvert et
-argumente) et une cle d'API morte nommee dans le manifeste avec la mention « facade a
-trancher », jamais corrigee. Le process voyait les defauts et les rangeait.
+### 0.1 Verrou d'exclusivite
 
-## Prerequis : projet qui n'a pas suivi la chaine complete
+1. `brick_tool` (action `get`) : si `held_by` porte quelqu'un d'autre → STOP, remonter.
+   Sinon poser `held_by` a ton identite (`brick_tool update held_by:`).
+2. `git fetch && git log --all --since=36.hours --format="%ae %ad %s"` : un autre auteur
+   actif → STOP, remonter. (monmentor B2 : deux `/brick-code-review` sur la meme brique
+   en parallele, memes defauts trouves deux fois, 102 commits a la poubelle.)
 
-Les artefacts `doc/memory/objectif.md`, `decisions.md`, `jeu_de_donnees.md` et
-`config.md` — et le cahier `brick-{N}/recette.md` derive a la reanalyse — n'existent que
-sur les projets passes par la chaine actuelle. Sur un projet plus ancien, NE T'ARRETE PAS
-et ne les fabrique pas retroactivement : mene la review avec ce qui existe
-(`acceptance_criteria.md`, les maquettes, le code), signale en tete de rapport lesquels
-manquaient, ecris ici le cahier de recette qui manque (c'est la seule exception a la
-regle « le cahier vient de la reanalyse »), et deroule quand meme la taxonomie, la
-parite, la matrice de permissions et la chasse aux facades — ce sont eux qui trouvent les
-defauts, pas les artefacts.
-
-## Apres le verdict READY : statut « finished » + acces de test
-
-Quand le verdict est READY, que le code est termine et que le walkthrough est
-cree et publie mais que la livraison n'est PAS encore partie au client :
-
-1. `brick_tool(action: "update", id: BRICK_ID, status: "finished")` — le
-   planning affiche « Terminé — à envoyer au client », l'humain sait qu'il ne
-   reste que l'envoi.
-2. Renseigner `test_access` sur la brick : l'URL et les comptes/mots de passe
-   de TEST que l'humain enverra au client (solution temporaire en attendant
-   une vraie gestion des logins). Sans ce champ rempli, l'envoi au client
-   bloque sur « c'est quoi les acces ? ».
-
-Le passage en `test` (livre) reste le geste de l'HUMAIN, au moment de l'envoi
-reel au client.
-
-## Quand utiliser
-
-- Avant de livrer une brick au client
-- Avant de passer a la brick suivante
-- Quand l'utilisateur demande un check global
-
-## Scope check
-
-- [ ] Tout le code implemente correspond a un critere d'acceptance
-- [ ] Chaque AC sert le QUOI de `doc/memory/objectif.md` (l'objectif signe)
-- [ ] Pas de features "bonus" non demandees
-- [ ] Les changements de scope sont documentes dans le journal de scope
-
-## Regle d'organisation : recetteur ≠ implementeur
-
-**Les AC et les criteres 🖐 sont coches par un SOUS-AGENT DE VERIFICATION qui n'a pas
-ecrit le code.** (Audit qualite 08/2026 : Gespilot 61/61 AC auto-coches dont un inatteignable.)
-
-- L'implementeur PREPARE : recette, tests, captures. Le recetteur COCHE, brief pour
-  refuter : "prouve que ca marche DEPUIS L'INTERFACE".
-- Preuve exigee pour chaque AC coche : screenshot ou trace playwright montrant que
-  l'AC est atteignable depuis l'interface (pas la console Rails, pas un test seul).
-  Un AC atteignable seulement en console = NON atteint.
-- Le recetteur travaille sur l'app lancee, avec les personas du jeu canonique. Il rend
-  son propre tableau ; ses "NON PROUVE" bloquent.
-- **Il execute un cahier qu'il n'a pas ecrit.** Il peut AJOUTER des criteres (taxonomie,
-  regression, securite) ; il ne peut ni en retirer, ni en affaiblir la formulation.
-  Tout « non applicable » se justifie par ecrit, ligne par ligne.
-- **Un ATTEINT se prouve aussi durement qu'un NON ATTEINT** : URL, compte, geste,
-  observation, capture. Une phrase ne coche rien. (Audit qualite 08/2026 : AC8.1 coche
-  sur « suppression proposee sur la page d'edition », page qui n'offre que Annuler et
-  Enregistrer.)
-- **Rejeu aleatoire** : le recetteur tire 10 preuves deposees par le build et les REJOUE
-  lui-meme depuis l'interface. Le compte de rejeux et leurs ecarts figurent dans le
-  rapport ; un ecart invalide toute la preuve du critere, qui est refaite. (Ce rejeu a
-  trouve 3 ecarts sur 10 lors de l'audit qualite 08/2026.)
-
-## Convergence : pas de nouvelle passe de recette sans solde de la precedente
-
-Une recette qui tourne en boucle (8 passes sur un meme lot, du nouveau a chaque fois)
-n'est pas de la rigueur, c'est un process qui fuit. Provenance : retour terrain 08/2026,
-l'agent relançait des recettes alors que, interroge, il admettait que les trouvailles
-precedentes n'etaient ni toutes corrigees ni consignees.
-
-Avant TOUTE nouvelle passe de recette (recetteur, recette-naive, rejeu), reponds par
-ecrit, preuves a l'appui, a ces deux questions ; un seul « non » INTERDIT la passe :
-
-1. **« Tout ce que la passe precedente a trouve est-il corrige ? »** Chaque trouvaille
-   a un statut : CORRIGEE (avec la preuve rejouee, comme un AC) ou REPORTEE (avec le
-   motif ecrit et l'accord consigne). Pas de troisieme statut, pas de « en cours ».
-2. **« La memoire est-elle a jour ? »** Cahier de recette, fichiers de consignation,
-   doc/memory : les trouvailles corrigees y sont soldees, les reportees y sont
-   inscrites. Sinon la passe suivante re-decouvre les memes defauts et le compte
-   de « nouveautes » ment.
-
-Et deux regles de bouclage :
-
-- **Une trouvaille deja vue qui ressort = echec de process, pas une nouveaute.**
-  Elle ne regonfle pas le compteur ; elle declenche la question « pourquoi la
-  correction ou la consignation a-t-elle saute ? », et la reponse s'ecrit.
-- **Deux passes successives qui apportent chacune du nouveau → on ne relance pas
-  une troisieme a l'aveugle.** On s'arrete, on fait UN balayage outille complet
-  (cahier + outils + parcours), on solde tout, et la passe suivante doit sortir
-  quasi vide. Si elle ne l'est pas, on remonte a l'humain avec le journal des
-  passes : c'est le perimetre ou la methode qui est en cause, pas la quantite
-  de recettes.
-
-## Process
-
-### 1. Cahier de recette : l'executer, l'etendre, jamais le rabaisser
-
-**Fichier `doc/memory/brick-{N}/recette.md`**, DEJA ecrit par la reanalyse et rempli par
-le build (un par brick, jamais un deuxieme). La review l'ouvre, verifie qu'il est complet
-au regard des trois sources d'origine (AC x role, cas etiquetes du jeu canonique, lignes
-de `decisions.md` dont la matrice CRUD), puis l'etend avec ce que les sections suivantes
-exigent. Format d'une ligne : ID, critere, AC/decision, URL, compte, geste, observation
-attendue — puis la preuve constatee et le statut.
-
-Regles :
-- **Un critere = un objectif verifiable**, en langage metier ("le client voit ses
-  factures triees"), pas en termes techniques.
-- **Chaque AC de `acceptance_criteria.md` apparait** dans au moins un critere.
-- **Chaque critere happy path appelle son negatif** : si "peut creer X", alors "ne
-  peut pas creer X invalide / sans droit".
-- IDs stables `R{N}-section.item` : on ne renumerote jamais, on ajoute.
-- **On ajoute, on ne retire pas.** Un critere juge trop dur reste : soit il est atteint,
-  soit c'est un defaut. Le seul retrait possible est un « non applicable » ecrit et motive.
-- Criteres de sortie : tous les ✅ verts, tous les 🖐 coches PAR LE RECETTEUR avec preuve,
-  aucune ligne sans statut, **aucun KO restant** (voir la regle du defaut connu).
-
-#### Taxonomie de recette : la derouler INTEGRALEMENT
-
-La taxonomie de reference est `~/.claude/skills/taxonomie-recette/SKILL.md`
-(versionnee dans le repo skills). Pour CHAQUE classe T1-T19 : appliquer sa
-**methode de verification** et creer les criteres correspondants (colonne "Classe
-taxo"). Une classe sans critere = ligne "non applicable" JUSTIFIEE dans la recette,
-jamais un silence. La section « Conventions de l'atelier » de la taxonomie dit ce qui
-N'EST PAS un defaut : la lire avant de qualifier une remontee.
-
-La recette exerce aussi **TOUS les cas etiquetes du jeu de donnees canonique** : chaque
-cas apparait dans au moins un critere.
-
-#### Journal de decisions : chaque decision est un critere de recette
-
-Ouvrir `doc/memory/decisions.md` et le derouler LIGNE A LIGNE :
-
-- Chaque decision (analyse ET journal courant) donne un critere de recette qui prouve
-  que le comportement decide est bien celui de l'app. Decision sans critere = trou.
-- **Aucune donnee fabriquee** : reprendre chaque chiffre, compteur, score, graphique
-  et vignette de l'app livree, et nommer sa source reelle. Une valeur sans source =
-  bug bloquant, remplace par un etat vide honnete (jamais "corrige" en la laissant).
-- **Aucune ligne qui decrive un defaut** (voir la regle du defaut connu) : celles-la
-  sortent du fichier et deviennent des fixes.
-- Les lignes cochees **« a signaler »** sont extraites telles quelles dans une section
-  `## Choix a expliquer au client` du rapport : formulation "voici ce qu'on a retenu et
-  pourquoi", jamais une question. Les corrections de maquette faites en cours de route
-  (regle « la maquette n'est jamais une excuse ») y figurent aussi.
-
-#### Matrice CRUD jouee depuis l'interface
-
-Le scanner de facades (section 4b) ne cherche pas ce qui MANQUE : croiser avec la
-**matrice CRUD** de `decisions.md` — chaque case « offert » est jouee DEPUIS L'INTERFACE
-(bouton trouve, geste fait, effet constate), chaque case « non offert » est prouvee
-absente (aucun bouton, et verbe direct refuse).
-
-**EXCEPTION mockups** : les vues sous `/mockups` sont volontairement accessibles sans
-authentification, y compris EN PRODUCTION — c'est un choix assume (le client y suit les
-briques a venir), et elles ont le droit d'etre inertes : ne PAS les signaler comme faille
-ni comme facade. Ce qui se verifie, c'est ce qu'exige la classe T11 : `noindex` sur ces
-pages, aucune donnee client reelle dans les donnees fictives, et le hub `/mockups` qui
-indique les pages deja livrees et pointe vers l'ecran reel.
-
-### 2. Suite de tests : faire passer la recette
+### 0.2 Gel du perimetre
 
 ```bash
-bin/rails test 2>&1 | tail -20
-bin/rails test:system 2>&1 | tail -20
+git tag review-brique-{N}-passe-1          # le perimetre de la review, c'est CE commit
+git worktree add /tmp/review-{N}-ro review-brique-{N}-passe-1   # arbre gele, lecture seule
 ```
 
-- [ ] Chaque critere ✅ pointe vers un test qui existe ; chaque test cite son ID (`# R{N}-1.2`)
-- [ ] Chaque parcours de `user_journeys.md` a son SYSTEM test navigateur vert
-- [ ] Suite verte a J, **J+3 et J+90** (shim d'horloge / `travel_to` global — T7 ;
-      audit qualite 08/2026 : fixtures de dates qui explosent a J+3)
-- [ ] **Base fraiche** (T16), en TROIS invocations SEPAREES — `db:drop`, puis
-      `db:prepare`, puis `db:seed` — suivies d'un `ls -l storage/*.sqlite3` et d'un
-      comptage en base. Enchainees en une seule commande, SQLite ecrit dans le fichier
-      efface (inode encore ouvert) : la commande sort 0 et la base reste vide, la preuve
-      d'idempotence lit un fantome. Puis `db:seed` une seconde fois : aucun doublon.
-- [ ] Aucune migration ne depend d'un modele applicatif (T16)
-- [ ] Tous les tests passent, aucun skip sans raison
-- [ ] Si un test revele un bug → le corriger fait partie de la review
-- [ ] **CI** : un workflow joue les deux suites sur push/PR, a REELLEMENT tourne sur le
-      dernier commit (`gh run list --limit 3` puis `gh run view <id>` ; `gh` est
-      installe et authentifie sur les VPS) et gate le deploiement. Absente → la
-      creer ici, pas a la brique suivante.
+- **Toute mesure (cahier, parite, mobile, facades) se fait sur l'arbre gele**, jamais
+  sur la branche de travail. Une mesure faite pendant qu'un autre agent modifie des
+  vues n'est pas une mesure (monmentor : « NON CERTIFIEE, a rejouer sur arbre gele »).
+- **Aucun code neuf pendant la review.** Une exigence qui n'est pas dans le cahier
+  derive a la reanalyse n'entre pas ici : elle va dans `later_brick` ou en changement
+  de scope, et la review continue sur le tag. (arcadesdata 17/08 : 2 836 lignes de code
+  neuf et 7 outils MCP « sous couvert de recette » ; yseis 21/08 : +21 000 lignes de
+  nouvelles exigences, puis READY sur autre chose que le NEEDS FIXES.)
+- **Aucun retour client pendant la review.** Ce qui arrive du client pendant la
+  fenetre part dans le tracker et sera traite par `/brick-code-feedback` APRES le
+  verdict. La review ne s'interrompt pas pour lui (tasteseller 06/08 : refus client
+  absorbe par la review, 18 h et 3 312 messages, compteur jamais reparti).
+- Les seuls fichiers qui bougent pendant une passe de mesure : `passes.md` et le cahier
+  (statuts). Le code bouge entre les passes, dans le lot de fixes, et nulle part ailleurs.
 
-Ne JAMAIS affaiblir un critere pour faire passer un test : soit c'est un bug (fix),
-soit c'est un changement de scope (documenter, puis ajuster la recette).
+### 0.3 Pre-vol des outils (15 minutes, pas plus)
 
-### 3. Gap Analysis (built vs specified)
+Avant de rendre un outil bloquant, verifier qu'il voit cette application :
 
-```markdown
-## Gap Analysis - Brick #X
-### Couvert
-- [x] R1/AC1.1: User registration (recette R2-1.1 → test)
-### Manquant
-- [ ] R2/AC2.3: Admin peut desactiver un compte (aucun critere de recette)
-### Hors scope (ajoute pendant le dev)
-- Extra: Pagination sur la liste users (pas dans les specs)
-```
+- `pairs_gen` apparie au moins 80 % des vues livrees a une maquette du tag
+  `mockups-valides-brique-{N}` ; sinon completer `pairs.json` a la main sur les vues
+  livrees, et ecrire le taux dans `passes.md` (monmentor : 7 vues appariees sur 79).
+- `facade_scan readwrite` lit le schema REEL : si le metier vit dans des shards ou une
+  seconde base, le pointer dessus ou le declasser en INFORMATION par ecrit (monmentor :
+  scan sur `db/schema.rb`, 4 tables, « 0 constat » qui ne couvrait rien).
+- `style_diff` prend pour reference les maquettes **au tag `mockups-valides-brique-{N}`**
+  (worktree du tag), jamais `/mockups` courant (vegetalents : trois campagnes relancees
+  pour cette seule raison).
+- Serveur de dev lance sur l'arbre gele, base seedee avec le jeu canonique, memes
+  donnees des deux cotes de chaque paire.
 
-### 4. Rapport de parite maquette / appli, et mobile mesure
+Un outil qui echoue au pre-vol n'est pas bloquant sur cette brique ; il est note
+INFORMATION dans `passes.md` et le defaut d'outil remonte a `/outils-recette`.
 
-**Lance d'abord `style_diff` (`/outils-recette`)** : il compare les styles calcules
-des deux cotes et sort la propriete qui differe, la ou l'oeil ne voit rien. Sur une
-livraison declaree « 32/32 conformes » il a trouve 157 ecarts reels.
+### 0.4 Budget et journal des passes
 
-```bash
-ruby ~/.claude/skills/outils-recette/pairs_gen.rb . --out pairs.json --base http://127.0.0.1:$PORT
-node ~/.claude/skills/outils-recette/style_diff.js --pairs pairs.json \
-  --out doc/memory/brick-{N}/parite/
-```
+- **Deux passes de mesure, quatre heures d'horloge chacune au plus**, puis le rejeu des
+  fixes de la passe 2. Pas de troisieme passe de mesure. Si la passe 2 rend encore du
+  neuf qui n'est pas une regression du lot de fixes, on s'arrete et on remonte a
+  l'humain avec `passes.md` : c'est le perimetre ou la methode, pas la quantite de
+  recettes.
+- `passes.md`, append-only, une entree par passe :
+  ```markdown
+  ## Passe 1 — 2026-08-27 08:10 → 11:40 — tag review-brique-2-passe-1
+  Verificateurs : R1 cahier (worktree a), R2 naive (b), R3 permissions (c), R4 mobile (d)
+  Trouvailles : 23 (R1 9, R2 8, R3 4, R4 2) — dont defaut connu : 4
+  Solde a l'ouverture de la passe 2 : 23 CORRIGEES (preuve rejouee) / 0 REPORTEES
+  ```
+  Une trouvaille n'a que deux statuts : CORRIGEE (preuve rejouee) ou REPORTEE (motif
+  ecrit + accord consigne). Pas de « en cours ». **Une trouvaille deja vue qui ressort
+  = echec de process** : elle ne regonfle pas le compteur, elle declenche la question
+  « pourquoi la correction a-t-elle saute ? » et la reponse s'ecrit.
+- Un commit de doc par passe, pas un par trouvaille : `review.md` s'ecrit UNE fois, au
+  verdict (gespilot : reecrit 16 fois, 22 % des commits ne touchaient que `doc/`).
 
-**Le perimetre de chaque paire est la PAGE ENTIERE, layout compris** : sidebar,
-topbar, footer, navigation. Pas seulement le contenu central. (Retour terrain
-21/08/2026, sharifunding B2 : « tout etait bon sauf les sidebars » — jamais
-comparees parce que rendues par des partials de layout. Une paire qui exclut le
-cadre valide une page qui n'existe pas.)
+### 0.5 Prerequis : projet qui n'a pas suivi la chaine complete
 
-Tu ne juges ensuite a l'oeil que le residu : les ecarts que l'outil signale et que
-tu dois trancher (corriger, ou justifier par ecrit avec la spec qui l'exige). Le
-rapport genere est celui qu'on publie au client
-(`~/.nexrai/bin/nexrai-parite`, page Conformite de l'espace client).
+Sur un projet plus ancien sans `objectif.md`, `decisions.md`, `jeu_de_donnees.md`,
+`config.md` ou sans cahier derive, NE T'ARRETE PAS et ne les fabrique pas
+retroactivement : signale en tete de `passes.md` lesquels manquent, ecris ici le cahier
+qui manque (seule exception a « le cahier vient de la reanalyse »), et deroule quand
+meme la passe 1 : ce sont les verificateurs qui trouvent les defauts, pas les artefacts.
+Ce que la review ne peut pas verifier faute d'artefact s'ecrit comme tel, en une ligne,
+et ne rouvre pas la boucle plus tard (tasteseller : la dette d'analyse a ete payee en
+trois passes de review au lieu d'un refus d'entree en 20 minutes).
 
-La comparaison complementaire se fait par SCREENSHOTS, jamais de memoire ni en lisant
-le code. **Reference = le tag `mockups-valides-brique-{N}`** (si `/mockups` a bouge
-depuis, capturer les maquettes depuis le tag), pas l'etat courant du repo.
+## 1. Passe 1 : quatre verificateurs independants, en parallele
 
-Protocole (playwright-cli, serveur dev lance, DB seedee avec le jeu canonique) :
+**Regle d'organisation : verificateur ≠ implementeur.** Les criteres sont coches par
+des sous-agents qui n'ont pas ecrit le code, briefes pour refuter (« prouve que ca
+marche DEPUIS L'INTERFACE »). Ils travaillent sur l'app lancee depuis l'arbre gele,
+avec les personas du jeu canonique, chacun dans son worktree, et rendent chacun une
+liste de KO au format du cahier (ID, URL, compte, geste, observe, capture). Ils sont
+lances **dans le meme appel**, l'orchestrateur attend les quatre DANS son tour.
 
-1. **Meme jeu de donnees des deux cotes** : toute comparaison a donnees differentes est nulle.
-2. Pour chaque page implementee, capturer les paires aux DEUX viewports, **1440x900 ET 390x844** :
-   ```
-   playwright-cli -s=parite goto <url>/mockups/users && resize + screenshot → parite/users-mockup-1440.png / -390.png
-   playwright-cli -s=parite goto <url>/admin/users   && resize + screenshot → parite/users-impl-1440.png / -390.png
-   ```
-3. Ouvrir chaque paire (Read) et comparer section par section : structure, ordre,
-   espacements, couleurs, typographie, etats visibles (empty states, badges, troncatures).
-4. Sur un ecart douteux, trancher au DOM : la seule difference autorisee est la liaison de donnees.
-5. Grosse brique : 1 sous-agent juge par paire de pages, puis verifier ses "A CORRIGER".
-6. **Rapport HTML cote a cote** : `doc/memory/brick-{N}/parite/index.html` — chaque ligne
-   = paire d'images (mockup | impl), viewport, statut (CONFORME / ECART JUSTIFIE : {raison}
-   / A CORRIGER). Le rapport propre sert de PREUVE DE LIVRAISON au client.
+### R1. Recetteur du cahier (`doc/memory/brick-{N}/recette.md`)
 
-**Mobile : mesure, pas impression.** Sur CHAQUE ecran livre, a 390 px, TROIS mesures.
-**Ne conclus JAMAIS « conforme » sur le seul `document.documentElement.scrollWidth`** :
-cette valeur ne prouve rien a elle seule, parce qu'un `overflow-x: clip|hidden` pose sur
-`body` (ou sur un conteneur du gabarit) CLIPPE le debordement au lieu de le rendre
-defilable, et la fait donc toujours egale a la largeur du viewport. Mesure 08/2026 : une
-messagerie dont le bouton « Envoyer » etait hors ecran, et 20 maquettes dont plusieurs
-debordaient franchement, passaient toutes au vert sur cette seule mesure.
+- **L'auto-attestation ne compte pas.** Un statut « couvert par la tache NNN » pose par
+  le build vaut NON PROUVE : le recetteur rejoue ou le critere reste ouvert.
+  (vegetalents : 48 % du cahier attestes par le build, « 0 critere a remplir », 54
+  defauts le lendemain ; gespilot : 61/61 auto-coches dont un inatteignable, vu par un
+  audit externe.)
+- Preuve exigee pour chaque critere coche : URL, compte, geste, observation, capture.
+  Un ATTEINT se prouve aussi durement qu'un NON ATTEINT. Console Rails ou test seul =
+  NON atteint.
+- **Cellule Statut = verdict + chemin de capture, 200 caracteres maximum.** Pas de
+  prose (monmentor : 921 caracteres par cellule, 553 Ko de prose dans un cahier de
+  821 Ko).
+- Le recetteur execute un cahier qu'il n'a pas ecrit. Il ne retire ni n'affaiblit un
+  critere ; il n'en AJOUTE que sur un defaut reel constate ou une classe de la taxonomie
+  (`~/.claude/skills/taxonomie-recette/SKILL.md`) sans critere, jamais en masse.
+  (yseis : 93 → 334 criteres en quatre passes ; monmentor : 92 % jamais KO.)
+- Rejeu aleatoire : 10 preuves deposees par le build, rejouees ; un ecart invalide la
+  preuve du critere. Le compte figure dans `passes.md`.
+- Grosse brique (> 150 criteres) : R1 se decoupe en 2 a 4 recetteurs par sections du
+  cahier, toujours en parallele (arcadesdata : quatre recetteurs, 2,7 h fixes compris).
 
-Le chemin le plus court est l'outil : `style_diff` detecte deja les conteneurs qui
-rognent et les controles ecrases, et rend ses resultats CLASSES par cause. On le lance et
-on lit ses categories (`clip-implicite` et `clip-declare` = contenu coupe, bloquants ;
-`scroll-voulu` = defilement declare, information), on ne compare pas deux nombres a la
-main :
+### R2. Recette naive : le premier jour d'un vrai utilisateur
 
-```bash
-node ~/.claude/skills/outils-recette/style_diff.js --pairs pairs.json --viewport mobile \
-  --out doc/memory/brick-{N}/parite/
-```
+Derouler `~/.claude/skills/recette-naive/SKILL.md`, **mode application** : un compte
+par run ou runs serialises, URL de depart = ecran de connexion avec les identifiants
+de la persona, verificateur distinct. Elle attrape ce qu'aucune ligne du cahier ne
+peut voir (fonction livree qu'aucun lien n'appelle, menu enferme sous les cartes,
+« le candidat sera notifie » sans notification). Mesure : 44 % de defauts reels sur
+les signalements arbitrables (yseis). Dose ~500 k jetons ; elle se lance ICI, en
+passe 1, jamais apres le verdict (monmentor : sautee pour son cout, puis jouee apres
+le GO, 4 ecrans manquants sur un lot valide).
 
-A la main, ecran par ecran :
+### R3. Matrice de permissions : URL directe ET blocs d'affichage
 
-```bash
-# 1. le bord droit REEL : l'element le plus a droite de la page, en excluant ce qui vit
-#    dans un conteneur a defilement horizontal DECLARE, ce qui est en position: fixed,
-#    et ce qui est en cours d'animation. Doit rendre <= 390.
-playwright-cli -s=mob eval "(()=>{const ok=e=>{const s0=getComputedStyle(e);if(s0.position==='fixed'||s0.animationName!=='none')return false;for(let p=e.parentElement;p&&p!==document.body;p=p.parentElement){const s=getComputedStyle(p);if(['auto','scroll'].includes(s.overflowX)||s.position==='fixed'||s.animationName!=='none')return false}return true};let m=null;for(const e of document.querySelectorAll('body *')){const r=e.getBoundingClientRect();if(r.width<=0||!ok(e))continue;if(!m||r.right>m.right)m={right:r.right,lbl:e.tagName+'.'+(e.className||'')}}return m?Math.round(m.right)+' '+m.lbl:'rien'})()"
-# 2. les conteneurs NON defilants (un overflow-y-auto fait calculer un overflow-x: auto
-#    implicite qui absorbe le debordement et coupe le contenu en silence)
-playwright-cli -s=mob eval "[...document.querySelectorAll('*')].filter(e => e.scrollWidth > e.clientWidth + 1 && !['auto','scroll'].includes(getComputedStyle(e).overflowX)).map(e => e.tagName + '.' + (e.className || '') + ' ' + e.scrollWidth + '/' + e.clientWidth)"
-# 3. la largeur reelle des champs de saisie
-playwright-cli -s=mob eval "[...document.querySelectorAll('input:not([type=checkbox]):not([type=radio]):not([type=hidden]), select, textarea')].map(e => (e.name || e.id || e.type) + ' ' + Math.round(e.getBoundingClientRect().width)).filter(l => +l.split(' ').pop() < 120)"
-```
+Pour CHAQUE role du jeu canonique (dont les droits restreints) x CHAQUE donnee ou action
+sensible, trois verifications :
 
-Les deux dernieres listes doivent etre VIDES : une ligne = du contenu coupe que rien ne
-permet de faire defiler, ou un champ inutilisable. (Audit qualite 08/2026 : 41 pages
-coupaient leurs tableaux derriere un document a 390 ; des `input` a 18 px sur un ecran
-declare conforme.) Un ecart se corrige, meme si la maquette deborde pareil : dans ce cas
-la maquette est fausse, on corrige les deux cotes et on le signale au client. Comparer
-aux mesures ecrites par la reanalyse : un ecran a 390 en maquette et a 465 dans l'app est
-une regression du build. Si `decisions.md` dit « responsive hors scope assume (ecrit) »,
-mesurer et ecrire quand meme.
+1. **URL directe** : GET et verbe d'ecriture (PATCH/POST/DELETE) sur chaque ressource
+   interdite — IDOR, cross-tenant (second tenant du jeu), etat interdit. Attendu :
+   refus propre, donnee inchangee.
+2. **Blocs d'affichage** : connecte AVEC le role restreint, ouvrir chaque page qui
+   affiche la donnee (fiche, liste, dashboard, export, PDF, mail) et verifier
+   VISUELLEMENT qu'elle n'y est pas. Le controle du menu ne protege pas la fiche.
+3. **Valeur RENDUE d'un droit** : poster chaque niveau depuis l'invitation ET
+   l'edition, relire en base. Un `read` qui ressort `write` est une fuite.
 
-Verifier :
-- [ ] Chaque page a sa paire aux deux viewports dans le rapport
-- [ ] Markup HTML / classes Tailwind identiques au mockup (seule la liaison change, ou
-      une correction assumee des DEUX cotes)
-- [ ] Aucune section ajoutee / retiree / reordonnee ; aucun faux objet (hash/OpenStruct)
-- [ ] Les trois mesures mobiles passent sur tous les ecrans livres
-- [ ] Tout ecart est CONFORME, JUSTIFIE PAR ECRIT, ou corrige
+Livrable : matrice lignes = donnees/actions, colonnes = roles, cellule OK/FUITE avec
+preuve, dans `recette.md`. Toute FUITE = defaut connu : elle se corrige. C'est le poste
+au meilleur rendement de tout le corpus (vegetalents : remise en ligne d'une offre
+archivee par requete forgee, cross-tenant `student_id` ; monmentor : 13 fuites d'une
+seule famille).
 
-**Toute ligne A CORRIGER non justifiee bloque la livraison** (verdict NEEDS FIXES).
+### R4. Verrou mobile et parcours navigues
 
-**Le verrou mobile, mecanique (OBLIGATOIRE avant d'ecrire le verdict).** Les trois
-mesures ci-dessus sont ecrites depuis aout 2026 ; le 16-17/08 deux livraisons sur trois
-ont quand meme ete rendues avec des champs de prix a 18 px sur mobile, l'une avec 26
-`control-crushed` bloquants dans son propre rapport style_diff au moment du READY. La
-regle etait lue, le rapport ne l'etait pas. Donc on ne lit plus, on verrouille :
+**Mobile : mesure, pas impression.** Sur CHAQUE ecran livre, a 390 px :
 
 ```bash
 ruby ~/.claude/skills/outils-recette/mobile_gate.rb doc/memory/brick-{N}/parite/
 ```
 
-Il lit le `resume.json` et les `paires/*.json` de style_diff et ne regarde QUE les
-classes de saisie mobile (`control-crushed`, `control-shrunk`, `clip-*`, `overflow-*`) :
-la parite de style, bruyante, reste a ton jugement. Sa derniere ligne de sortie EST la
-ligne « Mobile (gate) » du rapport (section 12) : on la colle, on ne la reformule pas.
-- exit 0 → la gate passe, tu peux ecrire le verdict.
-- exit 1 → REFUS : un verdict READY est interdit. Corriger, relancer style_diff,
-  relancer la gate.
-- exit 2 → NON MESURE (rapport absent, sans viewport mobile, ou vide) : meme interdit.
-  Un `style_diff` dont on n'a garde que le HTML n'a pas eu lieu.
-Ne pas contourner en relancant style_diff sur moins d'ecrans : `pairs.json` doit couvrir
-chaque page livree (controle [ ] ci-dessus).
+Il lit le `resume.json` de `style_diff` (campagne de la section 3, lancee en debut de
+passe 1 sur l'arbre gele) et ne regarde QUE les classes de saisie mobile
+(`control-crushed`, `control-shrunk`, `clip-*`, `overflow-*`). Sa derniere ligne est la
+ligne « Mobile (gate) » du rapport, collee telle quelle. exit 0 = passe ; exit 1 =
+refus ; exit 2 = non mesure (un `style_diff` dont on n'a garde que le HTML n'a pas eu
+lieu). Ne pas contourner en relancant sur moins d'ecrans.
 
-### 4b. Chasse aux facades a l'outil (BLOQUANT)
+A la main, sur un ecran douteux, TROIS sondes, jamais le seul `scrollWidth` (un
+`overflow-x: clip|hidden` sur `body` rend toujours 390 ; 41 pages coupaient leurs
+tableaux derriere un document au vert) :
 
-`style_diff` compare ce qui se voit. Ces deux scans trouvent ce qui ne se voit
-pas : la donnee affichee que personne ne peut saisir, et le controle qui ne mene
-nulle part.
+```bash
+playwright-cli -s=mob goto <url> && playwright-cli -s=mob resize 390 844
+# 1. bord droit REEL hors conteneur defilant declare, hors fixed, hors animation : <= 390
+playwright-cli -s=mob eval "(()=>{const ok=e=>{const s0=getComputedStyle(e);if(s0.position==='fixed'||s0.animationName!=='none')return false;for(let p=e.parentElement;p&&p!==document.body;p=p.parentElement){const s=getComputedStyle(p);if(['auto','scroll'].includes(s.overflowX)||s.position==='fixed'||s.animationName!=='none')return false}return true};let m=null;for(const e of document.querySelectorAll('body *')){const r=e.getBoundingClientRect();if(r.width<=0||!ok(e))continue;if(!m||r.right>m.right)m={right:r.right,lbl:e.tagName+'.'+(e.className||'')}}return m?Math.round(m.right)+' '+m.lbl:'rien'})()"
+# 2. conteneurs NON defilants qui coupent : liste vide attendue
+playwright-cli -s=mob eval "[...document.querySelectorAll('*')].filter(e => e.scrollWidth > e.clientWidth + 1 && !['auto','scroll'].includes(getComputedStyle(e).overflowX)).map(e => e.tagName + '.' + (e.className || '') + ' ' + e.scrollWidth + '/' + e.clientWidth)"
+# 3. champs de saisie < 120 px : liste vide attendue
+playwright-cli -s=mob eval "[...document.querySelectorAll('input:not([type=checkbox]):not([type=radio]):not([type=hidden]), select, textarea')].map(e => (e.name || e.id || e.type) + ' ' + Math.round(e.getBoundingClientRect().width)).filter(l => +l.split(' ').pop() < 120)"
+```
+
+**Clause d'artefact.** Un constat de la gate verifie UN PAR UN comme artefact d'outil
+(tableau a `overflow-x: auto` DECLARE, `object-cover` sur une image, element hors flux
+masque) se documente avec sa preuve (capture + regle CSS) et ne bloque pas : la gate
+rend « PASSE avec N artefacts documentes », et l'artefact remonte a `/outils-recette`
+pour corriger la sonde. Une porte qui ne peut pas devenir verte par construction n'est
+pas une porte (monmentor : 11 constats residuels, tous artefacts, verdict rendu a
+l'humain faute de clause).
+
+**Parcours navigues** : chaque parcours de `user_journeys.md` deroule au navigateur, en
+cliquant (jamais en rejouant l'URL), avec la persona. Un ecran d'arrivee qui n'est pas
+celui du parcours, un lien qui rend `Content missing`, une etape sans ecran = KO.
+
+### Pendant ce temps, l'orchestrateur (sur l'arbre gele)
+
+- **Consignation** : relire `decisions.md`, `config.md` et tout fichier de consignation
+  ligne par ligne avec une seule question, « est-ce que cette ligne DECRIT un bug ? ».
+  Chaque oui sort du fichier et devient un fix du lot. Le rapport compte ces lignes.
+- **Suite de tests** : `bin/rails test` et `test:system` verts a J, J+3 et J+90 (shim
+  d'horloge, T7) ; base fraiche T16 en TROIS invocations separees (`db:drop`, puis
+  `db:prepare`, puis `db:seed`, puis `ls -l storage/*.sqlite3` et un comptage ; enchainees
+  en une commande, SQLite ecrit dans l'inode efface et la preuve lit un fantome) ; second
+  `db:seed` sans doublon ; aucune migration qui depend d'un modele ; chaque parcours de
+  `user_journeys.md` a son system test ; **CI** qui a reellement tourne sur le dernier
+  commit (`gh run list --limit 3`, `gh run view`) et gate le deploiement, sinon la creer.
+- **Manifeste de configuration contre l'environnement livre** : chaque cle de
+  `config.md` existe sur la cible, son consommateur nomme la lit vraiment (`grep`), sa
+  valeur est celle de l'environnement (APP_HOST → liens des mails sur le host reel),
+  aucun compte ni secret en dur dans migrations, seeds ou code (gespilot :
+  `admin@5000.dev` / `secret5000` actif en prod depuis le 19 juin). Cle presente dans le
+  code et absente du manifeste → ajoutee ici.
+- **Securite** : `/security-review` sur `{base}..HEAD`, chaque finding corrige ou
+  justifie par ecrit ; un finding permissions/fuite ne se justifie pas. Socle : strong
+  parameters, autorisation sur chaque ressource, CSRF, pas de donnees sensibles dans les
+  logs, auth = Devise.
+- **Scope et gap analysis** : chaque AC de `acceptance_criteria.md` a un critere et un
+  test ; chaque AC sert le QUOI de `objectif.md` ; les ajouts hors spec sont dans le
+  journal de scope ou sortent. Format :
+  ```markdown
+  ## Gap Analysis - Brick #X
+  ### Couvert — [x] R1/AC1.1 (recette R2-1.1 → test)
+  ### Manquant — [ ] R2/AC2.3 (aucun critere)
+  ### Hors scope (ajoute pendant le dev) — Extra: pagination users
+  ```
+- **Points de friction** : endroits ou un test a echoue plusieurs fois, code deplace ou
+  renomme, TODO/FIXME, fichiers les plus remanies (`git diff --stat {base}..HEAD | sort
+  -k3 -n | tail -10`), deviations de perimetre signalees par le build (`git log
+  {base}..HEAD --grep='Deviation' --stat`) : un fichier partage touche par une tache qui
+  ne le prevoyait pas est le lieu de la regression auto-infligee, on verifie les pages
+  qui en dependent. Relecture a froid, facon `/vanilla-rails` : controllers < 7 actions,
+  pas de logique metier dedans, pas de N+1, fichiers < 400 lignes, aucune abstraction
+  sans AC ou decision qui la rattache (sinon on retire).
+
+## 2. Le lot de fixes, puis la passe 2 differentielle
+
+### 2.1 Un seul lot de fixes
+
+Toutes les trouvailles de la passe 1 (R1 a R4 + orchestrateur) sont corrigees en UN lot,
+sur la branche de travail, avec la methode de `/brick-code-fix` : test qui reproduit →
+fix → **le meme bug ailleurs** (grep de la famille entiere, pas l'occurrence signalee :
+arcadesdata D-26, « six passes, six defauts deplaces » ; 24/08, deux bloquants sur trois
+etaient des regressions du 21/08) → re-check navigateur. Chaque fix cite l'ID de la
+trouvaille. Le lot se termine par la suite complete verte et un nouveau tag
+`review-brique-{N}-passe-2`.
+
+### 2.2 Passe 2 : rejouer ce qui a bouge, pas tout
+
+Sur l'arbre gele au tag passe-2, les verificateurs rejouent **uniquement** :
+
+1. chaque trouvaille corrigee (preuve rejouee, statut CORRIGEE dans `passes.md`) ;
+2. les criteres du cahier dont l'URL ou le parcours touche un fichier modifie par le
+   lot (`git diff --name-only passe-1..passe-2` → vues, controleurs, partials, layouts
+   → pages → criteres) ; un layout ou un partial partage touche = toutes les pages qui
+   le rendent ;
+3. `mobile_gate` sur les ecrans touches ;
+4. la matrice de permissions sur les ressources touchees ;
+5. 10 rejeux aleatoires supplementaires hors perimetre du lot, pour attraper la
+   regression que la carte des fichiers ne voit pas.
+
+Le reste du cahier n'est pas rejoue : il a ete prouve en passe 1 sur un arbre gele et
+le lot ne l'a pas touche. (monmentor : 122 criteres rejoues integralement six fois.)
+
+### 2.3 Sortie de la passe 2
+
+- **Vide** (ou seulement des artefacts documentes) → verdict.
+- **Regressions du lot** uniquement → un dernier lot de fixes borne a ces regressions,
+  chaque fix rejoue par le verificateur, puis verdict. Ce n'est pas une passe : pas de
+  mesure au-dela des fixes.
+- **Du neuf qui n'est pas une regression** → STOP. On n'ouvre pas une passe 3. On
+  remonte a l'humain avec `passes.md` et la liste : soit le perimetre gele etait faux,
+  soit la methode de la passe 1 a un trou, et c'est ca qu'on corrige, pas le compteur.
+
+## 3. Indicateurs a seuil : parite, facades, SEO, performance
+
+Ces mesures se lancent UNE fois, en debut de passe 1, sur l'arbre gele, en parallele
+des verificateurs. Elles produisent des indicateurs, pas des verdicts, sauf les cas
+enumeres ci-dessous.
+
+### 3.1 Parite maquette / application (une campagne)
+
+```bash
+ruby ~/.claude/skills/outils-recette/pairs_gen.rb . --out pairs.json --base http://127.0.0.1:$PORT
+node ~/.claude/skills/outils-recette/style_diff.js --pairs pairs.json --out doc/memory/brick-{N}/parite/
+```
+
+- Reference = tag `mockups-valides-brique-{N}` (worktree), jeu canonique des deux
+  cotes, **perimetre de chaque paire = la page entiere, layout compris** (sharifunding
+  B2 : « tout etait bon sauf les sidebars », jamais comparees). Deux viewports.
+- **Bloquant** : les ecarts de STRUCTURE (section manquante, ajoutee, reordonnee ; un
+  partial de layout absent ; un faux objet dans le controleur) et les classes de saisie
+  mobile (deja portees par `mobile_gate`). Ceux-la sont des KO du cahier.
+- **Indicateur** : les ecarts de style (couleurs, espacements, tailles, typographie).
+  On les lit TRIES PAR CAUSE (le rapport les regroupe), on corrige les causes qui
+  tiennent en une heure, et le reste s'ecrit en une ligne : « N ecarts de style
+  residuels, M causes, rapport `parite/index.html` ». Ils ne bloquent pas le verdict.
+  Rendement mesure : 0,4 a 1,3 % d'ecarts reels par constat, 654 000 lignes de rapport
+  pour 3 defauts. On ne relance pas la campagne en passe 2 hors pages touchees.
+- Vue transcrite d'une source client (export Lovable, HTML depose) : le taux de reprise
+  de classes n'est PAS un critere ; la reference est la source transcrite au tag, pas
+  nos composants (tasteseller : pixel-match a 0-5 % realigne trois fois pour rien).
+- Le rapport HTML cote a cote (`parite/index.html`, CONFORME / ECART JUSTIFIE / A
+  CORRIGER par paire) reste la preuve de livraison publiable au client
+  (`~/.nexrai/bin/nexrai-parite`).
+
+### 3.2 Chasse aux facades (si le pre-vol l'a validee)
 
 ```bash
 ruby ~/.claude/skills/outils-recette/facade_scan.rb readwrite .
 ruby ~/.claude/skills/outils-recette/facade_scan.rb static .
 ```
 
-`readwrite` sort deux listes. **Colonne lue mais jamais saisissable** : l'ecran
-(ou pire, le PDF ou l'e-mail) montre une valeur qu'aucun formulaire ne permet de
-renseigner — chez un vrai client, le champ restera vide pour toujours.
-**Colonne saisie mais jamais lue** : l'utilisateur remplit un champ qui ne sert a
-rien. Les deux sont bloquantes des que la colonne part dans un document sortant.
+`readwrite` sort la colonne affichee que personne ne peut saisir et le champ saisi que
+personne ne lit. **Bloquant** seulement si la colonne part dans un document sortant
+(facture, PDF, mail) ou porte de l'argent ou un droit ; sinon chaque remontee se tranche
+par ecrit (defaut corrige, ou faux positif motive : colonne technique, service,
+homonyme). `static` et `crawl` : information. `reachability` : information seulement,
+presque que des faux positifs. Un scan sorti en code 2 n'a pas eu lieu. La matrice
+affiche/saisi de la reanalyse et la matrice CRUD de `decisions.md` (chaque case
+« offert » jouee depuis l'interface par R1, chaque « non offert » prouvee absente)
+restent la reference. **Exception `/mockups`** : accessibles sans auth, y compris en
+prod, inertes : pas une faille, pas une facade ; ce qui se verifie est T11 (`noindex`,
+aucune donnee client reelle, hub qui pointe vers l'ecran livre).
 
-Chaque remontee finit en critere de recette (T4/T5) et se tranche par ECRIT : defaut
-corrige, ou faux positif avec la raison (colonne technique, alimentee par un service,
-homonyme dans une autre table — l'outil rapproche sur le nom). Ne jamais se contenter du
-compte. Angle mort connu : le scan rate une colonne dont le nom existe ailleurs, la
-matrice affiche/saisi de la reanalyse reste la reference.
+### 3.3 SEO et performance (si pages publiques)
 
-Si un scan sort en code 2, il s'est interrompu : son rapport ne prouve rien, on
-le relance. Un rapport vide n'est un feu vert que si le scan est alle au bout.
+Derouler la « Checklist review » de `/brick-seo` (head, noindex staging, robots et
+sitemap, JSON-LD, NAP, 404, titles, images). Prerequis CWV sur staging : CSS < 20 Ko
+gz, HTML < 150 Ko, aucune image > 300 Ko, polices woff2 self-hosted, TTFB < 800 ms,
+DOM < 1 500 noeuds, variants ActiveStorage partout. Un ecart bloquant ici = une page
+publique inaccessible ou indexee a tort ; le reste est indicateur.
 
-Provenance : audit qualite 08/2026 (clients.postal_code imprime sur les factures sans
-champ de saisie, cle d'API saisie que l'envoi ne lit pas ; sur le parc : 27 colonnes lues
-et non saisissables sur un projet client, 13 sur un autre). Les modes `crawl` et
-`reachability` existent aussi mais restent EN INFORMATION : mesures a l'appui,
-`reachability` ne produit presque que des faux positifs (actions appelees en `fetch`,
-helpers resolus a l'execution). Les lire, ne rien bloquer dessus.
+## 4. Verdict a deux etages
 
-### 5. Matrice de permissions : URL directe ET blocs d'affichage
+Le verdict s'ecrit quand la passe 2 est vide (ou quand ses regressions sont rejouees).
+Trois valeurs, pas deux :
 
-Pour CHAQUE role (les personas du jeu canonique, dont ceux a droits restreints) x
-CHAQUE donnee/action sensible, TROIS verifications distinctes :
+- **READY** : aucun KO, aucun defaut connu ouvert, gate mobile PASSE (artefacts
+  documentes compris), CI verte sur le tag passe-2.
+- **READY SAUF DECISION HUMAINE** : tout ce qui depend de nous est ferme ; il reste des
+  points qui appartiennent a l'humain (un compte de demo a garder ou non, un choix de
+  scope, une formulation client). Ils sont listes avec la recommandation, **le reste de
+  la chaine s'enchaine** (walkthrough, guide, `finished`, `test_access`) et seul l'envoi
+  attend la reponse. (yseis : NEEDS FIXES tenu 10 jours pour un point deja corrige, en
+  attente d'un « laisse ».)
+- **NEEDS FIXES** : il reste un KO ou un defaut connu que nous pouvons corriger et qui
+  ne l'est pas. Ce verdict n'existe qu'entre deux passes ; il n'est jamais le mot de la
+  fin d'une review bornee.
 
-1. **URL directe** : GET et verbe d'ecriture (PATCH/POST/DELETE) sur chaque ressource
-   interdite — IDOR (id devine), cross-tenant (second tenant du jeu), etat interdit
-   (editer un devis facture). Attendu : refus propre, donnee inchangee.
-2. **Blocs d'affichage** : se connecter AVEC le role restreint et OUVRIR chaque page qui
-   affiche la donnee sensible (fiche, liste, dashboard, export, PDF, mail) ; verifier
-   VISUELLEMENT qu'elle n'y est pas. Le controle pense pour le menu ne protege pas la
-   fiche (audit qualite 08/2026 : commercial billing:none lisait le CA sur la fiche client).
-3. **Valeur RENDUE d'un droit** : poster chaque niveau de permission depuis l'ecran
-   d'invitation ET l'ecran d'edition, puis relire la valeur en base. Un `read` poste qui
-   ressort en `write` est une fuite silencieuse (audit qualite 08/2026).
+Un verdict est un fichier ecrit, date, avec le tag qu'il juge. Une boucle sans verdict
+ecrit n'a pas eu lieu (arcadesdata : `recette.md` gele au 19/08, cinq passes apres, READY
+jamais ecrit).
 
-Livrer la matrice dans recette.md : lignes = donnees/actions sensibles, colonnes =
-roles, chaque cellule = OK/FUITE avec la preuve (statut HTTP ou capture). Toute FUITE
-tombe sous la regle du defaut connu : elle se corrige, elle ne se note pas.
+## 5. Rapport (court) : `doc/memory/brick-{N}/review.md`
 
-### 6. Manifeste de configuration contre l'environnement livre
-
-Ouvrir `doc/memory/config.md` et verifier, ligne par ligne, sur l'environnement CIBLE :
-
-- [ ] La cle existe bien dans l'environnement livre (ENV, credentials, config par env)
-- [ ] Son **consommateur nomme** la lit vraiment : `grep` du nom de la cle dans le code,
-      et le point d'usage reel correspond. Un ecran qui enregistre une valeur que
-      personne ne relit est une facade : on la branche, ou on retire l'ecran. Ecrire
-      « facade a trancher » dans le manifeste est interdit (audit qualite 08/2026 :
-      ecran /admin/api_keys stockant un credential jamais lu a l'envoi)
-- [ ] Sa valeur est celle attendue pour cet environnement : APP_HOST → les liens des
-      mails generes pointent sur le host reel, pas app.5000.dev (Tastellers, educxa)
-- [ ] Aucun compte, mot de passe ou secret en dur dans migrations, seeds ou code
-      (Gespilot : superadmin `secret5000` actif en prod)
-- [ ] Toute cle presente dans le code mais absente du manifeste y est ajoutee ici
-
-### 7. Review UX
-
-- [ ] Chaque parcours de `user_journeys.md` fonctionnel de bout en bout (system test +
-      navigation reelle)
-- [ ] Etats d'erreur geres (formulaire invalide, 404), messages flash presents et clairs
-- [ ] Navigation coherente
-
-### 7b. Recette naive : le premier jour d'un vrai utilisateur (BLOQUANT si un defaut reel sort)
-
-La section 7 deroule `user_journeys.md`. Le cahier de recette porte l'URL, le compte, le geste et
-l'observation attendue de chaque ligne. Consequence : **rien dans la chaine ne peut etre
-surpris.** On verifie « le critere est-il satisfait », jamais « quelqu'un qui ne sait rien y
-arrive-t-il ». Cette section est le seul endroit du process ou l'on mesure la seconde question.
-
-**Derouler `~/.claude/skills/recette-naive/SKILL.md`, en MODE APPLICATION.** La methode y est
-entiere. Ce qui est propre a ce stade :
-
-- **Un compte par run, ou des runs serialises.** Deux agents sur le meme compte produisent des
-  devis en double et des compteurs qui bougent : 12 faux signalements sur un seul projet.
-- **L'URL de depart est l'ecran de connexion**, avec les identifiants de la persona.
-- **Chaque defaut reel rejoint le cahier de recette au statut KO** et commande le verdict (regle
-  du defaut connu). Il ne se consigne pas, il se corrige.
-
-Ce qu'elle attrape et que rien d'autre n'attrape (mesure, banc livraison p5, 33 defauts reels
-dont 33 sur 34 absents des rapports de recette) : un lien qui remplace la page par `Content
-missing` parce que la recette avait rejoue l'URL et jamais le clic ; une fonction livree et
-complete qu'aucun lien n'appelle ; un onglet inatteignable a vie, seule fonction differee sans
-badge « a venir » ; un menu dont 8 options sur 9 sont physiquement enfermees sous les cartes ;
-« Le candidat sera notifie. » alors qu'aucune notification n'est creee.
-
-**Elle ne remplace aucune ligne du cahier** : sur tout le corpus mesure les deux bras ne se
-recouvrent qu'en un seul point. Dose : ~500 k jetons par brique, et elle suit le nombre de types
-d'utilisateurs enumeres.
-
-### 8. Review code, deviations et simplicite
-
-Vanilla Rails :
-- [ ] Controllers < 7 actions, pas de logique business dedans ; modeles avec validations
-- [ ] Pas de JS custom quand Turbo/Stimulus suffit ; pas de N+1 (`includes`) ; fichiers < 400 lignes
-
-**Deviations de perimetre** (signal, pas verrou) — le build a calcule et signale dans
-chaque commit les fichiers touches hors intention :
-```bash
-git log {base}..HEAD --grep='Deviation' -p --stat | head -80
-```
-Chaque deviation se relit specifiquement : un fichier partage touche par une tache qui
-ne le prevoyait pas est le lieu classique de la regression auto-infligee (CSS global,
-layout, partial partage, helper). Verifier que les autres pages qui en dependent sont
-toujours conformes (parite + parcours).
-
-**Controle de simplicite** (final, facon `/vanilla-rails`) : lister gems, tables,
-colonnes, services, concerns et abstractions ajoutes par la brique ; pour chacun,
-nommer l'AC ou la ligne de `decisions.md` qu'il sert. Sans rattachement → on retire.
-Du code simple qui marche, sans cas a la con qui traine.
-
-### 9. Securite
-
-1. **Lancer le skill `/security-review` sur le diff de la brique** (`{base}..HEAD`) et
-   traiter chaque finding : corrige, ou justifie par ecrit dans le rapport. Un finding de
-   la famille permissions/fuite ne se justifie pas : il se corrige. C'est un passage
-   obligatoire, pas une option.
-2. Socle (les cas de securite de la taxonomie sont deja dans la recette avec leurs tests) :
-   - [ ] Strong parameters sur tous les controllers
-   - [ ] Autorisation verifiee (l'utilisateur a acces a la ressource)
-   - [ ] Pas de donnees sensibles dans les logs ; CSRF actif
-   - [ ] Auth = Devise (aucune auth maison introduite pendant la brick)
-
-### 10. SEO et performance (si pages publiques)
-
-Derouler INTEGRALEMENT la « Checklist review » de `/brick-seo` (head complet, noindex
-staging / absent en prod, robots + sitemap, JSON-LD valide, NAP identique, 404 reel,
-unicite des titles, images, coherence des chiffres). Elle n'est pas recopiee ici : elle
-vit dans ce skill, on l'ouvre et on la deroule ligne a ligne.
-
-- [ ] Les pages `/mockups` restent en `noindex` (elles ne remontent pas a la place des vraies)
-
-Prerequis CWV, verifies au HTML sur staging (home + 1 page par gabarit) :
-- [ ] Poids : CSS < 20 Ko gz, HTML < 150 Ko, aucune image > 300 Ko
-      (`curl -so /dev/null -w '%{size_download}'`, assets via `playwright-cli requests`)
-- [ ] Polices woff2 self-hosted + `preload`, pas de Google Fonts en prod
-- [ ] TTFB staging < 800 ms (`curl -so /dev/null -w '%{time_starttransfer}'`) ; sinon
-      verifier `fresh_when` / fragment caching
-- [ ] DOM < 1500 noeuds (`playwright-cli eval "document.querySelectorAll('*').length"`)
-- [ ] Aucune image uploadee servie brute : variants ActiveStorage partout
-
-### 11. Repetition : repasser les points de friction
-
-Les bugs sont concentres la ou le dev a coince, pas dans le CRUD sorti tout seul.
-Reconstituer la liste depuis les taches, les commits et la conversation :
-
-- endroits ou un test a echoue plusieurs fois avant de passer
-- code reecrit, deplace ou renomme en cours de route
-- decisions prises sous contrainte de temps, ou notees "a verifier plus tard"
-- TODO / FIXME / commentaires d'excuse laisses dans le code
-- fichiers les plus remanies : `git diff --stat {base}..HEAD | sort -k3 -n | tail -10`
-- endroits ou il a fallu demander de l'aide a l'utilisateur
-
-Pour chacun, relire le code a froid : est-ce la solution qu'on choisirait maintenant,
-en sachant ce qu'on sait a la fin de la brick ? Ce qui reste douteux devient une ligne
-du rapport (section Issues), pas un souvenir.
-
-### 12. Rapport
-
-`doc/memory/brick-{N}/review.md` :
+Ecrit UNE fois, au verdict. 150 lignes au plus ; le detail vit dans `recette.md`,
+`passes.md` et `parite/`.
 
 ```markdown
-# Review Brick #X - [Date]
+# Review Brick #X — {date} — tags passe-1 {sha} / passe-2 {sha}
 
+## Verdict : READY | READY SAUF DECISION HUMAINE | NEEDS FIXES
+## Decisions humaines en attente : [liste + recommandation] (ou aucune)
 ## Defauts connus (argent / permissions / donnees fausses / fuite) : X trouves, X corriges
-   — si un seul reste ouvert, le verdict est NEEDS FIXES
-## Criteres de recette au statut KO : X — un seul KO restant = NEEDS FIXES
-   — et mobile_gate.rb en REFUS ou NON MESURE = NEEDS FIXES, sans discussion
-## Lignes sorties des fichiers de consignation parce qu'elles decrivaient un bug : X
-## Recette: X/Y criteres passes (✅ automatises: A, 🖐 manuels: M)
-## Recetteur: sous-agent distinct OUI/NON — 10 preuves rejouees, Z ecarts
-## Cahier execute (ecrit a la reanalyse): X criteres, Y ajoutes ici, Z « non applicable » motives
-## readwrite / static: X remontees, Y tranchees — CRUD: A cases « offert » jouees, B « non offert » prouvees absentes
-## CI: presente OUI/NON — a tourne sur le dernier commit OUI/NON
-## Taxonomie: X/19 classes deroulees (N/A justifies: ...)
-## Tests: X/Y passing (verts a J, J+3, J+90 ; base fraiche verifiee en 3 invocations)
-## Decisions: X/X deroulees, 0 donnee fabriquee
-## Choix a expliquer au client: [« a signaler » + corrections de maquette assumees]
-## Config: X/Y cles verifiees sur l'env livre (consommateur + valeur)
-## Parite: X/Y paires conformes (1440 + 390) — style_diff: N ecarts, rapport: parite/index.html
-## Mobile (gate) : [derniere ligne de mobile_gate.rb, collee telle quelle — PASSE ou REFUS/NON MESURE]
-## Mobile: X/X ecrans — document 390, conteneurs non defilants OK, champs >= 120 px
-## Permissions: matrice X roles x Y donnees, fuites: [liste] — toutes corrigees OUI/NON
-## Deviations de perimetre relues: X (dont Y ayant motive une verification)
-## Simplicite: X ajouts, Y retires faute de rattachement
-## Securite: /security-review — X findings, Y corriges, Z justifies
-## Points de friction repasses: X (dont Y encore douteux)
-## Recette naive: N runs (M personas x P objectifs derives du QUOI), verificateur distinct OUI/NON
-##   — signalements bruts: X, arbitrables: Y, defauts reels: Z (rendement Z/Y), tous verses au cahier
-##   — soustraction verifiee sur les N traces: 0 lecture du depot, 0 URL tapee hors URL de depart
-## Gaps / Issues / Bugs trouves par la recette: [listes]
-## Verdict: READY / NEEDS FIXES
+## Criteres KO restants : 0 — lignes sorties des fichiers de consignation : X
+## Passes : 2 — duree passe 1 : Xh — lot de fixes : N (dont M famille elargie) — passe 2 : rejoues Y, regressions Z
+## Cahier : X criteres, dont A prouves par le recetteur, B ajoutes (defaut reel / taxonomie), C non applicables motives — auto-attestes comptes comme prouves : 0
+## Recette naive : N runs, signalements Y, defauts reels Z (Z/Y), tous verses au cahier
+## Permissions : matrice X roles x Y donnees, fuites trouvees F, toutes corrigees
+## Mobile (gate) : [derniere ligne de mobile_gate.rb, collee telle quelle] — artefacts documentes : N
+## Parcours navigues : X/Y
+## Tests : X/Y, verts a J / J+3 / J+90, base fraiche 3 invocations, CI sur passe-2 OUI
+## Config : X/Y cles verifiees sur l'env livre — secrets en dur : 0
+## Securite : /security-review — X findings, Y corriges, Z justifies
+## Parite : structure X/Y paires conformes (bloquant) — style : N ecarts residuels, M causes, rapport parite/index.html (indicateur)
+## Facades : readwrite X remontees, Y tranchees (pre-vol : OUTIL VALIDE / INFORMATION)
+## Gap analysis : couvert X / manquant Y / hors scope Z
+## Choix a expliquer au client : [« a signaler » + corrections de maquette assumees]
+## Outils : pairs_gen X % apparie — anomalies remontees a /outils-recette : [liste]
 ```
 
-### 13. Apres le deploiement : la livraison ne s'arrete pas a la video
+## 6. Apres le verdict
 
-Un verdict READY autorise le deploiement, pas la cloture. Une fois deploye :
+### 6.1 READY (ou READY SAUF DECISION HUMAINE) : la chaine s'enchaine, une fois
 
-1. **Smoke test sur l'URL REELLE** (pas localhost, pas un mock) : jouer le parcours
-   principal avec un compte reel du client ou un compte de test cree sur l'environnement
-   livre, et **declencher un mail reel** (invitation, confirmation) — l'ouvrir, verifier
-   habillage, destinataire et liens (host reel). Captures dans `brick-{N}/smoke/`.
-2. **Surveillance de l'error tracker sur 24 h** : relever la baseline au moment du
-   deploiement puis re-verifier a +1 h et +24 h.
-   ```
-   glitchtip_list_issues (projet de l'app) → baseline, puis +1 h, +24 h
-   glitchtip_issue_detail sur toute issue nouvelle
-   ```
-   Si le projet GlitchTip n'existe pas : `glitchtip_create_project` et cabler le DSN
-   AVANT de livrer (une brique sans error tracker n'est pas surveillable).
-3. **Toute erreur nouvelle rouvre la boucle** : `/brick-code-fix` (test qui reproduit →
-   fix → meme bug ailleurs → taxonomie), puis re-derouler la partie de recette impactee.
-   La brique n'est declaree livree qu'apres 24 h sans erreur nouvelle.
+1. `git tag review-brique-{N}-ready`, `git worktree remove /tmp/review-{N}-ro`,
+   `brick_tool update held_by: "-"`.
+2. `brick-code-walkthrough` puis `brick-code-guide`, **tournes UNE fois, sur le tag
+   ready**. Un walkthrough ne se refilme pas a chaque lot de fixes (yseis : 30 % des
+   sous-agents en tournage, 0 defaut) ; si le tournage revele un defaut, il part en
+   `/brick-code-fix` avec rejeu du critere, et seul le chapitre touche se refilme,
+   decision de `brick-code-video`.
+3. `brick_tool update status: finished` + `test_access` (URL et comptes de TEST que
+   l'humain enverra) : le planning affiche « Termine — a envoyer au client ».
+4. **STOP : l'envoi de la livraison est un geste humain.** Compte rendu final ici, avec
+   les decisions humaines en attente s'il y en a.
 
-## Sortie
+Le cahier, `passes.md` et le rapport de parite sont des LIVRABLES, partageables au client
+comme preuve de couverture et de conformite. Les « choix a expliquer » accompagnent la
+livraison.
 
-Si READY → informer l'utilisateur, deployer, puis executer la section 13. Le cahier de
-recette et le rapport de parite sont des LIVRABLES : partageables au client comme preuve
-de couverture et de conformite (le rapport de parite se publie avec
-`~/.nexrai/bin/nexrai-parite`). Les « choix a expliquer » accompagnent la livraison.
-Si NEEDS FIXES → lister les fixes. Pour chaque fix, `/brick-code-fix` (test qui reproduit
-→ fix → meme bug ailleurs → re-check navigateur → taxonomie), puis re-derouler la recette.
+### 6.2 Apres le deploiement : la livraison ne s'arrete pas a la video
 
-**Accès prod** : toute lecture ou vérification en production passe par kamal
-depuis le dossier du projet — voir `/kamal` (règle d'or : `kamal app exec --reuse`,
-jamais de deploy manuel, jamais les seeds pour deviner les données prod).
+1. **Smoke test sur l'URL REELLE** : le parcours principal avec un compte reel ou un
+   compte de test cree sur l'environnement livre, et **un mail reel declenche**, ouvert,
+   verifie (habillage, destinataire, liens sur le host reel). Captures dans
+   `brick-{N}/smoke/`.
+2. **Error tracker sur 24 h** : baseline au deploiement, +1 h, +24 h
+   (`glitchtip_list_issues`, `glitchtip_issue_detail`) ; projet absent →
+   `glitchtip_create_project` et DSN cables AVANT de livrer.
+3. **Une erreur nouvelle ne rouvre pas la review** : elle part dans `/brick-code-fix`
+   (test qui reproduit → fix → meme bug ailleurs → taxonomie) avec rejeu du seul critere
+   impacte. Un retour client part dans `/brick-code-feedback`. La review est close au
+   tag ready ; ce qui vient apres est de la maintenance, pas une passe.
+
+La brique est declaree livree apres 24 h sans erreur nouvelle.
+
+**Acces prod** : toute lecture ou verification en production passe par kamal depuis le
+dossier du projet, voir `/kamal` (`kamal app exec --reuse`, jamais de deploy manuel,
+jamais les seeds pour deviner les donnees prod).
+
+## Validation gate
+
+- [ ] `passes.md` ouvert : verrou pose, tag passe-1, pre-vol des outils ecrit (valides /
+      information), budget rappele
+- [ ] Passe 1 : R1 a R4 lances en parallele dans des worktrees, sur l'arbre gele, avec
+      les personas du jeu canonique ; aucune auto-attestation comptee
+- [ ] Orchestrateur : consignation relue, tests J/J+3/J+90 + base fraiche + CI, config
+      contre l'environnement, `/security-review`, gap analysis, points de friction
+- [ ] Un seul lot de fixes, famille elargie a chaque fois, tag passe-2, suite verte
+- [ ] Passe 2 differentielle : trouvailles rejouees, criteres des fichiers touches,
+      mobile et permissions sur le perimetre touche, 10 rejeux hors perimetre
+- [ ] Pas de passe 3 : du neuf non regressif en passe 2 = remontee humaine avec le journal
+- [ ] Parite : structure bloquante, style en indicateur, une campagne sur le tag
+- [ ] Verdict ecrit, date, avec ses tags ; rapport <= 150 lignes ecrit une fois
+- [ ] Aucun code neuf ni retour client traite pendant la review
+- [ ] Walkthrough tourne une fois sur le tag ready ; `finished` + `test_access` poses ;
+      `held_by` libere
 
 ## Ensuite
 
 L'enchainement est AUTOMATIQUE, dans le meme tour :
 
-- **NEEDS FIXES** → corriger les constats, puis nouvelle passe sous la porte de
-  convergence (« pas de nouvelle passe sans solde »), sans relance humaine. On ne
-  remonte a l'humain que si un constat exige une decision de scope qui lui appartient.
-- **READY** → enchainer directement : `brick-code-walkthrough` puis `brick-code-guide`
-  (memes sources), statut `finished` + `test_access` remplis (cf. section dediee),
+- **NEEDS FIXES** (entre les passes) → lot de fixes, tag passe-2, passe 2 differentielle,
+  sans relance humaine. On ne remonte a l'humain qu'au STOP de 2.3 ou pour une decision
+  qui lui appartient, et dans ce cas le verdict est READY SAUF DECISION HUMAINE et la
+  chaine continue.
+- **READY** ou **READY SAUF DECISION HUMAINE** → `brick-code-walkthrough` puis
+  `brick-code-guide` (une fois, sur le tag ready), statut `finished` + `test_access`,
   `brick-code-video` pour les changements du jour. **PUIS STOP : l'envoi de la
   livraison au client est un geste humain**, le compte rendu final se fait la.
 

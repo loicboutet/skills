@@ -48,7 +48,7 @@ Sur un lot transcrit, la normalisation (etape 6 de `/brick-mockup-transcription`
 | # | Commande | Quand l'utiliser |
 |---|----------|-----------------|
 | 4 | `/brick-code-build` | Developper la brick, tests, tracabilite vers les criteres |
-| 4r | `/brick-code-review` | Pre-livraison : cahier de recette, gap analysis, UX, securite |
+| 4r | `/brick-code-review` | Pre-livraison bornee a 2 passes : verrou + gel + pre-vol, 4 verificateurs en parallele (cahier, naive, permissions, mobile), lot de fixes, passe 2 differentielle, verdict a 2 etages |
 | 4v | `/brick-code-video` | Filmer les changements livres (une video par changement, en lot du jour) |
 | 4g | `/brick-code-guide` | Guide utilisateur publie dans l'espace client |
 | 4w | `/brick-code-walkthrough` | Video longue 10-30 min, tous les chemins (revue, formation, passation) |
@@ -106,9 +106,12 @@ ANALYSIS → [DESIGN] → MOCKUP ↻ → CODE ↻ → Brick suivante
     corriger → rejouer, en boucle) → `mockup-video` → **STOP : l'envoi au client est
     humain**.
   - Chaine CODE : `mockup-reanalyse` (verdict PRET) → `code-build` → `code-review`
-    (NEEDS FIXES → fixes → nouvelle passe sous la porte de convergence, sans relance
-    humaine) → sur READY : `code-walkthrough` + `code-guide`, statut `finished` +
-    `test_access` → **STOP : l'envoi de la livraison est humain**.
+    bornee a DEUX passes (passe 1 : quatre verificateurs en parallele ; un lot de
+    fixes ; passe 2 differentielle sur ce que le lot a touche ; du neuf non regressif
+    en passe 2 = STOP et remontee avec `passes.md`, jamais de passe 3) → sur READY ou
+    READY SAUF DECISION HUMAINE : `code-walkthrough` + `code-guide` tournes une fois,
+    statut `finished` + `test_access` → **STOP : l'envoi de la livraison est humain**.
+    Pendant la review : aucun code neuf, aucun retour client (→ `code-feedback` apres).
   - Chaine QUOTIDIENNE : `daily-triage` → `daily-video` dans le meme tour si rien
     n'attend l'humain. Des points a trancher DIFFERENT la video : quand l'humain
     repond, on traite les items debloques PUIS on fait la video dans ce meme tour,
