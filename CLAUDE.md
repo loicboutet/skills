@@ -59,7 +59,7 @@ Sur un lot transcrit, la normalisation (etape 6 de `/brick-mockup-transcription`
 savent RIEN du produit. On enumere les types d'utilisateurs, chacun recoit une persona, un
 objectif metier et rien d'autre, et un verificateur distinct tranche ses abandons. Appelee
 par `/brick-mockup-review` (mode maquette, avant le client) et `/brick-code-review`
-(mode application, section 7b). Attrape « la fonction marche et personne ne la trouve »,
+(mode application, verificateur R2 de la passe 1). Attrape « la fonction marche et personne ne la trouve »,
 que ni le cahier de recette ni les parcours connus ne peuvent voir.
 
 **Transverse (connaissance)** : `/brain` = le second cerveau cross-projet. On
