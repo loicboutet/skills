@@ -110,7 +110,8 @@ supprime pas, et l'humain n'a jamais a la redemander.
   traiter les items debloques ET enchainer `brick-daily-video` DANS CE MEME
   TOUR-LA, sans nouvelle relance — la reponse de l'humain est le feu vert de
   toute la fin de chaine, pas seulement des items.
-- **Rien produit et rien a trancher** → le dire (journee calme), pas de video.
+- **Rien produit et rien a trancher** → le dire (journee calme), pas de video,
+  premiere ligne `ETAT : CHAINE TERMINEE (journee calme)`.
 
 ## Todos : ce qui reste a l'humain part dans `todo_tool`
 

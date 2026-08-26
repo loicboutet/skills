@@ -159,6 +159,8 @@ la liste des changements (avant), cartons + assemblage + envoi (apres).
 
 ## Ensuite
 
+Compte rendu dont la premiere ligne est `ETAT : CHAINE TERMINEE (bilan du jour envoye)`.
+
 → fin de journee. Le lendemain matin, `brick-daily-triage` refait le tour des
 canaux (emails / WhatsApp / tracker), traite l'actionnable et rappelle
 `brick-daily-video` pour le bilan suivant. Entre-temps, `brick-mockup-feedback` /

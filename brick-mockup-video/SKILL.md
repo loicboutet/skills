@@ -217,4 +217,8 @@ chemin `$CHAP` + consigne de NE PAS toucher aux autres repertoires.
 
 ## Ensuite
 
+Compte rendu a l'humain dont la premiere ligne est `ETAT : CHAINE TERMINEE (maquettes a
+envoyer au client)` : la chaine mockup s'arrete ici, l'envoi est humain, et cette ligne
+empeche le chien de garde de relancer la session.
+
 → envoyer au client, puis `brick-mockup-feedback` à chaque vague de retours. Mockups validés → `brick-mockup-reanalyse`, puis `brick-code-build` sur verdict PRET.

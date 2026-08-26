@@ -275,7 +275,7 @@ question est un retour rate. Donc TOUT compte rendu, point d'etape, fin de skill
 de tache commence par la meme grille, dans cet ordre, sans preambule :
 
 ```
-ETAT : <un libelle net> — EN ATTENTE DE TA DECISION / <ETAPE> TERMINEE / EN COURS (<ou>) / BLOQUE (<par quoi>)
+ETAT : <un libelle net> — EN ATTENTE DE TA DECISION / <ETAPE> TERMINEE / EN COURS (<ou>) / BLOQUE (<par quoi>) / CHAINE TERMINEE (<motif>)
 
 Situation : 2 a 3 phrases, l'essentiel, pas l'historique.
 
@@ -293,6 +293,15 @@ Regles :
 - **L'ETAT en premiere ligne, toujours.** S'il n'y a rien a decider, il le dit
   (« TERMINEE », « EN COURS »), et le message peut s'arreter apres la Situation et
   les Prochaines etapes. Un point d'etape sans decision tient en 3 lignes.
+- **« <ETAPE> TERMINEE » n'est jamais une fin** : le skill suivant s'invoque dans le
+  meme tour. La seule vraie fin s'ecrit `CHAINE TERMINEE (<motif>)`, aux trois
+  arrets legitimes (envoi client a faire par l'humain, decision humaine dont la
+  suite depend, blocage documente x3) ou quand il n'y a plus rien a faire. C'est
+  cette ligne que le chien de garde des sessions lit : un tour qui se termine sans
+  `CHAINE TERMINEE`, sans `EN ATTENTE DE TA DECISION` et sans `BLOQUE` est
+  considere comme un arret en chemin et sera relance au bout de 30 minutes
+  (« reprends la ou tu en etais »). Un agent qui a fini repond alors par cette
+  seule ligne, et n'est plus jamais relance.
 - **Une decision = un bloc Situation-libre / Choix / Recommandation.** Plusieurs
   decisions = plusieurs blocs, dans l'ordre d'urgence. Jamais une question noyee dans
   un paragraphe. Jamais de choix sans recommandation : c'est toi l'expert, l'humain

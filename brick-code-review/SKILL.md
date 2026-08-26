@@ -462,7 +462,9 @@ Ecrit UNE fois, au verdict. 150 lignes au plus ; le detail vit dans `recette.md`
 3. `brick_tool update status: finished` + `test_access` (URL et comptes de TEST que
    l'humain enverra) : le planning affiche « Termine — a envoyer au client ».
 4. **STOP : l'envoi de la livraison est un geste humain.** Compte rendu final ici, avec
-   les decisions humaines en attente s'il y en a.
+   les decisions humaines en attente s'il y en a, et la premiere ligne du compte rendu
+   est `ETAT : CHAINE TERMINEE (livraison a envoyer par l'humain)` : c'est ce que le
+   chien de garde lit pour ne pas relancer la session.
 
 Le cahier, `passes.md` et le rapport de parite sont des LIVRABLES, partageables au client
 comme preuve de couverture et de conformite. Les « choix a expliquer » accompagnent la
