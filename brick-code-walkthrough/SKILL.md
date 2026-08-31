@@ -185,6 +185,18 @@ consigne de NE PAS toucher aux autres repertoires.
    ```bash
    ffmpeg -i "$WORK/out/presentation.mp4" -vf "freezedetect=n=0.001:d=8" -an -f null - 2>&1 | grep freeze || echo "aucun gel > 8s"
    ```
+   Et le SON, meme rigueur que l'image (verrou ajoute le 31/08/2026 : 4 videos
+   publiees avec cartons muets a -91 dB, le repli silencieux avait tout masque) :
+   ```bash
+   ffmpeg -ss 0 -t 2.5 -i "$WORK/out/presentation.mp4" -af volumedetect -vn -f null - 2>&1 | grep max_volume
+   ```
+   Le debut (carton d'intro, whoosh + musique) doit rendre un max_volume > -60 dB.
+   Sous ce seuil, le son promis n'y est pas : telechargement sfx/music rate (le
+   chemin est RELATIF, prefixe $PLATFORM_API_URL obligatoire, verifie la taille du
+   fichier telecharge) ou montage sans piste. NE PAS PUBLIER. Un carton rendu muet
+   par le repli n'est jamais un detail : il se DECLARE dans le rapport, et si le
+   plan promettait un whoosh, c'est un defaut a corriger avant publication.
+
    Tout gel superieur a ~8 s est suspect (une narration sur ecran fixe
    legitime dure moins que ca). C'est le test qui aurait attrape l'incident
    Nutchel en 15 secondes : des frames de controle tirees au hasard peuvent

@@ -173,6 +173,18 @@ chemin `$CHAP` + consigne de NE PAS toucher aux autres repertoires.
    ```bash
    ffmpeg -i "$WORK/out/mockups.mp4" -vf "freezedetect=n=0.001:d=8" -an -f null - 2>&1 | grep freeze || echo "aucun gel > 8s"
    ```
+   Et le SON, meme rigueur que l'image (verrou ajoute le 31/08/2026 : 4 videos
+   publiees avec cartons muets a -91 dB, le repli silencieux avait tout masque) :
+   ```bash
+   ffmpeg -ss 0 -t 2.5 -i "$WORK/out/mockups.mp4" -af volumedetect -vn -f null - 2>&1 | grep max_volume
+   ```
+   Le debut (carton d'intro, whoosh + musique) doit rendre un max_volume > -60 dB.
+   Sous ce seuil, le son promis n'y est pas : telechargement sfx/music rate (le
+   chemin est RELATIF, prefixe $PLATFORM_API_URL obligatoire, verifie la taille du
+   fichier telecharge) ou montage sans piste. NE PAS PUBLIER. Un carton rendu muet
+   par le repli n'est jamais un detail : il se DECLARE dans le rapport, et si le
+   plan promettait un whoosh, c'est un defaut a corriger avant publication.
+
    Plus une frame au MILIEU de chaque chapitre (pas aux transitions) et l'audio
    aux coutures.
 7. **Publier UNE video** sur la brique (`delivery_video`, meme derivation

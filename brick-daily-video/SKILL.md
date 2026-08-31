@@ -78,7 +78,7 @@ Meme moteur et memes garde-fous que `/brick-code-walkthrough`, en plus court :
   nombre de changements.
 - **Assemblage** : **concat FILTER obligatoire, JAMAIS le demuxer** (incident
   Nutchel — voir `/brick-code-walkthrough` Etape 4). Chaque segment avec piste
-  audio (cartons muets rendus avec un silence).
+  audio (un carton SANS audio recoit une piste de silence pour le concat — mais si le plan lui promettait un whoosh, ce silence est un DEFAUT a declarer, pas un repli discret ; voir le verrou son de l'etape Verifier).
 - **Voix** : par langue de l'espace client (Rudy FR / `3WqHLnw80rOZqJzW9YRB` EN,
   `eleven_v3`), la MEME sur toute la video.
 
@@ -109,6 +109,18 @@ la liste des changements (avant), cartons + assemblage + envoi (apres).
    ```bash
    ffmpeg -i "$WORK/out/bilan.mp4" -vf "freezedetect=n=0.001:d=8" -an -f null - 2>&1 | grep freeze || echo "aucun gel > 8s"
    ```
+   Et le SON, meme rigueur que l'image (verrou ajoute le 31/08/2026 : 4 videos
+   publiees avec cartons muets a -91 dB, le repli silencieux avait tout masque) :
+   ```bash
+   ffmpeg -ss 0 -t 2.5 -i "$WORK/out/bilan.mp4" -af volumedetect -vn -f null - 2>&1 | grep max_volume
+   ```
+   Le debut (carton d'intro, whoosh + musique) doit rendre un max_volume > -60 dB.
+   Sous ce seuil, le son promis n'y est pas : telechargement sfx/music rate (le
+   chemin est RELATIF, prefixe $PLATFORM_API_URL obligatoire, verifie la taille du
+   fichier telecharge) ou montage sans piste. NE PAS PUBLIER. Un carton rendu muet
+   par le repli n'est jamais un detail : il se DECLARE dans le rapport, et si le
+   plan promettait un whoosh, c'est un defaut a corriger avant publication.
+
    Plus une frame au milieu de chaque chapitre et l'audio aux coutures.
 6. **Publier UNE video** (`delivery_video`, derivation `MCP_TOKEN`/`PLATFORM_API_URL`
    depuis `.mcp.json` / `.nexrai/binding.json`) :
